@@ -44,7 +44,7 @@ U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, 
 
 
 //----------------- Replace with your network credentials ----------------------------------
-const char* ssid     = "ProTournament";
+const char* ssid     = "ProTournament1";
 const char* password = "123456789";
 //--------------------------------------------------------------------------------------------
 
@@ -447,7 +447,7 @@ void loop(){
 
             if (!is_settings) {
                //-------------Form to enter information-----------------------------------------
-                client.println("<div class=\"middle-form\"");
+                client.println("<div class=\"middle-form\">");
                 client.println("<form action=\"/\" method=\"GET\">");
                                //first entry field
                 client.println("    <div class=\"form-group\">");
@@ -479,20 +479,21 @@ void loop(){
                 client.println("<label for=\"checkbox1\">Print 2 Copies</label></div>");
 
 
-                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox2\" name=\"checkbox2\" value=\"checkbox2\" " + checkbox2_status + ">");
+                client.println("<div><input type=\"checkbox\" id=\"checkbox2\" name=\"checkbox2\" value=\"checkbox2\" " + checkbox2_status + ">");
                 client.println("<label for=\"checkbox2\">Print signature line</label></div>");
 
-                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox3\" name=\"checkbox3\" value=\"checkbox3\" " + checkbox3_status + ">");
+                client.println("<div><input type=\"checkbox\" id=\"checkbox3\" name=\"checkbox3\" value=\"checkbox3\" " + checkbox3_status + ">");
                 client.println("<label for=\"checkbox3\">Serialized ticket</label></div>");
 
-                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox4\" name=\"checkbox4\" value=\"checkbox4\" " + checkbox4_status + ">");
+                client.println("<div><input type=\"checkbox\" id=\"checkbox4\" name=\"checkbox4\" value=\"checkbox4\" " + checkbox4_status + ">");
                 client.println("<label for=\"checkbox3\">Optional Parameter (1)</label></div>");
 
+                //client.println("<button type=\"submit\" class=\"btn btn-primary\">Submit</button>");
                 client.println("<input type=\"submit\" value=\"Submit\" class=\"btn btn-primary btn-lg btn-block\">");
 
                 client.println("</form>");
                 client.println("</div>");
-                client.println("<div class=\"middle-form\"");
+                client.println("<div class=\"middle-form\">");
                 client.println("<form action=\"/settings\" method=\"GET\">");
                 client.println("<input type=\"submit\" value=\"Settings\" class=\"btn btn-warning btn-lg btn-block\">");
                 client.println("</form>");
@@ -511,6 +512,7 @@ void loop(){
                 client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck3\" name=\"settingsCheck3\" value=\"settingsCheck3\" " + settingsCheck3_status + ">");
                 client.println("<label for=\"settingsCheck3\">settings checkbox 3</label></div>");
 
+                
                 client.println("<input type=\"submit\" value=\"Save Settings\" class=\"btn btn-primary btn-lg btn-block\">");
 
                 client.println("</form>");
