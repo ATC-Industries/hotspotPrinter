@@ -92,6 +92,14 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;      //we will need to dec
                                                            //which we will use to take care of the synchronization 
                                                            //between the main loop and the ISR, when modifying a shared variable.
 
+// setting variables
+String settingsCheck1_status = "";
+String settingsCheck3_status = "";
+String settingsCheck2_status = "";
+void settingsPageForm();
+void mainPageForm();
+bool is_settings = false;
+
 // Assign eeprom save addresses
 const int line1_eeprom_addr = 0;
 const int line2_eeprom_addr = 50;
@@ -131,50 +139,71 @@ char *database[100][2];                                               //database
 void setup() {
 
     //---setup 1us counter---------
-//    timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
-//    timerAttachInterrupt(timer,&onTimer,true);            //"&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted 
-//    timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times           
-//    timerAlarmEnable(timer);                              //this line enables the timer declared 3 lines up and starts it
-//
-//    pinMode(4,INPUT_PULLUP);                                    //set pin 4 as the pushbutton input to print with pullup
-//    pinMode(2,OUTPUT);                                        //
-//    digitalWrite(2,LOW);                                    //other side of print pushbutton for test board
+    timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
+    timerAttachInterrupt(timer,&onTimer,true);            //"&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted 
+    timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times           
+    timerAlarmEnable(timer);                              //this line enables the timer declared 3 lines up and starts it
 
+    pinMode(4,INPUT_PULLUP);                                    //set pin 4 as the pushbutton input to print with pullup
+    pinMode(2,OUTPUT);                                        //this is the other side of pushbutton
+    digitalWrite(2,LOW);                                        //other side of print pushbutton for test board keep low
 
+    u8g2.begin();                                               //start up oled display
+    u8g2.clearBuffer();                                         //clear oled buffer
+    u8g2.setFont(u8g2_font_ncenB08_tr);                         // roman style 8 pixel
+    u8g2.sendBuffer();                                          //clear display
     ticket = 0;
    // Note the format for setting a serial port is as follows: Serial2.begin(baud-rate, protocol, RX pin, TX pin);
-   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);             //serial port 2 for thermal printer TX = pin 17 RX = pin 16
+   Serial2.begin(9600, SERIAL_8N1,RXD2, TXD2);             //serial port 2 for thermal printer TX = pin 17 RX = pin 2
    Serial.begin(115200);                                    //start serial port 0 (debug monitor and programming port)
    if (!EEPROM.begin(EEPROM_SIZE))                        //set aside memory for eeprom size
        {
        Serial.println("failed to intialise EEPROM");
        }
    //Serial2.print("THis is a test of serial port 2"); 
-   u8g2.begin();                                                         //start up oled display
+   
 
 
   Serial.print("Setting AP (Access Point)…\n");                         // Connect to Wi-Fi network with SSID and password
   // Remove the password parameter, if you want the AP (Access Point) to be open
-  WiFi.softAP(ssid,password);                                           //.softAP(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connection)
-
+  if (!digitalRead(4))                                                  // of print button is held down during power up
+      {
+      Serial.println("password = 987654321");
+      u8g2.clearBuffer();
+      u8g2.drawStr(3,10,"Temporary Password");                          //display temp password on oled display
+      u8g2.drawStr(3,18,"987654321");
+      u8g2.sendBuffer();
+      while(!digitalRead(4))                                              //loop until button is released
+           {delay(50);}
+      WiFi.softAP(ssid,"987654321");
+      }
+  else
+      {WiFi.softAP(ssid,password);                                        //this was declared as constant above
+      Serial.println("password = 123456789");}
+ 
+        //.softAP(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connection)
+  
   IPAddress IP = WiFi.softAPIP();                                       //get the ip address
   Serial.print("AP IP address: ");
   Serial.println(IP);
-  char ipaddress[30];
+
+ 
+ 
   server.begin();
 
+ 
 //  int j = 2048;
 //   while (j !=0 )
 //      { EEPROM.writeString(j,"");
 //      j--;
 //      }
-  u8g2.clearBuffer();                                                     // clear the internal memory on oled display
-  u8g2.setFont(u8g2_font_ncenB08_tr);                                     // choose a suitable font
-//  u8g2.drawStr(3,10,"SSID = ProTournament");                            // write something to the internal memory
-//  char ip_string[30];                                                   //declare a character array
-//  sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1) 
-//  u8g2.drawStr(3,28,ip_string);                                         //display ip value on oled
-//  u8g2.sendBuffer();                                                    //transfer buffer value to screen
+  u8g2.clearBuffer();
+  u8g2.drawStr(3,10,"SSID = ProTournament");                            // write something to the internal memory
+  char ip_string[30];                                                   //declare a character array
+  sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1) 
+  u8g2.drawStr(3,28,ip_string);                                         //display ip value on oled
+  u8g2.sendBuffer();                                                    //transfer buffer value to screen
+  delay(5000);
                line1 = (EEPROM.readString(line1_eeprom_addr));              //recall values saved in eeprom
                line2 = (EEPROM.readString(line2_eeprom_addr));
                line3 = (EEPROM.readString(line3_eeprom_addr));
@@ -198,8 +227,9 @@ void setup() {
                line1.toCharArray(temp_str1,30);                               //must convert string to a character array for drawStr() to work
                line2.toCharArray(temp_str2,30);
                line3.toCharArray(temp_str3,30);
-               line4.toCharArray(temp_str4,30); 
-
+               line4.toCharArray(temp_str4,30);
+                
+                // Writing to OLED display
                u8g2.clearBuffer();
                u8g2.drawStr(3,8,temp_str1);                                   //send line 1 to oled display
                u8g2.drawStr(3,18,temp_str2);
@@ -273,8 +303,15 @@ void loop(){
   
             Serial.println("headerT:");                                                            //print substring to serial monitor
             Serial.println(headerT);
-            if ((header.indexOf("Line1=") >= 0)&& !(header.indexOf("favicon") >= 0))                //if text 'Line1=' is found and text 'favicon' is not found
-               {Serial.println("********found it*********************************************");
+            if ((headerT.indexOf("settings?") >= 0)&& !(header.indexOf("favicon") >= 0))
+            {
+              is_settings = true;
+            }
+            else {
+              is_settings = false;
+            }
+            if ((headerT.indexOf("Line1=") >= 0)&& !(header.indexOf("favicon") >= 0))                //if text 'Line1=' is found and text 'favicon' is not found
+               {Serial.println("********found it (screen one) *********************************************");
                line1 =  header.substring(header.indexOf("Line1=")+6,header.indexOf("&Line2="));        //parse out the varible strings for the the 4 lines
                line2 =  header.substring(header.indexOf("Line2=")+6,header.indexOf("&Line3="));
                line3 =  header.substring(header.indexOf("Line3=")+6,header.indexOf("&Line4="));
@@ -282,6 +319,7 @@ void loop(){
                if (headerT.indexOf("&check") >= 0) {
                 line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf("&check"));                
                } else {
+                 
                 line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf(" HTTP"));
                }
                // Check if checkbox1 is checked
@@ -381,6 +419,9 @@ void loop(){
                u8g2.drawStr(3,28,temp_str3);
                u8g2.drawStr(3,48,temp_str4);
                u8g2.sendBuffer();
+            } else
+            {
+              // Do the settings page stuff
             }
             //--------------- Display the HTML web page---------------------------
             client.println("<!DOCTYPE html><html>");
@@ -399,44 +440,64 @@ void loop(){
             client.println("<body>");
             client.println("<h1>Pro Tournament Scales</h1>");                                             // Web Page Heading
             
-             
+            if (!is_settings) {               
+               //-------------Form to enter information-----------------------------------------
+                client.println("<form action=\"/\" method=\"GET\">");
+                client.println("Line 1:");
+                client.println("<input size=\"40\" type=\"text\" name=\"Line1\" value=\"" + line1 + "\">");                                     //first entry field
+                client.println("<br>");
+                client.println("Line 2:");
+                client.println("<input size=\"40\"type=\"text\"name=\"Line2\" value=\"" + line2 + "\">");                                      //second entry field
+                client.println("<br>");
+                client.println("Line 3:");                            
+                client.println("<input size=\"40\"type=\"text\"name=\"Line3\" value=\"" + line3 + "\">");                                      //second entry field
+                client.println("<br>");
+                client.println("Line 4:");                            
+                client.println("<input size=\"40\"type=\"text\"name=\"Line4\" value=\"" + line4 + "\">");                                      //second entry field
+                client.println("<br>");
+                client.println("<br>");
+                
+                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox1\" name=\"checkbox1\" value=\"checkbox1\" " + checkbox1_status + ">");
+                client.println("<label for=\"checkbox1\">Print 2 Copies</label></div>");
+                
+                
+                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox2\" name=\"checkbox2\" value=\"checkbox2\" " + checkbox2_status + ">");
+                client.println("<label for=\"checkbox2\">Print signature line</label></div>");
+                
+                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox3\" name=\"checkbox3\" value=\"checkbox3\" " + checkbox3_status + ">");
+                client.println("<label for=\"checkbox3\">Serialized ticket</label></div>");
+          
+                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox4\" name=\"checkbox4\" value=\"checkbox4\" " + checkbox4_status + ">");
+                client.println("<label for=\"checkbox3\">Optional Parameter (1)</label></div>");
+                
+                client.println("<br><input type=\"submit\" value=\"Submit\" class=\"button\">");
+                   
+                client.println("</form>");
+                client.println("<form action=\"/settings\" method=\"GET\">");
+                client.println("<br><input type=\"submit\" value=\"Settings\" class=\"button\">");
+                client.println("</form>");
+            } else {
+                       //-------------Settings Form to enter information-----------------------------------------
+                client.println("<form action=\"/\" method=\"GET\">");
+                client.println("<h1>Settings</h1>");
+          
+                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck1\" name=\"settingsCheck1\" value=\"settingsCheck1\" " + settingsCheck1_status + ">");
+                client.println("<label for=\"settingsCheck1\">settings checkbox 1</label></div>");
+                
+                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck2\" name=\"settingsCheck2\" value=\"settingsCheck2\" " + settingsCheck2_status + ">");
+                client.println("<label for=\"settingsCheck2\">settings checkbox 2</label></div>");
+          
+                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck3\" name=\"settingsCheck3\" value=\"settingsCheck3\" " + settingsCheck3_status + ">");
+                client.println("<label for=\"settingsCheck3\">settings checkbox 3</label></div>");
+                
+                client.println("<br><input type=\"submit\" value=\"Save Settings\" class=\"button\">");
+                   
+                client.println("</form>");
+                is_settings = false;                                                               //clear flag
+            }
 
-              //-------------Form to enter information-----------------------------------------
-              client.println("<form action=\"/\" method=\"GET\">");
-                  client.println("Line 1:");
-                  client.println("<input size=\"40\" type=\"text\" name=\"Line1\" value=\"" + line1 + "\">");                                     //first entry field
-                  client.println("<br>");
-                  client.println("Line 2:");
-                  client.println("<input size=\"40\"type=\"text\"name=\"Line2\" value=\"" + line2 + "\">");                                      //second entry field
-                  client.println("<br>");
-                  client.println("Line 3:");                            
-                  client.println("<input size=\"40\"type=\"text\"name=\"Line3\" value=\"" + line3 + "\">");                                      //second entry field
-                  client.println("<br>");
-                  client.println("Line 4:");                            
-                  client.println("<input size=\"40\"type=\"text\"name=\"Line4\" value=\"" + line4 + "\">");                                      //second entry field
-                  client.println("<br>");
-                  client.println("<br>");
-                  
-                  client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox1\" name=\"checkbox1\" value=\"checkbox1\" " + checkbox1_status + ">");
-                  client.println("<label for=\"checkbox1\">Print 2 Copies</label></div>");
-                  
-                  
-                  client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox2\" name=\"checkbox2\" value=\"checkbox2\" " + checkbox2_status + ">");
-                  client.println("<label for=\"checkbox2\">Print signature line</label></div>");
-                  
-                  client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox3\" name=\"checkbox3\" value=\"checkbox3\" " + checkbox3_status + ">");
-                  client.println("<label for=\"checkbox3\">Serialized ticket</label></div>");
-
-                  client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox4\" name=\"checkbox4\" value=\"checkbox4\" " + checkbox4_status + ">");
-                  client.println("<label for=\"checkbox3\">Optional Parameter (1)</label></div>");
-                  
-                  client.println("<br><input type=\"submit\" value=\"Submit\" class=\"button\">");
-                     
-                  client.println("</form>");
-                  client.println("</body>");
-                  client.println("</html>");
-            
-            
+            client.println("</body>");
+            client.println("</html>");
             client.println();                                                     // The HTTP response ends with another blank line
             // Break out of the while loop
             break;
@@ -473,6 +534,9 @@ void loop(){
 
 
 //%%%%%%%%%%%%%%%%%%%%%% functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
 
 String char_replace_http(String str) {
   str.replace("+", " ");
