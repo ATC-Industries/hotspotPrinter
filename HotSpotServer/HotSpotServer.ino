@@ -3,18 +3,18 @@
 
 
 /*******************************
-  Terry Clarkson 
+  Terry Clarkson & Adam Clarkson
   10/27/18
 *******************************/
 
 
 //------ EEPROM addresses --------------------------------
 //  line 1 -      0 to 49  49 bytes
-//  line 2 -      50 to 99  49 bytes 
-//  line 3 -      100 to 149  49 bytes 
-//  line 4 -      150 to 199 49 bytes  
+//  line 2 -      50 to 99  49 bytes
+//  line 3 -      100 to 149  49 bytes
+//  line 4 -      150 to 199 49 bytes
 //  checkbox1 -   200
-//  checkbox2 -   201 
+//  checkbox2 -   201
 //  checkbox3 -   202
 //  checkbox4 -   203
 //  checkbox5 -   204
@@ -36,7 +36,7 @@
 #include <SPI.h>
 #endif
 #ifdef U8X8_HAVE_HW_I2C
-#include <Wire.h>                                
+#include <Wire.h>
 #endif
 
 #define RXD2 16                               //port 2 serial pins for external printer
@@ -82,14 +82,14 @@ String checkbox4_status = "";
 String checkbox5_status = "";
 volatile int interruptCounter;                              //varible that tracks number of interupts
 int totalInterruptCounter;                                  //counter to track total number of interrupts
- 
+
 hw_timer_t * timer = NULL;                                 //in order to configure the timer, we will need
                                                            //a pointer to a variable of type hw_timer_t,
                                                            //which we will later use in the Arduino setup function.
 
 
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;      //we will need to declare a variable of type portMUX_TYPE,
-                                                           //which we will use to take care of the synchronization 
+                                                           //which we will use to take care of the synchronization
                                                            //between the main loop and the ISR, when modifying a shared variable.
 
 // setting variables
@@ -140,8 +140,8 @@ void setup() {
 
     //---setup 1us counter---------
     timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
-    timerAttachInterrupt(timer,&onTimer,true);            //"&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted 
-    timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times           
+    timerAttachInterrupt(timer,&onTimer,true);            //"&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
+    timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times
     timerAlarmEnable(timer);                              //this line enables the timer declared 3 lines up and starts it
 
     pinMode(4,INPUT_PULLUP);                                    //set pin 4 as the pushbutton input to print with pullup
@@ -160,8 +160,8 @@ void setup() {
        {
        Serial.println("failed to intialise EEPROM");
        }
-   //Serial2.print("THis is a test of serial port 2"); 
-   
+   //Serial2.print("THis is a test of serial port 2");
+
 
 
   Serial.print("Setting AP (Access Point)…\n");                         // Connect to Wi-Fi network with SSID and password
@@ -180,18 +180,18 @@ void setup() {
   else
       {WiFi.softAP(ssid,password);                                        //this was declared as constant above
       Serial.println("password = 123456789");}
- 
+
         //.softAP(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connection)
-  
+
   IPAddress IP = WiFi.softAPIP();                                       //get the ip address
   Serial.print("AP IP address: ");
   Serial.println(IP);
 
- 
- 
+
+
   server.begin();
 
- 
+
 //  int j = 2048;
 //   while (j !=0 )
 //      { EEPROM.writeString(j,"");
@@ -200,7 +200,7 @@ void setup() {
   u8g2.clearBuffer();
   u8g2.drawStr(3,10,"SSID = ProTournament");                            // write something to the internal memory
   char ip_string[30];                                                   //declare a character array
-  sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1) 
+  sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
   u8g2.drawStr(3,28,ip_string);                                         //display ip value on oled
   u8g2.sendBuffer();                                                    //transfer buffer value to screen
   delay(5000);
@@ -209,7 +209,7 @@ void setup() {
                line3 = (EEPROM.readString(line3_eeprom_addr));
                line4 = (EEPROM.readString(line4_eeprom_addr));
                serial_number = EEPROM.readUInt(serial_number_addr);
-               
+
                checkbox1_is_checked = (EEPROM.readBool(checkbox1_eeprom_addr));  //recall checkbox status
                checkbox2_is_checked = (EEPROM.readBool(checkbox2_eeprom_addr));
                checkbox3_is_checked = (EEPROM.readBool(checkbox3_eeprom_addr));
@@ -222,13 +222,13 @@ void setup() {
                 checkbox1_is_checked ? checkbox1_status = "checked" : checkbox1_status = "";    //set 'checkbox#_is_checked' to match 'checkbox#_status'
                 checkbox2_is_checked ? checkbox2_status = "checked" : checkbox2_status = "";
                 checkbox3_is_checked ? checkbox3_status = "checked" : checkbox3_status = "";
-                checkbox4_is_checked ? checkbox4_status = "checked" : checkbox4_status = ""; 
-               
+                checkbox4_is_checked ? checkbox4_status = "checked" : checkbox4_status = "";
+
                line1.toCharArray(temp_str1,30);                               //must convert string to a character array for drawStr() to work
                line2.toCharArray(temp_str2,30);
                line3.toCharArray(temp_str3,30);
                line4.toCharArray(temp_str4,30);
-                
+
                 // Writing to OLED display
                u8g2.clearBuffer();
                u8g2.drawStr(3,8,temp_str1);                                   //send line 1 to oled display
@@ -239,7 +239,7 @@ void setup() {
 }
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
-  
+
    if (interruptCounter > 0)                           //every one second 1 sec int is generated
       {
       portENTER_CRITICAL(&timerMux);
@@ -254,28 +254,28 @@ void loop(){
             {statt = 0;                               //set display mode to 0 so weights do not print
              totalInterruptCounter = 0;              //reset counter
             }
-   //--------------- push button routine -------------------------------------------------------   
+   //--------------- push button routine -------------------------------------------------------
       if (!digitalRead(4))                           //if pushbutton is pressed (low condition), print the ticket
       { print_ticket();                              //print the weight ticket
-        
+
         delay(300);
         if (checkbox1_status == "checked")           //if checkbox "print 2 tickets" is checked
         {print_ticket();}                           //print second ticket if print 2 copies is selected
         while (!digitalRead(4))                      //loop while button is held down
-            {delay(300);} 
+            {delay(300);}
         serial_number++;                             //increment serial number
-        EEPROM.writeUInt(serial_number_addr,serial_number); //save to eeprom 
-      }                                
-            
+        EEPROM.writeUInt(serial_number_addr,serial_number); //save to eeprom
+      }
 
-   
+
+
 //    while (Serial2.available())                  //if data on recieve buffer, send to serial monitor
 //        {Serial.print(char(Serial2.read()));}    //send serial 2 input data to serial monitor
-  
 
 
 
-  
+
+
   WiFiClient client = server.available();   // Listen for incoming clients
 
   if (client) {                             // If a new client connects,
@@ -300,7 +300,7 @@ void loop(){
 
       //-----read the returned information from form when submit button is pressed and save to memory--------
             String headerT = header.substring(0,header.indexOf("Host:"));                          //create substring from begining to the word 'Host:'
-  
+
             Serial.println("headerT:");                                                            //print substring to serial monitor
             Serial.println(headerT);
             if ((headerT.indexOf("settings?") >= 0)&& !(header.indexOf("favicon") >= 0))
@@ -317,13 +317,13 @@ void loop(){
                line3 =  header.substring(header.indexOf("Line3=")+6,header.indexOf("&Line4="));
                // Check if line 4 is end of data or if checkbox info follows
                if (headerT.indexOf("&check") >= 0) {
-                line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf("&check"));                
+                line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf("&check"));
                } else {
-                 
+
                 line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf(" HTTP"));
                }
                // Check if checkbox1 is checked
-              
+
                if (headerT.indexOf("&checkbox1") >= 0) {
                 checkbox1_is_checked = true;
                 checkbox1_status = "checked";
@@ -331,8 +331,8 @@ void loop(){
                 checkbox1_is_checked = false;
                 checkbox1_status = "";
                }
-              
-               
+
+
                if (headerT.indexOf("&checkbox2") >= 0) {
                 checkbox2_is_checked = true;
                 checkbox2_status = "checked";
@@ -340,8 +340,8 @@ void loop(){
                 checkbox2_is_checked = false;
                 checkbox2_status = "not_checked";
                }
-              
-               
+
+
                if (headerT.indexOf("&checkbox3") >= 0) {
                 checkbox3_is_checked = true;
                 checkbox3_status = "checked";
@@ -349,8 +349,8 @@ void loop(){
                 checkbox3_is_checked = false;
                 checkbox3_status = "not_checked";
                }
-              
-               
+
+
                if (headerT.indexOf("&checkbox4") >= 0) {
                 checkbox4_is_checked = true;
                 checkbox4_status = "checked";
@@ -358,7 +358,7 @@ void loop(){
                 checkbox4_is_checked = false;
                 checkbox4_status = "not_checked";
                }
-               
+
                line1 = char_replace_http(line1);                     //remove and replace http characters
                line2 = char_replace_http(line2);
                line3 = char_replace_http(line3);
@@ -373,7 +373,7 @@ void loop(){
 //               EEPROM.writeString(line2_eeprom_addr, line2);
 //               EEPROM.writeString(line3_eeprom_addr, line3);
 //               EEPROM.writeString(line4_eeprom_addr, line4);
-               
+
                EEPROM.writeBool(checkbox1_eeprom_addr,checkbox1_is_checked); //boolean true if checked false if not checked
                EEPROM.writeBool(checkbox2_eeprom_addr,checkbox2_is_checked);
                EEPROM.writeBool(checkbox3_eeprom_addr,checkbox3_is_checked);
@@ -389,13 +389,13 @@ void loop(){
 //         Serial.println(checkbox3_is_checked ? "True" :"False" );
 //         Serial.println(checkbox4_is_checked ? "True" :"False" );
 
-    
+
 
                 checkbox1_is_checked ? checkbox1_status = "checked" : checkbox1_status = "";
                 checkbox2_is_checked ? checkbox2_status = "checked" : checkbox2_status = "";
                 checkbox3_is_checked ? checkbox3_status = "checked" : checkbox3_status = "";
-                checkbox4_is_checked ? checkbox4_status = "checked" : checkbox4_status = ""; 
-                                                                          
+                checkbox4_is_checked ? checkbox4_status = "checked" : checkbox4_status = "";
+
                Serial.println("********START HEADER*********************************************");
                Serial.println(header);
                Serial.println("********END HEADER*********************************************");
@@ -407,12 +407,12 @@ void loop(){
                Serial.println("Checkbox2: " + checkbox2_status);
                Serial.println("Checkbox3: " + checkbox3_status);
                Serial.println("Checkbox4: " + checkbox4_status);
-               
+
                line1.toCharArray(temp_str1,30);                       //must convert string to a character array for drawStr() to work
                line2.toCharArray(temp_str2,30);
                line3.toCharArray(temp_str3,30);
-               line4.toCharArray(temp_str4,30); 
-                
+               line4.toCharArray(temp_str4,30);
+
                u8g2.clearBuffer();
                u8g2.drawStr(3,8,temp_str1);                                   //send line 1 to display
                u8g2.drawStr(3,18,temp_str2);
@@ -427,20 +427,20 @@ void loop(){
             client.println("<!DOCTYPE html><html>");
             client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
             client.println("<link rel=\"icon\" href=\"data:,\">");
-            // CSS to style the on/off buttons 
+            // CSS to style the on/off buttons
             // Feel free to change the background-color and font-size attributes to fit your preferences
             client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 2px auto; text-align: center;}");
             client.println("form { padding: 8px;}");
             client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");// default button style
-            client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer; width: 300px;}");    
-            
+            client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer; width: 300px;}");
+
             client.println(".button2 {background-color: #111111;}</style></head>");                              // greyed out button style
-            
-           
+
+
             client.println("<body>");
             client.println("<h1>Pro Tournament Scales</h1>");                                             // Web Page Heading
-            
-            if (!is_settings) {               
+
+            if (!is_settings) {
                //-------------Form to enter information-----------------------------------------
                 client.println("<form action=\"/\" method=\"GET\">");
                 client.println("Line 1:");
@@ -449,29 +449,29 @@ void loop(){
                 client.println("Line 2:");
                 client.println("<input size=\"40\"type=\"text\"name=\"Line2\" value=\"" + line2 + "\">");                                      //second entry field
                 client.println("<br>");
-                client.println("Line 3:");                            
+                client.println("Line 3:");
                 client.println("<input size=\"40\"type=\"text\"name=\"Line3\" value=\"" + line3 + "\">");                                      //second entry field
                 client.println("<br>");
-                client.println("Line 4:");                            
+                client.println("Line 4:");
                 client.println("<input size=\"40\"type=\"text\"name=\"Line4\" value=\"" + line4 + "\">");                                      //second entry field
                 client.println("<br>");
                 client.println("<br>");
-                
+
                 client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox1\" name=\"checkbox1\" value=\"checkbox1\" " + checkbox1_status + ">");
                 client.println("<label for=\"checkbox1\">Print 2 Copies</label></div>");
-                
-                
+
+
                 client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox2\" name=\"checkbox2\" value=\"checkbox2\" " + checkbox2_status + ">");
                 client.println("<label for=\"checkbox2\">Print signature line</label></div>");
-                
+
                 client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox3\" name=\"checkbox3\" value=\"checkbox3\" " + checkbox3_status + ">");
                 client.println("<label for=\"checkbox3\">Serialized ticket</label></div>");
-          
+
                 client.println("<div align = \"left\"><input type=\"checkbox\" id=\"checkbox4\" name=\"checkbox4\" value=\"checkbox4\" " + checkbox4_status + ">");
                 client.println("<label for=\"checkbox3\">Optional Parameter (1)</label></div>");
-                
+
                 client.println("<br><input type=\"submit\" value=\"Submit\" class=\"button\">");
-                   
+
                 client.println("</form>");
                 client.println("<form action=\"/settings\" method=\"GET\">");
                 client.println("<br><input type=\"submit\" value=\"Settings\" class=\"button\">");
@@ -480,18 +480,18 @@ void loop(){
                        //-------------Settings Form to enter information-----------------------------------------
                 client.println("<form action=\"/\" method=\"GET\">");
                 client.println("<h1>Settings</h1>");
-          
+
                 client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck1\" name=\"settingsCheck1\" value=\"settingsCheck1\" " + settingsCheck1_status + ">");
                 client.println("<label for=\"settingsCheck1\">settings checkbox 1</label></div>");
-                
+
                 client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck2\" name=\"settingsCheck2\" value=\"settingsCheck2\" " + settingsCheck2_status + ">");
                 client.println("<label for=\"settingsCheck2\">settings checkbox 2</label></div>");
-          
+
                 client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck3\" name=\"settingsCheck3\" value=\"settingsCheck3\" " + settingsCheck3_status + ">");
                 client.println("<label for=\"settingsCheck3\">settings checkbox 3</label></div>");
-                
+
                 client.println("<br><input type=\"submit\" value=\"Save Settings\" class=\"button\">");
-                   
+
                 client.println("</form>");
                 is_settings = false;                                                               //clear flag
             }
@@ -504,27 +504,27 @@ void loop(){
           } else {                                                                // if you got a newline, then clear currentLine
             currentLine = "";
           }
-        } 
+        }
         else if (c != '\r') {                                                     // if you got anything else but a carriage return character,
           currentLine += c;                                                       // add it to the end of the currentLine
         }
-         
+
       }//if (client.available())
     }//while (client.connected())
-    
+
     header = "";                                                                   // Clear the header variable
     save_header = "";
-    
+
     client.stop();                                                                 // Close the connection
     Serial.println("Client disconnected.");
     Serial.println("");
     u8g2.clearBuffer();
-    
+
 //    print_ticket();                                                                //print the weigh ticket when submit button is pressed
-//    
+//
 //    if (checkbox1_status == "checked")
 //        { print_ticket();}                                                         //print second ticket if print 2 copies is selected
-//         
+//
 //    delay(3000);                                                                   //one second delay
 
   }//If Client
@@ -580,36 +580,36 @@ String char_replace_http(String str) {
 
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
-              {  
+              {
                 int i=0;
                  String temp_string = "";
                  Serial2.write(0x1B);                //initialize printer
                  Serial2.write('@');
-               
+
                  Serial2.write(0x1B);                //upside down printing
                  Serial2.write('{');
                  Serial2.write('1');
-               
+
                  Serial2.write(0x1B);                //B Font 12x24
                  Serial2.write('M');
                  Serial2.write('1');
-               
+
                  Serial2.write(0x1B);                //justification: center text
                  Serial2.write('a');
                  Serial2.write('1');
-                       
+
                  Serial2.write(0x1D);                //character size : hoizontal x2, vertical x1
                  Serial2.write(0x21);
                  Serial2.write(0x11);
-               
+
                  Serial2.write(0x1B);                 //bold mode on
                  Serial2.write(0x21);
                  Serial2.write(0x38);
-              
+
                  Serial2.write(0x1D);                 //multiply text size by x4 by x4
                  Serial2.write(0x21);
-                 Serial2.write(0x44); 
-               
+                 Serial2.write(0x44);
+
                  Serial2.write(0x1D);                 //turn smoothing on
                  Serial2.write(0x62);
                  Serial2.write('1');
@@ -617,27 +617,27 @@ void print_ticket(void)
                  Serial2.write(0x1D);                 //set to small text
                  Serial2.write(0x21);
                  Serial2.write(0x00);
-                  
+
                  if (line4 != "")
                       {Serial2.println(line4);}      //print sponsor line if anything is in it
-                 
-                 
+
+
                  if (checkbox2_status == "checked")
                       { Serial2.println("Sign________________________________________");}  //print signature line
-                      
+
                  Serial2.write(0x1D);                 //set text size to x4 by x4
                  Serial2.write(0x21);
-                 Serial2.write(0x44);    
+                 Serial2.write(0x44);
 
-                 
-               
+
+
                i=0;
                while (i++ <= 8)
                   {Serial2.write(0xC4);}              //horizontal line
-                 Serial2.write(0x0A); 
+                 Serial2.write(0x0A);
 
 
-              //----------save data to database --------------------------------------------------   
+              //----------save data to database --------------------------------------------------
               // weight = "112.56";
                //line4.toCharArray(temp_str1,30);
               // *database [ticket][0] = temp_str1;  //save name to data base
@@ -645,43 +645,43 @@ void print_ticket(void)
 
 line1.toCharArray(temp_str1,30);
 
-               
+
                if(statt == 1 )                     //h2 lb mode
                   {
                     Serial2.print(output_string);  //send weight value
-                    Serial2.write(0x1D);                 //2x text size 
+                    Serial2.write(0x1D);                 //2x text size
                     Serial2.write(0x21);
                     Serial2.write(0x11);
                     Serial.printf("Lbs\n");             //print "Lbs"
                     clear_output_buffer();;                //clear the output string
                   }
-                
-                  
+
+
                else if (statt == 2)                     //h2 lb/oz mode
                   {
-                 
-                     Serial2.write(output_string[1]);          //send out string one byte at a time. 
+
+                     Serial2.write(output_string[1]);          //send out string one byte at a time.
                      Serial2.write(output_string[2]);          //print lb value
                      Serial2.write(output_string[3]);
-                     Serial2.write(0x1D);                 //normal text size 
+                     Serial2.write(0x1D);                 //normal text size
                      Serial2.write(0x21);
-                     Serial2.write(0x00); 
+                     Serial2.write(0x00);
                      Serial2.printf("Lb");
-                     Serial2.write(0x1D);                 //large text size 
+                     Serial2.write(0x1D);                 //large text size
                      Serial2.write(0x21);
-                     Serial2.write(0x44); 
+                     Serial2.write(0x44);
                      Serial2.write(output_string[5]);     //print oz value
                      Serial2.write(output_string[6]);
                      Serial2.write(output_string[7]);
                      Serial2.write(output_string[8]);
-                 
-                     Serial2.write(0x1D);                 //normal text size 
+
+                     Serial2.write(0x1D);                 //normal text size
                      Serial2.write(0x21);
-                     Serial2.write(0x00); 
+                     Serial2.write(0x00);
                      Serial2.print("oz\n");              //print the oz label with return
                      clear_output_buffer();;                //clear the output string
                   }
-                  
+
                else if ( statt == 3)               //357 lb mode
                   {
                      Serial2.write(output_string[0]);  //send weight
@@ -690,52 +690,52 @@ line1.toCharArray(temp_str1,30);
                      Serial2.write(output_string[3]);  //decimal point
                      Serial2.write(output_string[4]);
                      Serial2.write(output_string[5]);
-                   
-                   
+
+
                      Serial2.write(0x1D);                 //normal text size
                      Serial2.write(0x21);
-                     Serial2.write(0x11); 
+                     Serial2.write(0x11);
                      Serial2.print("Lbs\n");
                      clear_output_buffer();;                //clear the output string
          // weight = "";
                   }
-                  
+
                else if (statt == 4)                     //357 lb/oz mode
                   {
                      Serial2.write(output_string[0]);
                      Serial2.write(output_string[1]);      //send lbs
                      Serial2.write(output_string[2]);
-                 
-                     Serial2.write(0x1D);                 //normal text size 
+
+                     Serial2.write(0x1D);                 //normal text size
                      Serial2.write(0x21);
-                     Serial2.write(0x11); 
+                     Serial2.write(0x11);
                      Serial2.printf("Lb");                //print "lb" label
-                     Serial2.write(0x1D);                 //large text size 
+                     Serial2.write(0x1D);                 //large text size
                      Serial2.write(0x21);
-                     Serial2.write(0x44); 
-                     Serial2.write(output_string[6]);     
-                     Serial2.write(output_string[7]);     
+                     Serial2.write(0x44);
+                     Serial2.write(output_string[6]);
+                     Serial2.write(output_string[7]);
                      Serial2.write(output_string[8]);
                      Serial2.write(output_string[9]);
                      Serial2.write(output_string[10]);
-                     Serial2.write(0x1D);                 //normal text size 
+                     Serial2.write(0x1D);                 //normal text size
                      Serial2.write(0x21);
-                     Serial2.write(0x11); 
+                     Serial2.write(0x11);
                      Serial2.print("oz\n");
-                   
+
                      clear_output_buffer();              //clear the output string
      //  weight = "";
                   }
-                else if (statt == 0)                //no signal  
+                else if (statt == 0)                //no signal
                   {
                   Serial2.printf("No Signal");
                   }
-               
+
                  Serial2.write(0x1D);                 //multiply text size by 4 by 4
                  Serial2.write(0x21);
-                 Serial2.write(0x44); 
-               
-               
+                 Serial2.write(0x44);
+
+
                i=0;
                while (i++ <= 8)
                   {
@@ -745,23 +745,23 @@ line1.toCharArray(temp_str1,30);
 
                  Serial2.write(0x1D);                 //small text
                  Serial2.write(0x21);
-                 Serial2.write(0x00); 
-               
-                 
+                 Serial2.write(0x00);
+
+
                  if (checkbox3_status == "checked")                            //is serialized ticket check box checked
                      {Serial2.printf("S/N # %08d",serial_number);
                      Serial2.write(0x0A);
-                     } 
+                     }
 
-                 
-               
+
+
                  Serial2.write(0x1D);                //character size(horiz x2   vertical x2)
                  Serial2.write('!');
                  Serial2.write(0x11);
 
-                
-               
-              //------bottom of box-------------------- 
+
+
+              //------bottom of box--------------------
                  Serial2.write(0xC8);               //bottom of double line square box
                 i=0;
                while (i++ <= 14)
@@ -771,9 +771,9 @@ line1.toCharArray(temp_str1,30);
                  Serial2.write(0xBC);             //right bottom corner
                  Serial2.write(0x0A);
                //-------------------------------------------------
-              
-               
-               
+
+
+
                  Serial2.write(0xBA);            //left side line
                  Serial2.printf("     ");
                  Serial2.printf("WEIGHT");
@@ -786,35 +786,35 @@ line1.toCharArray(temp_str1,30);
                  Serial2.printf("   ");
                  Serial2.write(0xBA);              //right side double line
                  Serial2.write(0x0A);
-                
+
                   Serial2.write(0xC9);               //top of double line square box
                   i=0;
                   while (i++ <= 14)
                       {  Serial2.write(0xCD);}
                  Serial2.write(0xBB);
-               
-               
+
+
                  Serial2.write(0x1D);
                  Serial2.write(0x00);
-               
+
                //--------------area to insert tournament name and address and date--------------
                if (line1!= "")                                //if line 1 is not blank
-               
-                   {   
+
+                   {
                        Serial2.write(0x1D);                 // set text size to small size
                        Serial2.write(0x21);
-                       Serial2.write(0x00);                 
-                    
+                       Serial2.write(0x00);
+
                        Serial2.write(0x0A);                 //line feeds
                        Serial2.write(0x0A);
                        Serial2.write(0x0A);
-                      
+
                        Serial2.print(line3);               //print 3rd line of text
                        Serial2.write(0x0A);
-                     
+
                        Serial2.print(line2);                //print second line of text
                        Serial2.write(0x0A);
-                      
+
                        Serial2.print(line1);                //print first line of text
                        Serial2.write(0x0A);
                    }
@@ -825,13 +825,13 @@ line1.toCharArray(temp_str1,30);
                     Serial2.write(0x1D);                 // set text size to small size
                     Serial2.write(0x21);
                     Serial2.write(0x00);
-                         
+
                     Serial2.write(0x1D);                //reverse text toggle on
                     Serial2.write('B');
                     Serial2.write('1');                 //1 = turn on reverse 0= turn off reverse
-                  
+
                     Serial2.printf("\n\n\n        Pro Tournament Scales         \n");
-                  
+
                     Serial2.write(0x1D);                //reverse text toggle off
                     Serial2.write('B');
                     Serial2.write('0');
@@ -841,7 +841,7 @@ line1.toCharArray(temp_str1,30);
                  Serial2.write(0x1D);                // "GS" cut paper
                  Serial2.write('V');                 //"V"
                  Serial2.write(0x42);                //decimal 66
-                 Serial2.write(0xB0);                //length to feed before cut (mm)         
+                 Serial2.write(0xB0);                //length to feed before cut (mm)
               // delay_ms(200);
               // while (input(Pin_B1 == 0))          //wait for switch to be released
               //     {delay_ms(5);}
@@ -855,10 +855,10 @@ void clear_output_buffer(void)
           i=i+1;
          }
  //    next_in = 0;
-     }          
+     }
 
 //-----------------  Printer routine from ccs compiler  -------------------------------------
- 
+
 
 /*
 
@@ -877,7 +877,7 @@ int1 B_status;
 int16 graphic_word,timer_one,light_delay;
 int32 timer_100us;
 char x,out,rb;
-char large_text[4]; 
+char large_text[4];
 char weight[15];
 int i;
 int stat;      //1 = h2 lb   2= h2 lb/oz     3 = 357 lb     4 = 357 lb/oz
@@ -909,7 +909,7 @@ void serial_isr()
 void TIMER1_isr(void)                                        //timer 1 set for 13.1 ms interrupts
    {
    ++timer_one;
-   }                                   
+   }
 
 
 #int_TIMER2
@@ -919,96 +919,96 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
    }
 
 
-  
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++  Start of main program loop  ++++++++++++++++++++++++++++++++++++++++++++++++++
    while(1)                                                //Once program enters this loop it will stay here until powered off
       {
-      
+
           if (timer_one >=100)                       //if no signal this timer times out
             {stat = 0;
             timer_one = 1510;
             }
-      
-      
+
+
            restart_wdt();
            if (input(Pin_B0)== 0)               //if switch is pressed
               {
                  Serial2.write(0x1B);                //initialize printer
                  Serial2.write('@');
-               
+
                  Serial2.write(0x1B);                //upside down printing
                  Serial2.write('{');
                  Serial2.write('1');
-               
+
                  Serial2.write(0x1B);                //B Font 12x24
                  Serial2.write('M');
                  Serial2.write('1');
-               
+
                  Serial2.write(0x1B);                //justification: center text
                  Serial2.write('a');
                  Serial2.write('1');
-                       
+
                  Serial2.write(0x1D);                //character size : hoizontal x2, vertical x1
                  Serial2.write(0x21);
                  Serial2.write(0x11);
-               
+
                  Serial2.write(0x1B);                 //bold mode on
                  Serial2.write(0x21);
                  Serial2.write(0x38);
-              
+
                  Serial2.write(0x1D);                 //multiply text size by x4 by x4
                  Serial2.write(0x21);
-                 Serial2.write(0x44); 
-               
+                 Serial2.write(0x44);
+
                  Serial2.write(0x1D);                 //turn smoothing on
                  Serial2.write(0x62);
                  Serial2.write('1');
-               
+
                i=0;
                while (I++ <= 8)
                   {
                     Serial2.write(0xC4);              //horizontal line
                   }
-                 Serial2.write(0x0A); 
+                 Serial2.write(0x0A);
               // weight = "112.56";
-               
+
                if(stat == 1 )                     //h2 lb mode
                   {//sprintf(output_string, "%S",weight);
                    fprintf("%s",output_string);  //send weight value
-                     Serial2.write(0x1D);                 //2x text size 
+                     Serial2.write(0x1D);                 //2x text size
                      Serial2.write(0x21);
                      Serial2.write(0x11);
                    fprintf("Lbs\n");             //print "Lbs"
                    output_string = "";                //clear the output string
                   }
-                
-                  
+
+
                else if (stat == 2)                     //h2 lb/oz mode
                   {
-                 
-                     Serial2.write(output_string[1]);          //send out string one byte at a time. 
+
+                     Serial2.write(output_string[1]);          //send out string one byte at a time.
                      Serial2.write(output_string[2]);          //print lb value
                      Serial2.write(output_string[3]);
-                     Serial2.write(0x1D);                 //normal text size 
+                     Serial2.write(0x1D);                 //normal text size
                      Serial2.write(0x21);
-                     Serial2.write(0x00); 
+                     Serial2.write(0x00);
                     fprintf("Lb");
-                     Serial2.write(0x1D);                 //large text size 
+                     Serial2.write(0x1D);                 //large text size
                      Serial2.write(0x21);
-                     Serial2.write(0x44); 
+                     Serial2.write(0x44);
                      Serial2.write(output_string[5]);     //print oz value
                      Serial2.write(output_string[6]);
                      Serial2.write(output_string[7]);
                      Serial2.write(output_string[8]);
-                 
-                     Serial2.write(0x1D);                 //normal text size 
+
+                     Serial2.write(0x1D);                 //normal text size
                      Serial2.write(0x21);
-                     Serial2.write(0x00); 
+                     Serial2.write(0x00);
                     fprintf("oz\n");              //print the oz label with return
-                   
+
                    output_string = "";               //clear string
                   }
-                  
+
                else if ( stat == 3)               //357 lb mode
                   {
                      Serial2.write(output_string[0]);  //send weight
@@ -1017,64 +1017,64 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
                      Serial2.write(output_string[3]);  //decimal point
                      Serial2.write(output_string[4]);
                      Serial2.write(output_string[5]);
-                   
-                   
+
+
                      Serial2.write(0x1D);                 //normal text size
                      Serial2.write(0x21);
-                     Serial2.write(0x11); 
+                     Serial2.write(0x11);
                    fprintf("Lbs\n");
                    output_string = "";                //clear the output string
                    weight = "";
                   }
-                  
+
                else if (stat == 4)                     //357 lb/oz mode
                   {
                      Serial2.write(output_string[0]);
                      Serial2.write(output_string[1]);      //send lbs
                      Serial2.write(output_string[2]);
-                 
-                     Serial2.write(0x1D);                 //normal text size 
+
+                     Serial2.write(0x1D);                 //normal text size
                      Serial2.write(0x21);
-                     Serial2.write(0x11); 
+                     Serial2.write(0x11);
                      fprintf("Lb");                //print "lb" label
-                     Serial2.write(0x1D);                 //large text size 
+                     Serial2.write(0x1D);                 //large text size
                      Serial2.write(0x21);
-                     Serial2.write(0x44); 
-                     Serial2.write(output_string[6]);     
-                     Serial2.write(output_string[7]);     
+                     Serial2.write(0x44);
+                     Serial2.write(output_string[6]);
+                     Serial2.write(output_string[7]);
                      Serial2.write(output_string[8]);
                      Serial2.write(output_string[9]);
                      Serial2.write(output_string[10]);
-                     Serial2.write(0x1D);                 //normal text size 
+                     Serial2.write(0x1D);                 //normal text size
                      Serial2.write(0x21);
-                     Serial2.write(0x11); 
+                     Serial2.write(0x11);
                    fprintf("oz\n");
-                   
+
                    output_string = "";               //clear the output string
                    weight = "";
                   }
-                else if (stat == 0)                //no signal  
+                else if (stat == 0)                //no signal
                   {
                   fprintf( ,"No Signal");
                   }
-               
+
                  Serial2.write(0x1D);                 //multiply text size by 4 by 4
                  Serial2.write(0x21);
-                 Serial2.write(0x44); 
-               
-               
+                 Serial2.write(0x44);
+
+
                i=0;
                while (I++ <= 8)
                   {
                     Serial2.write(0xC4);               //horizontal line
                   }
                  Serial2.write(0x0A);
-               
+
                  Serial2.write(0x1D);                //character size(horiz x2   vertical x2)
                  Serial2.write('!');
                  Serial2.write(0x11);
-               
-              //------bottom of box-------------------- 
+
+              //------bottom of box--------------------
                  Serial2.write(0xC8);               //bottom of double line square box
                 i=0;
                while (I++ <= 14)
@@ -1084,9 +1084,9 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
                  Serial2.write(0xBC);             //right bottom corner
                  Serial2.write(0x0A);
                //-------------------------------------------------
-              
+
                //  Serial2.write(0x0A,ComA);
-               
+
                  Serial2.write(0xBA);            //left side line
                fprintf("     ");
                fprintf("WEIGHT");
@@ -1099,20 +1099,20 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
                fprintf("   ");
                  Serial2.write(0xBA);              //right side double line
                  Serial2.write(0x0A);
-                
+
                   Serial2.write(0xC9);               //top of double line square box
                i=0;
                while (I++ <= 14)
                   {  Serial2.write(0xCD);}
                  Serial2.write(0xBB);
-               
-               
+
+
                  Serial2.write(0x1D);
                  Serial2.write(0x00);
-               
+
                //--------------area to insert tournament name and address and date--------------
                if (Line1!= "")
-               
+
                    {   Serial2.write(0x0A);
                        Serial2.write(0x0A);
                        Serial2.write(0x0A);
@@ -1122,8 +1122,8 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
                        Serial2.write(0x0A);
                      fprintf(Line1);
                        Serial2.write(0x0A);
-               
-               
+
+
                    }
                else
                   {
@@ -1131,9 +1131,9 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
                     Serial2.write(0x1D, );                //reverse text toggle on
                     Serial2.write('B');
                     Serial2.write('1');                 //1 = turn on reverse 0= turn off reverse
-                  
+
                   fprintf("\n\n\n        Pro Tournament Scales         \n");
-                  
+
                     Serial2.write(0x1D);                //reverse text toggle off
                     Serial2.write('B');
                     Serial2.write('0');
@@ -1144,27 +1144,27 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
                  Serial2.write(0x1D);                // "GS" cut paper
                  Serial2.write('V');                 //"V"
                  Serial2.write(0x42);                //decimal 66
-                 Serial2.write(0xB0);                //length to feed before cut (mm)         
+                 Serial2.write(0xB0);                //length to feed before cut (mm)
                delay_ms(200);
                while (input(Pin_B1 == 0))          //wait for switch to be released
                    {delay_ms(5);}
            }//if (input(Pin_B0)== 0)
-          
-  //-----------------     
-       
+
+  //-----------------
+
        if (next_in >= 30)                                   //limit serial recieve buffer to this value
           {next_in = 0;                                    //reset everything if buffer overruns
            stx_flag = 0;
            eox_flag = 0;
           }
-          
-         
-          
+
+
+
   ///-----code below is the software uart that reads the radio and looks for commands coming through the air
        if (kbhit( ) ==1)                                        //check for input from radio on software rs232
            { timer_one = 0;                                         //    reset no signal timer
            radio_buffer[rb] = fgetc( );                         //get character from software uart
-           
+
             if(radio_buffer[rb]== 0x02)                           //check for start of string for scale command
               {rb=0;
                radio_buffer[rb]=0x02;
@@ -1172,15 +1172,15 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
              if(radio_buffer[rb]== 0x0A)                           //check for start of string for 357 scale command
               {rb=0;                                               //reset pointer
                radio_buffer[rb]=0x0A;
-              } 
-              
-              
-              
+              }
+
+
+
            if(++rb >30)                                          //increment pointer, reset and clear buffer if overflow
               {rb=0;
               clear_radio_buffer();                               //clear buffer on overflow
               }                                                   //buffer overflow, reset pointer to start
-              
+
            if(radio_buffer[rb-1]==0x0D && ((radio_buffer[0] == 0x02) || radio_buffer[0] == 0x0A))//end of string and start of string accepted
               {
               if (radio_buffer[7] == 0x2E)                        //lb mode if decimal is in 7th position
@@ -1189,21 +1189,21 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
                          {stat=1;                                 //lb  mode in H2
                          output_string = "";                      //clear the string
                          memmove(output_string,radio_buffer+3,7);
-                         clear_232_buffer();    
+                         clear_232_buffer();
                          clear_radio_buffer();
                          }
-                   else 
+                   else
                          {stat=3;                                //lb mode in 357
                          output_string = "";
-                         memmove(output_string,radio_buffer+4,6);         
+                         memmove(output_string,radio_buffer+4,6);
                          clear_232_buffer();
                          clear_radio_buffer();
                          }
                  }
-                 
+
               else
-                 { 
-                 
+                 {
+
                   if (radio_buffer[14] == 0x7A)                //if z is in 14 position
                          {stat=4;                              //lb/oz mode in 357
                          output_string = "";
@@ -1221,18 +1221,18 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
                  }
               sprintf(weight,"%s",output_string);                 //save value to string named weight
               rb=0;                                               //reset pointer
-              output_toggle(PIN_A4);                               //flash led 
+              output_toggle(PIN_A4);                               //flash led
               clear_radio_buffer();                               //clear buffer
-              } 
+              }
            }
-      
-   //--- this is the hardware uart that reads the info coming from the scale   
+
+   //--- this is the hardware uart that reads the info coming from the scale
       if(data_in==1)                                        //get character in uart if "data_in" flag is set
         {data_in = 0;                                      //reset flag used in uart interuupt routine
-       
-       
+
+
        if (buffer[0] !=0xFF)                    //if not a weight string pass character through to radio
-                   { 
+                   {
                    x = next_in-1;                         //save pointer value
                    next_in = 0;                           //reset pointer to prevent overflow
                    disable_interrupts(INT_RDA);
@@ -1249,10 +1249,10 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
               }
            else
               {
-              
+
               if ((buffer[next_in-1] == 0x0D) && (buffer[0] ==0xFF) )   //check for end of transmission (carriage return)
                  {
-                  if (buffer[0] == 0xFF )                               //if stx is in first postion of string 
+                  if (buffer[0] == 0xFF )                               //if stx is in first postion of string
                     {
                      memcpy(temp_buffer,buffer,next_in);                //save input string to temp buffer
                      process_buffer_flag = 1;                           //of stx and eox was recieved then set process buffer flag
@@ -1264,23 +1264,23 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
                  {clear_232_buffer();}                        //buffer overflow, clear buffer and reset pointer
               }
        if(process_buffer_flag ==1)                         //if buffer is complete then process
-         {  
-          convert_string();                             //send converted output string to remote display and taysys 
+         {
+          convert_string();                             //send converted output string to remote display and taysys
           process_buffer_flag = 0;                        //reset flags
           eox_flag = 0;
           stx_flag = 0;
          }
-      }  
+      }
    }//test3434
-     
+
    }//end for while(1)
 }//end of main()
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //=======================================================Sub Routines===============================================================
 
-void write_string(int8 address,int8 string[]) 
+void write_string(int8 address,int8 string[])
      {
-     int8 ctr = 0;                                    //set counter to zero   
+     int8 ctr = 0;                                    //set counter to zero
      while(string[ctr] !=0)
         {write_eeprom (addresss++, string[ctr])       //write string to eeprom
         ctr++;
@@ -1313,7 +1313,7 @@ void clear_output_buffer(void)
          }
      next_in = 0;
      }
-     
+
 void clear_radio_buffer(void)
      {int i=0;
      while(i <= 30)
@@ -1322,7 +1322,7 @@ void clear_radio_buffer(void)
       }
      next_in = 0;
      }
- 
+
 
 //-------------------------------------------
 
@@ -1331,20 +1331,20 @@ void clear_radio_buffer(void)
 
 void convert_string(void)
    {                                      //take 11 byte input string and convert to 14 byte ts string
-    
+
    if(buffer[0] == 0xFF)                 //if string starts with 0xFF this is a weight value to send to remotes and taysys
        {
-       
+
        output_string[14] = 0x00;
        output_string[13] = 0x0D;               //"cr" carriage return
        if (buffer[3] ==0x4c)
           {
            output_string[12] = 0x48;             //(changes to H when locked)
-          } 
+          }
        else
           {output_string[12] = 0x4D;}             //"M" indicates movement
        output_string[11] = 0x47;                //"G" or "N" for gross mode or net mode
-       output_string[10] = 0x4C;                //"L"  indicates lbs   
+       output_string[10] = 0x4C;                //"L"  indicates lbs
        output_string[9] =  buffer[9];           //hundreths column
        output_string[8] =  buffer[8];           //tenths column
        output_string[7] =  buffer[7];                //"." decimal point
@@ -1363,7 +1363,7 @@ void convert_string(void)
 
       fprintf(ComB,"%s",temp_buffer);
      }
-    
+
    }*/
 
 
@@ -1371,14 +1371,14 @@ void convert_string(void)
 ////--------------timer interupt code example ----------------------
 //volatile int interruptCounter;                              //varible that tracks number of interupts
 //int totalInterruptCounter;                                  //counter to track total number of interrupts
-// 
+//
 //hw_timer_t * timer = NULL;                                 //in order to configure the timer, we will need
 //                                                           //a pointer to a variable of type hw_timer_t,
 //                                                           //which we will later use in the Arduino setup function.
 //
 //
 //portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;      //we will need to declare a variable of type portMUX_TYPE,
-//                                                           //which we will use to take care of the synchronization 
+//                                                           //which we will use to take care of the synchronization
 //                                                           //between the main loop and the ISR, when modifying a shared variable.
 
 //------------------- Timer INterupt  ---------------------------------------------------------------------------------------
@@ -1388,17 +1388,17 @@ void convert_string(void)
 //  interruptCounter++;                                      //put code to perform during interrupt here
 //  portEXIT_CRITICAL_ISR(&timerMux);
 //  }
-// 
+//
 //void setup() {
-// 
+//
 //  Serial.begin(115200);
-// 
+//
 //  timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
-//  timerAttachInterrupt(timer,&onTimer,               //&onTimer is the function to call when intrrupt occurs,"true" is edge interupted 
-//  timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times           
+//  timerAttachInterrupt(timer,&onTimer,               //&onTimer is the function to call when intrrupt occurs,"true" is edge interupted
+//  timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times
 //  timerAlarmEnable(timer);                              //this line enables the timer and starts it
-// 
-//}  
+//
+//}
 
 
 //------------------EEPROM examples-------------------------------------------------------------------------------
@@ -1458,10 +1458,10 @@ void convert_string(void)
 //
 //  char gratitude[] = "Thank You Espressif!";
 //  EEPROM.writeString(address, gratitude);
-//  Serial.println(EEPROM.readString(address)); 
+//  Serial.println(EEPROM.readString(address));
 
 //------------------------- reflash program from sd card -------------------------------------------------
-/* 
+/*
  Name:      SD_Update.ino
  Created:   12.09.2017 15:07:17
  Author:    Frederik Merz <frederik.merz@novalight.de>
@@ -1471,7 +1471,7 @@ void convert_string(void)
    2. Copy update.bin to a SD-Card, you can basically
       compile this or any other example
       then copy and rename the app binary to the sd card root
-   3. Connect SD-Card as shown in SD_MMC example, 
+   3. Connect SD-Card as shown in SD_MMC example,
       this can also be adapted for SPI
    3. After successfull update and reboot, ESP32 shall start the new app
 */
@@ -1482,7 +1482,7 @@ void convert_string(void)
 
 // perform the actual update from a given stream
 void performUpdate(Stream &updateSource, size_t updateSize) {
-   if (Update.begin(updateSize)) {      
+   if (Update.begin(updateSize)) {
       size_t written = Update.writeStream(updateSource);
       if (written == updateSize) {
          Serial.println("Written : " + String(written) + " successfully");
@@ -1531,9 +1531,9 @@ void updateFromFS(fs::FS &fs) {
       }
 
       updateBin.close();
-    
+
       // whe finished remove the binary from sd card to indicate end of the process
-      fs.remove("/update.bin");      
+      fs.remove("/update.bin");
    }
    else {
       Serial.println("Could not load update.bin from sd root");
@@ -1570,5 +1570,5 @@ void rebootEspWithReason(String reason){
 
 //will not be reached
 //void loop() {
-  
+
 //}
