@@ -4,7 +4,7 @@
 
 /*******************************
   Terry Clarkson & Adam Clarkson
-  11/02/18 This is really today
+  11/02/18
 *******************************/
 
 
