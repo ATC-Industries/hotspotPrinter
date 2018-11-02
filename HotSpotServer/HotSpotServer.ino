@@ -1,7 +1,6 @@
 
 
 
-
 /*******************************
   Terry Clarkson & Adam Clarkson
   11/02/18
@@ -191,12 +190,6 @@ void setup() {
 
   server.begin();
 
-
-//  int j = 2048;
-//   while (j !=0 )
-//      { EEPROM.writeString(j,"");
-//      j--;
-//      }
   u8g2.clearBuffer();
   u8g2.drawStr(3,10,"SSID = ProTournament");                            // write something to the internal memory
   char ip_string[30];                                                   //declare a character array
@@ -425,17 +418,16 @@ void loop(){
             }
             //--------------- Display the HTML web page---------------------------
             client.println("<!DOCTYPE html><html>");
-            client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-            client.println("<link rel=\"icon\" href=\"data:,\">");
-            // CSS to style the on/off buttons
-            // Feel free to change the background-color and font-size attributes to fit your preferences
-            client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 2px auto; text-align: center;}");
-            client.println("form { padding: 8px;}");
-            client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");// default button style
-            client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer; width: 300px;}");
-
-            client.println(".button2 {background-color: #111111;}</style></head>");                              // greyed out button style
-
+            client.println("<head>");
+            client.println("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+            client.println("    <link rel=\"icon\" href=\"data:,\">");
+            client.println("    <style>");
+            client.println("        html { font-family: Helvetica; display: inline-block; margin: 2px auto; text-align: center;}");
+            client.println("        form { padding: 8px;}");
+            client.println("        .button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");// default button style
+            client.println("                  text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer; width: 300px;}");
+            client.println("        .button2 {background-color: #111111;}</style>");  // greyed out button style
+            client.println("</head>");                             
 
             client.println("<body>");
             client.println("<h1>Pro Tournament Scales</h1>");                                             // Web Page Heading
