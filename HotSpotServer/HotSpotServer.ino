@@ -1,7 +1,6 @@
 
 
 
-
 /*******************************
   Terry Clarkson & Adam Clarkson
   11/02/18
@@ -20,7 +19,7 @@
 //  checkbox5 -   204
 
 
-//------------------INclude files ------------------------------------------
+//------------------Include files ------------------------------------------
 #include <WiFi.h>                                 // Load Wi-Fi library
 #include <Arduino.h>
 #include <U8g2lib.h>                              //driver for oled display
@@ -191,12 +190,6 @@ void setup() {
 
   server.begin();
 
-
-//  int j = 2048;
-//   while (j !=0 )
-//      { EEPROM.writeString(j,"");
-//      j--;
-//      }
   u8g2.clearBuffer();
   u8g2.drawStr(3,10,"SSID = ProTournament");                            // write something to the internal memory
   char ip_string[30];                                                   //declare a character array
@@ -425,17 +418,16 @@ void loop(){
             }
             //--------------- Display the HTML web page---------------------------
             client.println("<!DOCTYPE html><html>");
-            client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-            client.println("<link rel=\"icon\" href=\"data:,\">");
-            // CSS to style the on/off buttons
-            // Feel free to change the background-color and font-size attributes to fit your preferences
-            client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 2px auto; text-align: center;}");
-            client.println("form { padding: 8px;}");
-            client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");// default button style
-            client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer; width: 300px;}");
-
-            client.println(".button2 {background-color: #111111;}</style></head>");                              // greyed out button style
-
+            client.println("<head>");
+            client.println("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+            client.println("    <link rel=\"icon\" href=\"data:,\">");
+            client.println("    <style>");
+            client.println("        html { font-family: Helvetica; display: inline-block; margin: 2px auto; text-align: center;}");
+            client.println("        form { padding: 8px;}");
+            client.println("        .button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");// default button style
+            client.println("                  text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer; width: 300px;}");
+            client.println("        .button2 {background-color: #111111;}</style>");  // greyed out button style
+            client.println("</head>");                             
 
             client.println("<body>");
             client.println("<h1>Pro Tournament Scales</h1>");                                             // Web Page Heading
@@ -540,13 +532,12 @@ void loop(){
 
 String char_replace_http(String str) {
   str.replace("+", " ");
-  str.replace("%20", " ");
   str.replace("%21", "!");
   str.replace("%22", "\"");
   str.replace("%23", "#");
   str.replace("%24", "$");
   str.replace("%26", "&");
-  str.replace("%27", "\'");
+  str.replace("%27", "'");
   str.replace("%28", "(");
   str.replace("%29", ")");
   str.replace("%2A", "*");
@@ -555,24 +546,208 @@ String char_replace_http(String str) {
   str.replace("%2D", "-");
   str.replace("%2E", ".");
   str.replace("%2F", "/");
+  str.replace("%30", "0");
+  str.replace("%31", "1");
+  str.replace("%32", "2");
+  str.replace("%33", "3");
+  str.replace("%34", "4");
+  str.replace("%35", "5");
+  str.replace("%36", "6");
+  str.replace("%37", "7");
+  str.replace("%38", "8");
+  str.replace("%39", "9");
   str.replace("%3A", ":");
   str.replace("%3B", ";");
   str.replace("%3C", "<");
   str.replace("%3D", "=");
   str.replace("%3E", ">");
-  str.replace("%3F", "?");
+  str.replace("%3F", "\?");
   str.replace("%40", "@");
+  str.replace("%41", "A");
+  str.replace("%42", "B");
+  str.replace("%43", "C");
+  str.replace("%44", "D");
+  str.replace("%45", "E");
+  str.replace("%46", "F");
+  str.replace("%47", "G");
+  str.replace("%48", "H");
+  str.replace("%49", "I");
+  str.replace("%4A", "J");
+  str.replace("%4B", "K");
+  str.replace("%4C", "L");
+  str.replace("%4D", "M");
+  str.replace("%4E", "N");
+  str.replace("%4F", "O");
+  str.replace("%50", "P");
+  str.replace("%51", "Q");
+  str.replace("%52", "R");
+  str.replace("%53", "S");
+  str.replace("%54", "T");
+  str.replace("%55", "U");
+  str.replace("%56", "V");
+  str.replace("%57", "W");
+  str.replace("%58", "X");
+  str.replace("%59", "Y");
+  str.replace("%5A", "Z");
   str.replace("%5B", "[");
   str.replace("%5C", "\\");
   str.replace("%5D", "]");
   str.replace("%5E", "^");
   str.replace("%5F", "_");
-  str.replace("%60", "``");
+  str.replace("%60", "`");
+  str.replace("%61", "a");
+  str.replace("%62", "b");
+  str.replace("%63", "c");
+  str.replace("%64", "d");
+  str.replace("%65", "e");
+  str.replace("%66", "f");
+  str.replace("%67", "g");
+  str.replace("%68", "h");
+  str.replace("%69", "i");
+  str.replace("%6A", "j");
+  str.replace("%6B", "k");
+  str.replace("%6C", "l");
+  str.replace("%6D", "m");
+  str.replace("%6E", "n");
+  str.replace("%6F", "o");
+  str.replace("%70", "p");
+  str.replace("%71", "q");
+  str.replace("%72", "r");
+  str.replace("%73", "s");
+  str.replace("%74", "t");
+  str.replace("%75", "u");
+  str.replace("%76", "v");
+  str.replace("%77", "w");
+  str.replace("%78", "x");
+  str.replace("%79", "y");
+  str.replace("%7A", "z");
   str.replace("%7B", "{");
   str.replace("%7C", "|");
   str.replace("%7D", "}");
   str.replace("%7E", "~");
-  str.replace("%7F", " ");
+  str.replace("%E2%82%AC", "`");
+  str.replace("%E2%80%9A", "‚");
+  str.replace("%C6%92", "ƒ");
+  str.replace("%E2%80%9E", "„");
+  str.replace("%E2%80%A6", "…");
+  str.replace("%E2%80%A0", "†");
+  str.replace("%E2%80%A1", "‡");
+  str.replace("%CB%86", "ˆ");
+  str.replace("%E2%80%B0", "‰");
+  str.replace("%C5%A0", "Š");
+  str.replace("%E2%80%B9", "‹");
+  str.replace("%C5%92", "Œ");
+  str.replace("%C5%BD", "Ž");
+  str.replace("%E2%80%98", "‘");
+  str.replace("%E2%80%99", "’");
+  str.replace("%E2%80%9C", "“");
+  str.replace("%E2%80%9D", "”");
+  str.replace("%E2%80%A2", "•");
+  str.replace("%E2%80%93", "–");
+  str.replace("%E2%80%94", "—");
+  str.replace("%CB%9C", "˜");
+  str.replace("%E2%84", "™");
+  str.replace("%C5%A1", "š");
+  str.replace("%E2%80", "›");
+  str.replace("%C5%93", "œ");
+  str.replace("%C5%BE", "ž");
+  str.replace("%C5%B8", "Ÿ");
+  str.replace("%C2%A1", "¡");
+  str.replace("%C2%A2", "¢");
+  str.replace("%C2%A3", "£");
+  str.replace("%C2%A4", "¤");
+  str.replace("%C2%A5", "¥");
+  str.replace("%C2%A6", "¦");
+  str.replace("%C2%A7", "§");
+  str.replace("%C2%A8", "¨");
+  str.replace("%C2%A9", "©");
+  str.replace("%C2%AA", "ª");
+  str.replace("%C2%AB", "«");
+  str.replace("%C2%AC", "¬");
+  str.replace("%C2%AE", "®");
+  str.replace("%C2%AF", "¯");
+  str.replace("%C2%B0", "°");
+  str.replace("%C2%B1", "±");
+  str.replace("%C2%B2", "²");
+  str.replace("%C2%B3", "³");
+  str.replace("%C2%B4", "´");
+  str.replace("%C2%B5", "µ");
+  str.replace("%C2%B6", "¶");
+  str.replace("%C2%B7", "·");
+  str.replace("%C2%B8", "¸");
+  str.replace("%C2%B9", "¹");
+  str.replace("%C2%BA", "º");
+  str.replace("%C2%BB", "»");
+  str.replace("%C2%BC", "¼");
+  str.replace("%C2%BD", "½");
+  str.replace("%C2%BE", "¾");
+  str.replace("%C2%BF", "¿");
+  str.replace("%C3%80", "À");
+  str.replace("%C3%81", "Á");
+  str.replace("%C3%82", "Â");
+  str.replace("%C3%83", "Ã");
+  str.replace("%C3%84", "Ä");
+  str.replace("%C3%85", "Å");
+  str.replace("%C3%86", "Æ");
+  str.replace("%C3%87", "Ç");
+  str.replace("%C3%88", "È");
+  str.replace("%C3%89", "É");
+  str.replace("%C3%8A", "Ê");
+  str.replace("%C3%8B", "Ë");
+  str.replace("%C3%8C", "Ì");
+  str.replace("%C3%8D", "Í");
+  str.replace("%C3%8E", "Î");
+  str.replace("%C3%8F", "Ï");
+  str.replace("%C3%90", "Ð");
+  str.replace("%C3%91", "Ñ");
+  str.replace("%C3%92", "Ò");
+  str.replace("%C3%93", "Ó");
+  str.replace("%C3%94", "Ô");
+  str.replace("%C3%95", "Õ");
+  str.replace("%C3%96", "Ö");
+  str.replace("%C3%97", "×");
+  str.replace("%C3%98", "Ø");
+  str.replace("%C3%99", "Ù");
+  str.replace("%C3%9A", "Ú");
+  str.replace("%C3%9B", "Û");
+  str.replace("%C3%9C", "Ü");
+  str.replace("%C3%9D", "Ý");
+  str.replace("%C3%9E", "Þ");
+  str.replace("%C3%9F", "ß");
+  str.replace("%C3%A0", "à");
+  str.replace("%C3%A1", "á");
+  str.replace("%C3%A2", "â");
+  str.replace("%C3%A3", "ã");
+  str.replace("%C3%A4", "ä");
+  str.replace("%C3%A5", "å");
+  str.replace("%C3%A6", "æ");
+  str.replace("%C3%A7", "ç");
+  str.replace("%C3%A8", "è");
+  str.replace("%C3%A9", "é");
+  str.replace("%C3%AA", "ê");
+  str.replace("%C3%AB", "ë");
+  str.replace("%C3%AC", "ì");
+  str.replace("%C3%AD", "í");
+  str.replace("%C3%AE", "î");
+  str.replace("%C3%AF", "ï");
+  str.replace("%C3%B0", "ð");
+  str.replace("%C3%B1", "ñ");
+  str.replace("%C3%B2", "ò");
+  str.replace("%C3%B3", "ó");
+  str.replace("%C3%B4", "ô");
+  str.replace("%C3%B5", "õ");
+  str.replace("%C3%B6", "ö");
+  str.replace("%C3%B7", "÷");
+  str.replace("%C3%B8", "ø");
+  str.replace("%C3%B9", "ù");
+  str.replace("%C3%BA", "ú");
+  str.replace("%C3%BB", "û");
+  str.replace("%C3%BC", "ü");
+  str.replace("%C3%BD", "ý");
+  str.replace("%C3%BE", "þ");
+  str.replace("%C3%BF", "ÿ");
+
+
   // replace percent last so not to double swap
   str.replace("%25", "%");
   return str;
