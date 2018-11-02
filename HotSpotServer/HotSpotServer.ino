@@ -14,7 +14,7 @@
 //  line 4 -      150 to 199 49 bytes
 //  checkbox1 -   200
 //  checkbox2 -   201
-//  checkbox3 -   202 
+//  checkbox3 -   202
 //  checkbox4 -   203
 //  checkbox5 -   204
 
@@ -143,9 +143,9 @@ void setup() {
     timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times
     timerAlarmEnable(timer);                              //this line enables the timer declared 3 lines up and starts it
 
-    pinMode(2,INPUT_PULLUP);                                    //set pin 4 as the pushbutton input to print with pullup
-    //pinMode(2,OUTPUT);                                        //this is the other side of pushbutton
-   // digitalWrite(2,LOW);                                        //other side of print pushbutton for test board keep low
+    pinMode(4,INPUT_PULLUP);                                    //set pin 4 as the pushbutton input to print with pullup
+    pinMode(2,OUTPUT);                                        //this is the other side of pushbutton
+    digitalWrite(2,LOW);                                        //other side of print pushbutton for test board keep low
 
     u8g2.begin();                                               //start up oled display
     u8g2.clearBuffer();                                         //clear oled buffer
@@ -165,14 +165,14 @@ void setup() {
 
   Serial.print("Setting AP (Access Point)…\n");                         // Connect to Wi-Fi network with SSID and password
   // Remove the password parameter, if you want the AP (Access Point) to be open
-  if (!digitalRead(2))                                                  // of print button is held down during power up
+  if (!digitalRead(4))                                                  // of print button is held down during power up
       {
       Serial.println("password = 987654321");
       u8g2.clearBuffer();
       u8g2.drawStr(3,10,"Temporary Password");                          //display temp password on oled display
       u8g2.drawStr(3,18,"987654321");
       u8g2.sendBuffer();
-      while(!digitalRead(2))                                              //loop until button is released
+      while(!digitalRead(4))                                              //loop until button is released
            {delay(50);}
       WiFi.softAP(ssid,"987654321");
       }
@@ -248,7 +248,7 @@ void loop(){
              totalInterruptCounter = 0;              //reset counter
             }
    //--------------- push button routine -------------------------------------------------------
-      if (!digitalRead(2))                           //if pushbutton is pressed (low condition), print the ticket
+      if (!digitalRead(4))                           //if pushbutton is pressed (low condition), print the ticket
       { print_ticket();                              //print the weight ticket
 
         delay(300);
@@ -412,7 +412,8 @@ void loop(){
                u8g2.drawStr(3,28,temp_str3);
                u8g2.drawStr(3,48,temp_str4);
                u8g2.sendBuffer();
-            } else
+            } 
+            else
             {
               // Do the settings page stuff
             }
