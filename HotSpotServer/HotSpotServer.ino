@@ -145,13 +145,10 @@ void setup() {
     timerAlarmEnable(timer);                              //this line enables the timer declared 3 lines up and starts it
 
     pinMode(2,INPUT_PULLUP);                                    //set pin 4 as the pushbutton input to print with pullup
-//<<<<<<< HEAD
 
-//=======
     //pinMode(2,OUTPUT);                                        //this is the other side of pushbutton
     //digitalWrite(2,LOW);                                        //other side of print pushbutton for test board keep low
 
-//>>>>>>> 8c69c0f3a03aaba73cbe70b624a3f2a4876746cd
     u8g2.begin();                                               //start up oled display
     u8g2.clearBuffer();                                         //clear oled buffer
     u8g2.setFont(u8g2_font_ncenB08_tr);                         // roman style 8 pixel
@@ -268,7 +265,7 @@ void loop(){
 //      int length = 0;
 //      ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_num, (size_t*)&length));
 //      length = uart_read_bytes(uart_num, data, length, 100);
-     
+
 
    if (totalInterruptCounter >=3)                       //if no signal this timer times out
             {statt = 0;                               //set display mode to 0 so weights do not print
@@ -446,19 +443,6 @@ void loop(){
             }
             //--------------- Display the HTML web page---------------------------
             client.println("<!DOCTYPE html><html>");
-//<<<<<<< HEAD
-            client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-            client.println("<link rel=\"icon\" href=\"data:,\">");
-            // CSS to style the on/off buttons
-            // Feel free to change the background-color and font-size attributes to fit your preferences
-            client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 2px auto; text-align: center;}");
-            client.println("form { padding: 8px;}");
-            client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");// default button style
-            client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer; width: 300px;}");
-
-            client.println(".button2 {background-color: #111111;}</style></head>");                              // greyed out button style
-
-//=======
             client.println("<head>");
             client.println("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
             client.println("    <link rel=\"icon\" href=\"data:,\">");
@@ -481,7 +465,6 @@ void loop(){
 //            client.println("        .button2 {background-color: #111111;}");  // greyed out button style
             client.println("    </style>");
             client.println("</head>");
-//>>>>>>> 8c69c0f3a03aaba73cbe70b624a3f2a4876746cd
 
             client.println("<body>");
             client.println("<h1>Pro Tournament Scales</h1>");                                             // Web Page Heading
