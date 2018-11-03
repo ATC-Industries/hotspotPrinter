@@ -145,13 +145,13 @@ void setup() {
     timerAlarmEnable(timer);                              //this line enables the timer declared 3 lines up and starts it
 
     pinMode(2,INPUT_PULLUP);                                    //set pin 4 as the pushbutton input to print with pullup
-<<<<<<< HEAD
+//<<<<<<< HEAD
 
-=======
+//=======
     //pinMode(2,OUTPUT);                                        //this is the other side of pushbutton
     //digitalWrite(2,LOW);                                        //other side of print pushbutton for test board keep low
 
->>>>>>> 8c69c0f3a03aaba73cbe70b624a3f2a4876746cd
+//>>>>>>> 8c69c0f3a03aaba73cbe70b624a3f2a4876746cd
     u8g2.begin();                                               //start up oled display
     u8g2.clearBuffer();                                         //clear oled buffer
     u8g2.setFont(u8g2_font_ncenB08_tr);                         // roman style 8 pixel
@@ -173,11 +173,11 @@ void setup() {
        }
 
    //-------------- Test ouput line of serial ports ------------------------
-   while(true)
-   {Serial.println("THis is a test of serial port 0");        //***diagnostic
-   Serial1.print("THis is a test of serial port 1");        //***diagnostic
-   Serial2.print("THis is a test of serial port 2");        //***diagnostic
-   }
+//   while(true)
+//   {Serial.println("THis is a test of serial port 0");        //***diagnostic
+//   Serial1.print("THis is a test of serial port 1");        //***diagnostic
+//   Serial2.print("THis is a test of serial port 2");        //***diagnostic
+//   }
 
 
 
@@ -209,11 +209,6 @@ void setup() {
   server.begin();
 
 
-//  int j = 2048;
-//   while (j !=0 )
-//      { EEPROM.writeString(j,"");
-//      j--;
-//      }
   u8g2.clearBuffer();
   u8g2.drawStr(3,10,"SSID = ProTournament");                            // write something to the internal memory
   char ip_string[30];                                                   //declare a character array
@@ -248,7 +243,7 @@ void setup() {
 
                 // Writing to OLED display
                u8g2.clearBuffer();
-               u8g2.drawStr(3,8,temp_str1);                                   //send line 1 to oled display
+               u8g2.drawStr(3,8,temp_str1);                                   //send lines of text esp32 to oled display
                u8g2.drawStr(3,18,temp_str2);
                u8g2.drawStr(3,28,temp_str3);
                u8g2.drawStr(3,48,temp_str4);
@@ -266,6 +261,14 @@ void loop(){
       //Serial2.print("An interrupt as occurred. Total number: ");
       //Serial2.println(totalInterruptCounter);
      }
+
+//      // Read data from UART.
+//      const int uart_num = UART_NUM_2;
+//      uint8_t data[128];
+//      int length = 0;
+//      ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_num, (size_t*)&length));
+//      length = uart_read_bytes(uart_num, data, length, 100);
+     
 
    if (totalInterruptCounter >=3)                       //if no signal this timer times out
             {statt = 0;                               //set display mode to 0 so weights do not print
@@ -443,7 +446,7 @@ void loop(){
             }
             //--------------- Display the HTML web page---------------------------
             client.println("<!DOCTYPE html><html>");
-<<<<<<< HEAD
+//<<<<<<< HEAD
             client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
             client.println("<link rel=\"icon\" href=\"data:,\">");
             // CSS to style the on/off buttons
@@ -455,7 +458,7 @@ void loop(){
 
             client.println(".button2 {background-color: #111111;}</style></head>");                              // greyed out button style
 
-=======
+//=======
             client.println("<head>");
             client.println("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
             client.println("    <link rel=\"icon\" href=\"data:,\">");
@@ -478,7 +481,7 @@ void loop(){
 //            client.println("        .button2 {background-color: #111111;}");  // greyed out button style
             client.println("    </style>");
             client.println("</head>");
->>>>>>> 8c69c0f3a03aaba73cbe70b624a3f2a4876746cd
+//>>>>>>> 8c69c0f3a03aaba73cbe70b624a3f2a4876746cd
 
             client.println("<body>");
             client.println("<h1>Pro Tournament Scales</h1>");                                             // Web Page Heading
