@@ -2,12 +2,24 @@
 
 
 
-/*******************************
+/**************************************************************
   Terry Clarkson & Adam Clarkson
   11/02/18
-*******************************/
+***************************************************************
+           [NOTE- TO-Do list located at bottom of this file]
+
+This program uses a serial port to read an XBee radio board connected to UART 1
+and send the weight value recieved from a scale to a printer connected to UART 2 
+UART 1 is used for a debug monitor.
+
+The board is setup as a WIFI hotspot so user can log onto the system and set and
+change parameters related to the printing of the weigh ticket.
+
+Pass word override - power up the system while holding down the print button,default
+pass word is [987654321]
 
 
+*/
 //------ EEPROM addresses --------------------------------
 //  line 1 -      0 to 49  49 bytes
 //  line 2 -      50 to 99  49 bytes
@@ -62,6 +74,8 @@ char temp_str1[30];
 char temp_str2[30];
 char temp_str3[30];
 char temp_str4[30];
+String radio_rx_string = "";                          //string being recieved on xbee radio
+bool stringComplete = false;                         // whether the rec radio string is complete
 int statt;      //1 = h2 lb   2= h2 lb/oz     3 = 357 lb     4 = 357 lb/oz
 int serial_number;
 char output_string[31];                                  //converted data to send out
@@ -73,7 +87,7 @@ bool checkbox2_is_checked;
 bool checkbox3_is_checked;
 bool checkbox4_is_checked;
 bool checkbox5_is_checked;
-volatile int ticket;
+volatile int ticket;                                        //ticket serial number
 
 String checkbox1_status = "";
 String checkbox2_status = "";
@@ -92,7 +106,7 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;      //we will need to dec
                                                            //which we will use to take care of the synchronization
                                                            //between the main loop and the ISR, when modifying a shared variable.
 
-// setting variables
+// ------------ setting variables ---------------------------------------
 String settingsCheck1_status = "";
 String settingsCheck3_status = "";
 String settingsCheck2_status = "";
@@ -100,7 +114,7 @@ void settingsPageForm();
 void mainPageForm();
 bool is_settings = false;
 
-// Assign eeprom save addresses
+//------------ Assign eeprom save addresses -----------------------------
 const int line1_eeprom_addr = 0;
 const int line2_eeprom_addr = 50;
 const int line3_eeprom_addr = 100;
@@ -133,22 +147,22 @@ void IRAM_ATTR onTimer()                                  //this is the actual i
 
 char *database[100][2];                                               //database array to hold anglers name and weight
 
+
 //--------------------------------------------------------------------------
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
-void setup() {
-
+void setup()
+    {
+    radio_rx_string.reserve(200);                           //reserve 200 bytes for radio input string
+    pinMode(2,INPUT_PULLUP);                                    //set pin 2 as the pushbutton input to print with pullup
+    
     //---setup 1us counter---------
     timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
     timerAttachInterrupt(timer,&onTimer,true);            //"&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
     timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times
     timerAlarmEnable(timer);                              //this line enables the timer declared 3 lines up and starts it
 
-    pinMode(2,INPUT_PULLUP);                                    //set pin 4 as the pushbutton input to print with pullup
-
-    //pinMode(2,OUTPUT);                                        //this is the other side of pushbutton
-    //digitalWrite(2,LOW);                                        //other side of print pushbutton for test board keep low
-
+    //---configure and start oled display ---------
     u8g2.begin();                                               //start up oled display
     u8g2.clearBuffer();                                         //clear oled buffer
     u8g2.setFont(u8g2_font_ncenB08_tr);                         // roman style 8 pixel
@@ -156,56 +170,64 @@ void setup() {
     ticket = 0;
 
    //-------------  declare serial ports -----------------------------
-   // Serial = debug monitor
-   // Serial1 = radio  rec = 35  xmit = 34
-   // Serial2 = printer rec = 23  xmit - 17
    // Note the format for setting a serial port is as follows: Serial2.begin(baud-rate, protocol, RX pin, TX pin);
 
-   Serial1.begin(9600, SERIAL_8N1,33,32);
-   Serial2.begin(9600, SERIAL_8N1,23, 17);                  //serial port 2 for thermal printer TX = pin 17 RX = pin 2
+   Serial1.begin(9600, SERIAL_8N1,33,32);                   //serial port for radio tx =32 rx = 33
+   Serial2.begin(9600, SERIAL_8N1,23,17);                  //serial port 2 for thermal printer TX = pin 17 RX = pin 2
    Serial.begin(115200);                                    //start serial port 0 (debug monitor and programming port)
+  
+  //--- initialize the EEPROM ---------------------------------------
    if (!EEPROM.begin(EEPROM_SIZE))                          //set aside memory for eeprom size
        {
-       Serial.println("failed to intialise EEPROM");        //display error to monitor
+       Serial.println("failed to intialize EEPROM");        //display error to monitor
        }
-
-   //-------------- Test ouput line of serial ports ------------------------
-//   while(true)
-//   {Serial.println("THis is a test of serial port 0");        //***diagnostic
-//   Serial1.print("THis is a test of serial port 1");        //***diagnostic
-//   Serial2.print("THis is a test of serial port 2");        //***diagnostic
-//   }
-
 
 
   Serial.print("Setting AP (Access Point)…\n");                         // Connect to Wi-Fi network with SSID and password
-  // Remove the password parameter, if you want the AP (Access Point) to be open
-  if (!digitalRead(2))                                                  // of print button is held down during power up
-      {
-      Serial.println("password = 987654321");
-      u8g2.clearBuffer();
-      u8g2.drawStr(3,10,"Temporary Password");                          //display temp password on oled display
-      u8g2.drawStr(3,40,"987654321");
-      u8g2.sendBuffer();
-      while(!digitalRead(2))                                              //loop until button is released
-           {delay(50);}
-      WiFi.softAP(ssid,"987654321");
-      }
+  /* Remove the password parameter, if you want the AP (Access Point) to be open
+  if pin 2 is pulled low,(print button pressed) a temporary password will be displayed on the remote
+  dispay and the password will be printed out on the printer*/
+  if (!digitalRead(2))                                                  // if print button is held down during power up
+       {
+        Serial.println("password = 987654321");
+        u8g2.clearBuffer();
+        u8g2.drawStr(3,10,"Temporary Password");                          //display temp password on oled display
+        u8g2.drawStr(3,40,"987654321");
+        u8g2.sendBuffer();
+        while(!digitalRead(2))                                              //loop until button is released
+             {delay(50);}
+        WiFi.softAP(ssid,"987654321");
+        
+        //------------ print a ticket with the temp password ----------------------
+        Serial2.println("________________________________________");
+        Serial2.println("Temporary password to use ");
+        Serial2.println(" ");
+        Serial2.write(0x1D);                 //large text size
+        Serial2.write(0x21);
+        Serial2.write(0x44);
+        Serial2.println("987654321");
+        Serial2.write(0x1D);                 //normal text size
+        Serial2.write(0x21);
+        Serial2.write(0x00);
+        Serial2.println("Reset your password with an 8-digit password\n\rmade up of letters and numbers");
+        //-------------- cut paper-----------------------------
+        Serial2.write(0x1D);                // "GS" cut paper
+        Serial2.write('V');                 //"V"
+        Serial2.write(0x42);                //decimal 66
+        Serial2.write(0xB0);                //length to feed before cut (mm)
+       }
+      
   else
-      {WiFi.softAP(ssid,password);                                        //this was declared as constant above
-      Serial.println("password = 123456789");}
+      {WiFi.softAP(ssid,password);                                        //ssid declared in setup, pw recalled from eeprom or use default
+      Serial.println("password = 123456789");
+      }
 
         //.softAP(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connection)
 
   IPAddress IP = WiFi.softAPIP();                                       //get the ip address
-  Serial.print("AP IP address: ");
+  Serial.print("AP IP address: ");                                      //print ip address to SM
   Serial.println(IP);
-
-
-
   server.begin();
-
-
   u8g2.clearBuffer();
   u8g2.drawStr(3,10,"SSID = ProTournament");                            // write something to the internal memory
   char ip_string[30];                                                   //declare a character array
@@ -259,25 +281,17 @@ void loop(){
       //Serial2.println(totalInterruptCounter);
      }
 
-//      // Read data from UART.
-//      const int uart_num = UART_NUM_2;
-//      uint8_t data[128];
-//      int length = 0;
-//      ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_num, (size_t*)&length));
-//      length = uart_read_bytes(uart_num, data, length, 100);
-
 
    if (totalInterruptCounter >=3)                       //if no signal this timer times out
             {statt = 0;                               //set display mode to 0 so weights do not print
              totalInterruptCounter = 0;              //reset counter
             }
-   //--------------- push button routine -------------------------------------------------------
+   //--------------- read print button routine -------------------------------------------------------
       if (!digitalRead(2))                           //if pushbutton is pressed (low condition), print the ticket
       { print_ticket();                              //print the weight ticket
-
         delay(300);
         if (checkbox1_status == "checked")           //if checkbox "print 2 tickets" is checked
-        {print_ticket();}                           //print second ticket if print 2 copies is selected
+            {print_ticket();}                        //print second ticket if print 2 copies is selected
         while (!digitalRead(4))                      //loop while button is held down
             {delay(300);}
         serial_number++;                             //increment serial number
@@ -285,24 +299,29 @@ void loop(){
       }
 
 
+//--------------- radio uart recieve ---------------------------------------------------------------
+      if (Serial1.available() > 0)                  //if data in recieve buffer, send to serial monitor
+          {char c;
+           c = (char)Serial1.read();                //get byte from uart buffer
+           radio_rx_string += c;                       //add character to string
+            if (c == 0x0D)
+              {//Serial.println("end of string");  //***diagnostic 
+               Serial.println(radio_rx_string);                     //***diagnostic send serial 1(radio) input data to serial monitor
+               radio_rx_string = "";}                  //clear radio receive string
+          }
 
-//    while (Serial2.available())                  //if data on recieve buffer, send to serial monitor
-//        {Serial.print(char(Serial2.read()));}    //send serial 2 input data to serial monitor
-
-
-
-
+//-------------- start client routine ----------------------------------------------------------------
 
   WiFiClient client = server.available();   // Listen for incoming clients
 
-  if (client) {                             // If a new client connects,
+  if (client) {                             // If a new client connects (tablet or cell phone logs on)
     Serial.println("New Client.");          // print a message out in the serial port monitor
     String currentLine = "";                // make a String to hold incoming data from the client
     while (client.connected()) {            // loop while the client's connected
       if (client.available()) {             // if there's bytes to read from the client,
         char c = client.read();             // read a byte, then
         Serial.write(c);                    // print it out the serial monitor
-        header += c;
+        header += c;                        //add character to the header string
         if (c == '\n') {                    // if the byte is a newline character
           // if the current line is blank, you got two newline characters in a row.
           // that's the end of the client HTTP request, so send a response:
@@ -1619,3 +1638,22 @@ void rebootEspWithReason(String reason){
 //void loop() {
 
 //}
+
+
+/*---------------------------Code to be added ------------------------------------------------
+
+1. Add Setting input box to enter user password
+   a.save and recall password form eeprom
+2. Save all weights to array to print out at end of Tournament
+3. Save all names printed on LIne 4 with weight to be printed out at end of tournament
+4.    
+
+
+
+
+
+
+
+
+
+*/
