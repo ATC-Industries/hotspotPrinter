@@ -137,6 +137,7 @@ void clear_output_buffer(void);
 void clear_radio_buffer(void);
 void print_ticket(void);
 void set_text_size(unsigned int size);
+void set_text_reverse(bool on_off);
 
 //-------------Interuput routines ----------------------------------------
 void IRAM_ATTR onTimer()                                  //this is the actual interrupt(place before void setup() code)
@@ -873,15 +874,17 @@ line1.toCharArray(temp_str1,30);
 //                    Serial2.write(0x00);
                     set_text_size(0x00);
                    
-                    Serial2.write(0x1D);                //reverse text toggle on
-                    Serial2.write('B');
-                    Serial2.write('1');                 //1 = turn on reverse 0= turn off reverse
+//                    Serial2.write(0x1D);                //reverse text toggle on
+//                    Serial2.write('B');
+//                    Serial2.write('1');                 //1 = turn on reverse 0= turn off reverse
+                    set_text_reverse(true);
 
                     Serial2.printf("\n\n\n        Pro Tournament Scales         \n");
 
-                    Serial2.write(0x1D);                //reverse text toggle off
-                    Serial2.write('B');
-                    Serial2.write('0');
+//                    Serial2.write(0x1D);                //reverse text toggle off
+//                    Serial2.write('B');
+//                    Serial2.write('0');
+                    set_text_reverse(false);
                     Serial2.printf("stat = %d\n",stat); //diagnostic
                   }
                //-------------- cut paper-----------------------------
@@ -912,7 +915,16 @@ void set_text_size(unsigned int size)      //set font size on printer
       Serial2.write(0x21);
       Serial2.write(size);                 // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
       }
-
+      
+void set_text_reverse(bool on_off)      //set font size on printer
+      {
+      Serial2.write(0x1D);                 // set text size to small size
+      Serial2.write('B');
+      if (on_off)
+          Serial2.write('1');                 // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
+      else
+          Serial2.write('0');    
+      }
 
 
 
