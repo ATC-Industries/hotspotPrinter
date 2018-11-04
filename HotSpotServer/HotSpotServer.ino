@@ -169,7 +169,10 @@ void setup()
     //---configure and start oled display ---------
     u8g2.begin();                                               //start up oled display
     u8g2.clearBuffer();                                         //clear oled buffer
-    u8g2.setFont(u8g2_font_ncenB08_tr);                         // roman style 8 pixel
+    u8g2.setFont(u8g2_font_ncenB08_tr);                       // roman style 8 pixel (larger and bolder than the 8 bit arial)
+    // u8g2.setFont(u8g2_font_ncenB14_tr);                       //roman style 14 pixel
+   // u8g2.setFont(u8g2_font_5x7_tr);                              //8 bit arial (very small text)
+   // u8g2.setFont(u8g2_font_pressstart2p_8u);                     //7 pixel high font bold characters (upper case alpabit only)
     u8g2.sendBuffer();                                          //clear display
     ticket = 0;
 
@@ -303,11 +306,12 @@ void loop(){
       if (Serial1.available() > 0)                  //if data in recieve buffer, send to serial monitor
           {char c;
            c = (char)Serial1.read();                //get byte from uart buffer
-           radio_rx_string += c;                    //add character to string
-            if (c == 0x0D)
+           radio_rx_string += c;                    //add character to radio rx buffer
+            if (c == 0x0D)                          //if character is CR then process buffer
               {//Serial.println("end of string");   //***diagnostic 
                Serial.println(radio_rx_string);     //***diagnostic send serial 1(radio) input data to serial monitor
-               radio_rx_string = "";}               //clear radio receive string
+               radio_rx_string = "";               //clear radio receive string
+              }
           }
 
 //-------------- start client routine ----------------------------------------------------------------
@@ -394,21 +398,21 @@ void loop(){
                 checkbox4_status = "not_checked";
                }
 
-               line1 = char_replace_http(line1);                     //remove and replace http characters
+               line1 = char_replace_http(line1);                     //remove and replace http characters with space
                line2 = char_replace_http(line2);
                line3 = char_replace_http(line3);
                line4 = char_replace_http(line4);
                //-----save varibles to eeprom---------------------------
-               EEPROM.writeString(line1_eeprom_addr, line1.substring(0,40));                    //save input box info after to trimming
+               EEPROM.writeString(line1_eeprom_addr, line1.substring(0,40));                //save input box info after to trimming
                EEPROM.writeString(line2_eeprom_addr, line2.substring(0,40));
                EEPROM.writeString(line3_eeprom_addr, line3.substring(0,40));
                EEPROM.writeString(line4_eeprom_addr, line4.substring(0,40));
 
-               EEPROM.writeBool(checkbox1_eeprom_addr,checkbox1_is_checked); //boolean true if checked false if not checked
+               EEPROM.writeBool(checkbox1_eeprom_addr,checkbox1_is_checked);                //boolean true if checked false if not checked
                EEPROM.writeBool(checkbox2_eeprom_addr,checkbox2_is_checked);
                EEPROM.writeBool(checkbox3_eeprom_addr,checkbox3_is_checked);
                EEPROM.writeBool(checkbox4_eeprom_addr,checkbox4_is_checked);
-               EEPROM.commit();      ////save to eeprom
+               EEPROM.commit();                                                             ////save to eeprom
 
                checkbox1_is_checked ? checkbox1_status = "checked" : checkbox1_status = "";
                checkbox2_is_checked ? checkbox2_status = "checked" : checkbox2_status = "";
@@ -427,13 +431,13 @@ void loop(){
                Serial.println("Checkbox3: " + checkbox3_status);
                Serial.println("Checkbox4: " + checkbox4_status);
 
-               line1.toCharArray(temp_str1,30);                       //must convert string to a character array for drawStr() to work
+               line1.toCharArray(temp_str1,30);                       //must convert string to a character array for oled drawStr() to work
                line2.toCharArray(temp_str2,30);
                line3.toCharArray(temp_str3,30);
                line4.toCharArray(temp_str4,30);
 
                u8g2.clearBuffer();
-               u8g2.drawStr(3,8,temp_str1);                                   //send line 1 to display
+               u8g2.drawStr(3,8,temp_str1);                                   //send 4 text entry box values to oled display
                u8g2.drawStr(3,18,temp_str2);
                u8g2.drawStr(3,28,temp_str3);
                u8g2.drawStr(3,48,temp_str4);
@@ -567,27 +571,15 @@ void loop(){
     save_header = "";
 
     client.stop();                                                                 // Close the connection
-    Serial.println("Client disconnected.");
+    Serial.println("Client disconnected.");                                        //send status message to serial debug window
     Serial.println("");
-    u8g2.clearBuffer();
+    u8g2.clearBuffer();                                                             //clear the oled screen buffer
 
-//    print_ticket();                                                                //print the weigh ticket when submit button is pressed
-//
-//    if (checkbox1_status == "checked")
-//        { print_ticket();}                                                         //print second ticket if print 2 copies is selected
-//
-//    delay(3000);                                                                   //3 second delay
-
-  }//ed of 'If (Client)'
+  }//end of 'If (Client)'
 
 }//end of program 'loop()'
 
-
-
 //%%%%%%%%%%%%%%%%%%%%%% functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
 
 String char_replace_http(String str) {
   str.replace("+", " ");
@@ -632,54 +624,54 @@ String char_replace_http(String str) {
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
               {
-                int i=0;
-                 String temp_string = "";
-                 Serial2.write(0x1B);                //initialize printer
-                 Serial2.write('@');
+              int i=0;
+               String temp_string = "";            //create a temp string
+               Serial2.write(0x1B);                //initialize printer
+               Serial2.write('@');
 
-                 Serial2.write(0x1B);                //upside down printing
-                 Serial2.write('{');
-                 Serial2.write('1');
+               Serial2.write(0x1B);                //upside down printing
+               Serial2.write('{');
+               Serial2.write('1');
 
-                 Serial2.write(0x1B);                //B Font 12x24
-                 Serial2.write('M');
-                 Serial2.write('1');
+               Serial2.write(0x1B);                //B Font 12x24
+               Serial2.write('M');
+               Serial2.write('1');
 
-                 Serial2.write(0x1B);                //justification: center text
-                 Serial2.write('a');
-                 Serial2.write('1');
+               Serial2.write(0x1B);                //justification: center text
+               Serial2.write('a');
+               Serial2.write('1');
 
-                 Serial2.write(0x1B);                 //bold mode on
-                 Serial2.write(0x21);
-                 Serial2.write(0x38);
+               Serial2.write(0x1B);                 //bold mode on
+               Serial2.write(0x21);
+               Serial2.write(0x38);
 
-                 
-                 Serial2.write(0x1D);                 //turn smoothing on
-                 Serial2.write(0x62);
-                 Serial2.write('1');
+               
+               Serial2.write(0x1D);                 //turn smoothing on
+               Serial2.write(0x62);
+               Serial2.write('1');
 
 //                 Serial2.write(0x1D);                 //set to small text
 //                 Serial2.write(0x21);
 //                 Serial2.write(0x00);
-                 set_text_size(0x00);               //1x text size
+               set_text_size(0x00);               //1x text size
 
-                 if (line4 != "")
+               if (line4 != "")
                       {Serial2.println(line4);}      //print sponsor line if anything is in it
 
 
-                 if (checkbox2_status == "checked")
+               if (checkbox2_status == "checked")
                       { Serial2.println("Sign________________________________________");}  //print signature line
 
 //                 Serial2.write(0x1D);                 //set text size to x4 by x4
 //                 Serial2.write(0x21);
 //                 Serial2.write(0x44);
-                  set_text_size(0x44);               //5x text size
+               set_text_size(0x44);               //5x text size
 
 
                i=0;
                while (i++ <= 8)
                   {Serial2.write(0xC4);}              //horizontal line
-                 Serial2.write(0x0A);
+               Serial2.write(0x0A);
 
 
               //----------save data to database --------------------------------------------------
@@ -697,15 +689,14 @@ line1.toCharArray(temp_str1,30);
 //                    Serial2.write(0x1D);                 //2x text size
 //                    Serial2.write(0x21);
 //                    Serial2.write(0x11);
-                      set_text_size(0x11);               //2x text size
+                    set_text_size(0x11);               //2x text size
                     Serial.printf("Lbs\n");             //print "Lbs"
                     clear_output_buffer();;                //clear the output string
                   }
 
 
                else if (statt == 2)                     //H2 lb/oz mode
-                  {
-
+                    {
                      Serial2.write(output_string[1]);          //send out string one byte at a time.
                      Serial2.write(output_string[2]);          //print lb value
                      Serial2.write(output_string[3]);
@@ -788,64 +779,52 @@ line1.toCharArray(temp_str1,30);
 
                i=0;
                while (i++ <= 8)
-                  {
-                  Serial2.write(0xC4);               //horizontal line
-                  }
-                 Serial2.write(0x0A);
+                  {Serial2.write(0xC4);}                        //horizontal line character
+               Serial2.write(0x0A);                         //line feed
 
-//                 Serial2.write(0x1D);                 //small text
+//                 Serial2.write(0x1D);                       //small text
 //                 Serial2.write(0x21);
 //                 Serial2.write(0x00);
-                 set_text_size(0x00);
+               set_text_size(0x00);                         //set text to 1x
 
-                 if (checkbox3_status == "checked")                            //is serialized ticket check box checked
-                     {Serial2.printf("S/N # %08d",serial_number);
-                     Serial2.write(0x0A);
-                     }
-
-
+               if (checkbox3_status == "checked")            //is serialized ticket check box checked
+                   {Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
+                   Serial2.write(0x0A);
+                   }
 
 //                 Serial2.write(0x1D);                //character size(horiz x2   vertical x2)
 //                 Serial2.write(0x21);
 //                 Serial2.write(0x11);
-                 set_text_size(0x11);
+               set_text_size(0x11);                  //character size(horiz x2   vertical x2)
 
 
-              //------bottom of box--------------------
-                 Serial2.write(0xC8);               //bottom of double line square box
+              //------bottom of box-------------------------------
+               Serial2.write(0xC8);                   //bottom of double line square box
                 i=0;
                while (i++ <= 14)
-                  {
-                   Serial2.write(0xCD);
-                  }
-                 Serial2.write(0xBC);             //right bottom corner
-                 Serial2.write(0x0A);
-               //-------------------------------------------------
-
-
-
-                 Serial2.write(0xBA);            //left side line
-                 Serial2.printf("     ");
-                 Serial2.printf("WEIGHT");
-                 Serial2.printf("    ");
-                 Serial2.write(0xBA);            //right side line
-                 Serial2.write(0x0A);
-                 Serial2.write(0xBA);            //left side line
-                 Serial2.printf("    ");
-                 Serial2.printf("OFFICIAL");
-                 Serial2.printf("   ");
-                 Serial2.write(0xBA);              //right side double line
-                 Serial2.write(0x0A);
-
-                  Serial2.write(0xC9);               //top of double line square box
-                  i=0;
-                  while (i++ <= 14)
-                      {  Serial2.write(0xCD);}
-                 Serial2.write(0xBB);
-
-
-                 Serial2.write(0x1D);
-                 Serial2.write(0x00);
+                  {Serial2.write(0xCD);}
+               Serial2.write(0xBC);                     //right bottom corner character
+               Serial2.write(0x0A);
+               //---------------Box with 'Official Weight' printed in it ----------------------
+               Serial2.write(0xBA);                   //left side line
+               Serial2.printf("     ");
+               Serial2.printf("WEIGHT");
+               Serial2.printf("    ");
+               Serial2.write(0xBA);                   //verical line character
+               Serial2.write(0x0A);
+               Serial2.write(0xBA);                   //left side line
+               Serial2.printf("    ");
+               Serial2.printf("OFFICIAL");
+               Serial2.printf("   ");
+               Serial2.write(0xBA);              //right side double line
+               Serial2.write(0x0A);
+               Serial2.write(0xC9);               //top of double line square box
+               i=0;
+               while (i++ <= 14)
+                    {  Serial2.write(0xCD);}
+               Serial2.write(0xBB);
+               Serial2.write(0x1D);
+               Serial2.write(0x00);
 
                //--------------area to insert tournament name and address and date--------------
                if (line1!= "")                                //if line 1 is not blank
@@ -920,25 +899,27 @@ void set_text_size(unsigned int size)      //set font size on printer
       Serial2.write(size);                 // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
       }
       
-void set_text_reverse(bool on_off)      //set font size on printer
+void set_text_reverse(bool on_off)      //set or clear reverse text
       {
-      Serial2.write(0x1D);                 // set text size to small size
+      Serial2.write(0x1D);                 
       Serial2.write('B');
       if (on_off)
-          Serial2.write('1');                 // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
+          Serial2.write('1');                 //1= on 0= off
       else
           Serial2.write('0');    
       }
 
-void clear_radio_buffer(void)
+void clear_radio_buffer(void)                          //routine to clear radio rx buffer
      {int i=0;
      while(i <= 30)
       {radio_buffer[i] = 0x00;                            //set all 30 locations to 0x00
       i=i+1;
       }
-     radio_buff_pointer = 0;                                          //reset buffer pointer
-     }
+     radio_buff_pointer = 0;                             //reset  pointer
+    }
 
+
+    
 //void write_string(int  address,int  string[])
 //     {
 //     int ctr = 0;                                    //set counter to zero
@@ -965,10 +946,6 @@ void clear_radio_buffer(void)
 //         }
 //     next_in = 0;
 //    }
-
-
-
-
 
 
 //-------------------------------------------
