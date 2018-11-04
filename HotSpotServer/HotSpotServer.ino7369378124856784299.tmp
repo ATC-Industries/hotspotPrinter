@@ -406,11 +406,22 @@ void loop(){
                EEPROM.writeBool(checkbox3_eeprom_addr,checkbox3_is_checked);
                EEPROM.writeBool(checkbox4_eeprom_addr,checkbox4_is_checked);
                EEPROM.commit();      ////save to eeprom
+//         Serial.println(EEPROM.readBool(checkbox1_eeprom_addr));  //recall checkbox status
+//         Serial.println(EEPROM.readBool(checkbox2_eeprom_addr));
+//         Serial.println(EEPROM.readBool(checkbox3_eeprom_addr));
+//         Serial.println(EEPROM.readBool(checkbox4_eeprom_addr));
+//         Serial.println("--------saved EEPROM values --------------\n");
+//         Serial.println(checkbox1_is_checked ? "True" :"False" );
+//         Serial.println(checkbox2_is_checked ? "True" :"False" );
+//         Serial.println(checkbox3_is_checked ? "True" :"False" );
+//         Serial.println(checkbox4_is_checked ? "True" :"False" );
 
-               checkbox1_is_checked ? checkbox1_status = "checked" : checkbox1_status = "";
-               checkbox2_is_checked ? checkbox2_status = "checked" : checkbox2_status = "";
-               checkbox3_is_checked ? checkbox3_status = "checked" : checkbox3_status = "";
-               checkbox4_is_checked ? checkbox4_status = "checked" : checkbox4_status = "";
+
+
+                checkbox1_is_checked ? checkbox1_status = "checked" : checkbox1_status = "";
+                checkbox2_is_checked ? checkbox2_status = "checked" : checkbox2_status = "";
+                checkbox3_is_checked ? checkbox3_status = "checked" : checkbox3_status = "";
+                checkbox4_is_checked ? checkbox4_status = "checked" : checkbox4_status = "";
 
                Serial.println("********START HEADER*********************************************");
                Serial.println(header);
@@ -438,7 +449,7 @@ void loop(){
             }
             else
             {
-             // Do the settings page stuff
+              // Do the settings page stuff
             }
             //--------------- Display the HTML web page---------------------------
             client.println("<!DOCTYPE html><html>");
