@@ -78,8 +78,10 @@ String radio_rx_string = "";                          //string being recieved on
 bool stringComplete = false;                         // whether the rec radio string is complete
 int statt;      //1 = h2 lb   2= h2 lb/oz     3 = 357 lb     4 = 357 lb/oz
 int serial_number;
+int radio_buff_pointer;
 char output_string[31];                                  //converted data to send out
-char temp_str[30];
+char radio_buffer[31];                               //buffer to hold incoming data from radio
+char temp_str[31];
 String temp_val = "";
 char weight[15];
 bool checkbox1_is_checked;
@@ -129,15 +131,15 @@ const int serial_number_addr = 204;
 
 
 //----------Define routines -----------------------------------------
-String char_replace_http(String str);                   //define routine
-void display_graphic(void);
-void clear_232_buffer(void);
-void convert_string(void);
+String char_replace_http(String str);                   // routine to remove unwanted characters from header file
+//void display_graphic(void);                             //not used
+//void clear_232_buffer(void);                         //not used             
+//void convert_string(void);                           //not used
 void clear_output_buffer(void);
-void clear_radio_buffer(void);
-void print_ticket(void);
-void set_text_size(unsigned int size);
-void set_text_reverse(bool on_off);
+void clear_radio_buffer(void);                        //routine to clear rx buffer from xbee radio
+void print_ticket(void);                              //function to print the weigh ticket
+void set_text_size(unsigned int size);                //oled set text size routine
+void set_text_reverse(bool on_off);                   //oled set reverse text on/off
 
 //-------------Interuput routines ----------------------------------------
 void IRAM_ATTR onTimer()                                  //this is the actual interrupt(place before void setup() code)
@@ -468,8 +470,9 @@ void loop(){
 
             client.println("<body>");
             client.println("<h1>Pro Tournament Scales</h1>");                                             // Web Page Heading
-
-            if (!is_settings) {
+            
+    
+            if (!is_settings) {  //------------ Second Screen HTML code ------------------------------------------                                                
                //-------------Form to enter information-----------------------------------------
                 client.println("<div class=\"middle-form\">");
                 client.println("<form action=\"/\" method=\"GET\">");
@@ -522,8 +525,9 @@ void loop(){
                 client.println("<input type=\"submit\" value=\"Settings\" class=\"btn btn-warning btn-lg btn-block\">");
                 client.println("</form>");
                 client.println("</div>");
-            } else {
-                       //-------------Settings Form to enter information-----------------------------------------
+            }
+             else {               //-------------First Page HTML code -----------------------------------------
+
                 client.println("<form action=\"/\" method=\"GET\">");
                 client.println("<h1>Settings</h1>");
 
@@ -572,11 +576,11 @@ void loop(){
 //    if (checkbox1_status == "checked")
 //        { print_ticket();}                                                         //print second ticket if print 2 copies is selected
 //
-//    delay(3000);                                                                   //one second delay
+//    delay(3000);                                                                   //3 second delay
 
-  }//If Client
+  }//ed of 'If (Client)'
 
-}//end of wifi loop
+}//end of program 'loop()'
 
 
 
@@ -926,7 +930,14 @@ void set_text_reverse(bool on_off)      //set font size on printer
           Serial2.write('0');    
       }
 
-
+void clear_radio_buffer(void)
+     {int i=0;
+     while(i <= 30)
+      {radio_buffer[i] = 0x00;                            //set all 30 locations to 0x00
+      i=i+1;
+      }
+     radio_buff_pointer = 0;                                          //reset buffer pointer
+     }
 
 //void write_string(int  address,int  string[])
 //     {
@@ -955,23 +966,9 @@ void set_text_reverse(bool on_off)      //set font size on printer
 //     next_in = 0;
 //    }
 
-//void clear_output_buffer(void)
-//    {int i=0;
-//     while(i <= 30)
-//         {output_string[i] = 0;
-//          i=i+1;
-//         }
-//     next_in = 0;
-//     }
 
-//void clear_radio_buffer(void)
-//     {int i=0;
-//     while(i <= 30)
-//      {radio_buffer[i] = 0x00;
-//      i=i+1;
-//      }
-//     next_in = 0;
-//     }
+
+
 
 
 //-------------------------------------------
