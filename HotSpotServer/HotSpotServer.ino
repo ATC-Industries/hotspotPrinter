@@ -74,14 +74,12 @@ char temp_str1[30];
 char temp_str2[30];
 char temp_str3[30];
 char temp_str4[30];
-String radio_rx_string = "";                          //string being recieved on xbee radio
+char radio_rx_array[30];                          //array being recieved on xbee radio
 bool radio_rx_ready = false;                         // whether the rec radio string is complete
-int radio_buff_pointer;                               //pointer for radio rx buffer
+int radio_rx_pointer;                               //pointer for radio rx buffer
 int statt;      //1 = h2 lb   2= h2 lb/oz     3 = 357 lb     4 = 357 lb/oz
 int serial_number;
-
 char output_string[31];                                  //converted data to send out
-char radio_buffer[31];                               //buffer to hold incoming data from radio
 char temp_str[31];
 String temp_val = "";
 char weight[15];
@@ -137,7 +135,7 @@ String char_replace_http(String str);                   // routine to remove unw
 //void clear_232_buffer(void);                         //not used             
 //void convert_string(void);                           //not used
 void clear_output_buffer(void);
-void clear_radio_buffer(void);                        //routine to clear rx buffer from xbee radio
+void clear_radio_rx_array(void);                        //routine to clear rx buffer from xbee radio
 void print_ticket(void);                              //function to print the weigh ticket
 void set_text_size(unsigned int size);                //oled set text size routine
 void set_text_reverse(bool on_off);                   //oled set reverse text on/off
@@ -159,8 +157,7 @@ char *database[100][2];                                               //database
 //------------------------------------------------------------------------
 void setup()
     {
-    radio_rx_string.reserve(200);                           //reserve 200 bytes for radio input string
-    pinMode(2,INPUT_PULLUP);                                    //set pin 2 as the pushbutton input to print with pullup
+     pinMode(2,INPUT_PULLUP);                                    //set pin 2 as the pushbutton input to print with pullup
     
     //---setup 1us counter---------
     timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
@@ -308,10 +305,11 @@ void loop(){
       if (Serial1.available() > 0)                  //if data in recieve buffer, send to serial monitor
           {char c;
            c = (char)Serial1.read();                //get byte from uart buffer
-           radio_rx_string += c;                    //add character to radio rx buffer
-            if (c == 0x0D)                          //if character is CR then process buffer
-              {//Serial.println("end of string");   //***diagnostic 
-               Serial.println(radio_rx_string);     //***diagnostic send serial 1(radio) input data to serial monitor
+           radio_rx_array[radio_rx_pointer] += c;                    //add character to radio rx buffer
+           radio_rx_pointer ++;                     //increment pointer
+            if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
+              {
+               Serial.println(radio_rx_array);     //***diagnostic send serial 1(radio) input data to serial monitor
                radio_rx_ready = true;               //set flag so buffer will process
               }
           }
@@ -911,67 +909,67 @@ void set_text_reverse(bool on_off)      //set or clear reverse text
           Serial2.write('0');    
       }
 
-void clear_radio_buffer(void)                          //routine to clear radio rx buffer
+void clear_radio_rx_array(void)                          //routine to clear radio rx buffer
      {int i=0;
      while(i <= 30)
-      {radio_buffer[i] = 0x00;                            //set all 30 locations to 0x00
+      {radio_rx_array[i] = 0x00;                            //set all 30 locations to 0x00
       i=i+1;
       }
-     radio_buff_pointer = 0;                             //reset  pointer
+     radio_rx_pointer= 0;                             //reset  pointer
     }
 //----Process radio string if flag is set----
 void processRadioString()
          {
-         if(radio_buffer[radio_buff_pointer-1]==0x0D && ((radio_buffer[0] == 0x02) || radio_buffer[0] == 0x0A))//end of string and start of string accepted
+         if(radio_rx_array[radio_rx_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))//end of string and start of string accepted
               {
-              if (radio_buffer[7] == 0x2E)                        //lb mode if decimal is in 7th position
+              if (radio_rx_array[7] == 0x2E)                        //lb mode if decimal is in 7th position
                  {
-                 if (radio_buffer[0] == 0x02)
+                 if (radio_rx_array[0] == 0x02)
                          {statt=1;                                 //lb  mode in H2
                   //       output_string = "";                      //clear the string
-                         memmove(output_string,radio_buffer+3,7);
+                         memmove(output_string,radio_rx_array+3,7);
                    //      clear_232_buffer();    
-                         clear_radio_buffer();
+                         clear_radio_rx_array();
                          }
                    else 
                          {statt=3;                                //lb mode in 357
                  //        output_string = "";
-                         memmove(output_string,radio_buffer+4,6);         
+                         memmove(output_string,radio_rx_array+4,6);         
                 //         clear_232_buffer();
-                         clear_radio_buffer();
+                         clear_radio_rx_array();
                          }
                  }
                  
               else
                  { 
                  
-                  if (radio_buffer[14] == 0x7A)                //if z is in 14 position
+                  if (radio_rx_array[14] == 0x7A)                //if z is in 14 position
                          {statt=4;                              //lb/oz mode in 357
                  //        output_string = "";
-                         memmove(output_string,radio_buffer+3,10);
+                         memmove(output_string,radio_rx_array+3,10);
                   //       clear_232_buffer();
-                         clear_radio_buffer();
+                         clear_radio_rx_array();
                          }
                   else
                          { statt=2;                              //lb oz mode in H2
                  //        output_string = "";
-                         memmove(output_string,radio_buffer+2,12);
+                         memmove(output_string,radio_rx_array+2,12);
                  //        clear_232_buffer();
-                         clear_radio_buffer();
+                         clear_radio_rx_array();
                          }
                  }
               sprintf(weight,"%s",output_string);                 //save value to string named weight
-              radio_buff_pointer=0;                               //reset pointer
-              clear_radio_buffer();                               //clear buffer
+              radio_rx_pointer=0;                               //reset pointer
+              clear_radio_rx_array();                               //clear buffer
               }
-              else
+              else                                                //send error to SM (serial monitor)
               {
                Serial.println("unable to process radio rx string");
-               Serial.println("if(radio_buffer[radio_buff_pointer-1]==0x0D && ((radio_buffer[0] == 0x02) || radio_buffer[0] == 0x0A))");
+               Serial.println("if(radio_rx_array[radio_buff_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))");
 
               }   
-              }
-       //    }//void processRadioString()
+          }//void processRadioString()
+       
            
     
 //void write_string(int  address,int  string[])
@@ -1306,7 +1304,7 @@ void rebootEspWithReason(String reason){
 #fuses wdt2048
 
 char buffer[31];                                         //incoming data buffer                                                                                        //reserve ram for buffer
-char radio_buffer[31];
+char radio_rx_array[31];
 char temp_buffer[31];                                    //temporary register to hold values while calculating
 char output_string[31];                                  //converted data to send out
 char Line3[45];
@@ -1329,7 +1327,7 @@ void display_graphic(void);
 void clear_232_buffer(void);
 void convert_string(void);
 void clear_output_buffer(void);
-void clear_radio_buffer(void);
+void clear_radio_rx_array(void);
 void write_string(int8 address,int8 string[]);
 void read_string(int8 address, char data);
 //================================================  Interrupts =====================================================================
@@ -1634,66 +1632,66 @@ void main()
   ///-----code below is the software uart that reads the radio and looks for commands coming through the air
        if (kbhit(ComB) ==1)                                        //check for input from radio on software rs232
            { timer_one = 0;                                         //    reset no signal timer
-           radio_buffer[radio_buff_pointer] = fgetc(ComB);                         //get character from software uart
+           radio_rx_array[radio_buff_pointer] = fgetc(ComB);                         //get character from software uart
            
-            if(radio_buffer[radio_buff_pointer]== 0x02)                           //check for start of string for scale command
+            if(radio_rx_array[radio_buff_pointer]== 0x02)                           //check for start of string for scale command
               {radio_buff_pointer=0;
-               radio_buffer[radio_buff_pointer]=0x02;
+               radio_rx_array[radio_buff_pointer]=0x02;
               }
-             if(radio_buffer[radio_buff_pointer]== 0x0A)                           //check for start of string for 357 scale command
+             if(radio_rx_array[radio_buff_pointer]== 0x0A)                           //check for start of string for 357 scale command
               {radio_buff_pointer=0;                                               //reset pointer
-               radio_buffer[radio_buff_pointer]=0x0A;
+               radio_rx_array[radio_buff_pointer]=0x0A;
               } 
               
               
               
            if(++radio_buff_pointer >30)                                          //increment pointer, reset and clear buffer if overflow
               {radio_buff_pointer=0;
-              clear_radio_buffer();                               //clear buffer on overflow
+              clear_radio_rx_array();                               //clear buffer on overflow
               }                                                   //buffer overflow, reset pointer to start
               
-           if(radio_buffer[radio_buff_pointer-1]==0x0D && ((radio_buffer[0] == 0x02) || radio_buffer[0] == 0x0A))//end of string and start of string accepted
+           if(radio_rx_array[radio_buff_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))//end of string and start of string accepted
               {
-              if (radio_buffer[7] == 0x2E)                        //lb mode if decimal is in 7th position
+              if (radio_rx_array[7] == 0x2E)                        //lb mode if decimal is in 7th position
                  {
-                 if (radio_buffer[0] == 0x02)
+                 if (radio_rx_array[0] == 0x02)
                          {stat=1;                                 //lb  mode in H2
                          output_string = "";                      //clear the string
-                         memmove(output_string,radio_buffer+3,7);
+                         memmove(output_string,radio_rx_array+3,7);
                          clear_232_buffer();    
-                         clear_radio_buffer();
+                         clear_radio_rx_array();
                          }
                    else 
                          {stat=3;                                //lb mode in 357
                          output_string = "";
-                         memmove(output_string,radio_buffer+4,6);         
+                         memmove(output_string,radio_rx_array+4,6);         
                          clear_232_buffer();
-                         clear_radio_buffer();
+                         clear_radio_rx_array();
                          }
                  }
                  
               else
                  { 
                  
-                  if (radio_buffer[14] == 0x7A)                //if z is in 14 position
+                  if (radio_rx_array[14] == 0x7A)                //if z is in 14 position
                          {stat=4;                              //lb/oz mode in 357
                          output_string = "";
-                         memmove(output_string,radio_buffer+3,10);
+                         memmove(output_string,radio_rx_array+3,10);
                          clear_232_buffer();
-                         clear_radio_buffer();
+                         clear_radio_rx_array();
                          }
                   else
                          { stat=2;                              //lb oz mode in H2
                          output_string = "";
-                         memmove(output_string,radio_buffer+2,12);
+                         memmove(output_string,radio_rx_array+2,12);
                          clear_232_buffer();
-                         clear_radio_buffer();
+                         clear_radio_rx_array();
                          }
                  }
               sprintf(weight,"%s",output_string);                 //save value to string named weight
               radio_buff_pointer=0;                                               //reset pointer
               output_toggle(PIN_A4);                               //flash led 
-              clear_radio_buffer();                               //clear buffer
+              clear_radio_rx_array();                               //clear buffer
               } 
            }
       
@@ -1791,10 +1789,10 @@ void clear_output_buffer(void)
      next_in = 0;
      }
      
-void clear_radio_buffer(void)
+void clear_radio_rx_array(void)
      {int i=0;
      while(i <= 30)
-      {radio_buffer[i] = 0x00;
+      {radio_rx_array[i] = 0x00;
       i=i+1;
       }
      next_in = 0;
