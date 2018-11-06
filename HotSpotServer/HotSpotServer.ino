@@ -19,6 +19,30 @@ Pass word override - power up the system while holding down the print button,def
 pass word is [987654321]
 
 
+pin assignment
+                            ----------------------------
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                             |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |
+                            |                           |                                                                                    
 */
 //------ EEPROM addresses --------------------------------
 //  line 1 -      0 to 49  49 bytes
@@ -43,25 +67,20 @@ pass word is [987654321]
 #include <FS.h>
 #include <SD_MMC.h>
 
-#define EEPROM_SIZE 2048                          //rom reserved for eeprom storage
-#ifdef U8X8_HAVE_HW_SPI
-#include <SPI.h>
-#endif
-#ifdef U8X8_HAVE_HW_I2C
-#include <Wire.h>
-#endif
+#define EEPROM_SIZE 2048                            //rom reserved for eeprom storage
 
-#define RXD2 16                               //port 2 serial pins for external printer
+#define RXD2 16                                     //port 2 serial pins for external printer
 #define TXD2 17
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);     //identify pins used for oled display
 
 
-//----------------- Replace with your network credentials ----------------------------------
+//----------------- Replace with network credentials ----------------------------------
 const char* ssid     = "ProTournament";
 const char* password = "123456789";
+WiFiServer server(80);                                 // Set web server port number to 80
 //--------------------------------------------------------------------------------------------
 
-WiFiServer server(80);                                // Set web server port number to 80
+                               
 
 //-----------------Define varibles------------------------------------------------------------
 String header;                                        // Variable to store the HTTP request
@@ -95,9 +114,9 @@ String checkbox2_status = "";
 String checkbox3_status = "";
 String checkbox4_status = "";
 String checkbox5_status = "";
-volatile int interruptCounter;                              //varible that tracks number of interupts
-int totalInterruptCounter;                                  //counter to track total number of interrupts
-
+volatile int interruptCounter;                             //varible that tracks number of interupts
+int totalInterruptCounter;                                 //counter to track total number of interrupts
+char *database[100][2];                                    //database array to hold anglers name and weight
 hw_timer_t * timer = NULL;                                 //in order to configure the timer, we will need
                                                            //a pointer to a variable of type hw_timer_t,
                                                            //which we will later use in the Arduino setup function.
@@ -131,9 +150,6 @@ const int serial_number_addr = 204;
 
 //----------Define routines -----------------------------------------
 String char_replace_http(String str);                   // routine to remove unwanted characters from header file
-//void display_graphic(void);                             //not used
-//void clear_232_buffer(void);                         //not used             
-//void convert_string(void);                           //not used
 void clear_output_buffer(void);
 void clear_radio_rx_array(void);                        //routine to clear rx buffer from xbee radio
 void print_ticket(void);                              //function to print the weigh ticket
@@ -149,7 +165,7 @@ void IRAM_ATTR onTimer()                                  //this is the actual i
   portEXIT_CRITICAL_ISR(&timerMux);
   }
 
-char *database[100][2];                                               //database array to hold anglers name and weight
+
 
 
 //--------------------------------------------------------------------------
