@@ -9,7 +9,7 @@
            [NOTE- TO-Do list located at bottom of this file]
 
 This program uses a serial port to read an XBee radio board connected to UART 1
-and send the weight value recieved from a scale to a printer connected to UART 2 
+and send the weight value recieved from a scale to a printer connected to UART 2
 UART 1 is used for a debug monitor.
 
 The board is setup as a WIFI hotspot so user can log onto the system and set and
@@ -42,7 +42,7 @@ pin assignment
                             |                           |
                             |                           |
                             |                           |
-                            |                           |                                                                                    
+                            |                           |
 */
 //------ EEPROM addresses --------------------------------
 //  line 1 -      0 to 49  49 bytes
@@ -65,7 +65,7 @@ pin assignment
 //------ files for sd card ------------------------
 #include <Update.h>
 #include <FS.h>
-#include <SD_MMC.h>
+#include <SD.h>
 
 #define EEPROM_SIZE 2048                            //rom reserved for eeprom storage
 
@@ -80,7 +80,7 @@ const char* password = "123456789";
 WiFiServer server(80);                                 // Set web server port number to 80
 //--------------------------------------------------------------------------------------------
 
-                               
+
 
 //-----------------Define varibles------------------------------------------------------------
 String header;                                        // Variable to store the HTTP request
@@ -148,14 +148,20 @@ const int serial_number_addr = 204;
 
 
 
-//----------Define routines -----------------------------------------
-String char_replace_http(String str);                   // routine to remove unwanted characters from header file
+//----------funtion prototypes -----------------------------------------
+String char_replace_http(String str);                 // routine to remove unwanted characters from header file
 void clear_output_buffer(void);
-void clear_radio_rx_array(void);                        //routine to clear rx buffer from xbee radio
+void clear_radio_rx_array(void);                      //routine to clear rx buffer from xbee radio
 void print_ticket(void);                              //function to print the weigh ticket
 void set_text_size(unsigned int size);                //oled set text size routine
 void set_text_reverse(bool on_off);                   //oled set reverse text on/off
 void processRadioString();                            //routine to process radio rx string
+
+/****** SD card update funtion prototypes ***********/
+void performUpdate(Stream &updateSource, size_t updateSize);  // perform the actual update from a given stream
+void updateFromFS(fs::FS &fs, String updateFileName);  //  check given FS for valid update.bin and perform update if available
+void updateFirmware();                                 //  Call this when you want the program to look for an update file on the SD Card
+void rebootEspWithReason(String reason);               //  reboot and serial log the reason for faulure
 
 //-------------Interuput routines ----------------------------------------
 void IRAM_ATTR onTimer()                                  //this is the actual interrupt(place before void setup() code)
@@ -174,7 +180,7 @@ void IRAM_ATTR onTimer()                                  //this is the actual i
 void setup()
     {
      pinMode(2,INPUT_PULLUP);                                    //set pin 2 as the pushbutton input to print with pullup
-    
+
     //---setup 1us counter---------
     timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
     timerAttachInterrupt(timer,&onTimer,true);            //"&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
@@ -197,7 +203,7 @@ void setup()
    Serial1.begin(9600, SERIAL_8N1,33,32);                   //serial port for radio tx =32 rx = 33
    Serial2.begin(9600, SERIAL_8N1,23,17);                  //serial port 2 for thermal printer TX = pin 17 RX = pin 2
    Serial.begin(115200);                                    //start serial port 0 (debug monitor and programming port)
-  
+
   //--- initialize the EEPROM ---------------------------------------
    if (!EEPROM.begin(EEPROM_SIZE))                          //set aside memory for eeprom size
        {
@@ -219,7 +225,7 @@ void setup()
         while(!digitalRead(2))                                              //loop until button is released
              {delay(50);}
         WiFi.softAP(ssid,"987654321");
-        
+
         //------------ print a ticket with the temp password ----------------------
         Serial2.println("________________________________________");
         Serial2.println("Temporary password to use ");
@@ -240,7 +246,7 @@ void setup()
         Serial2.write(0x42);                //decimal 66
         Serial2.write(0xB0);                //length to feed before cut (mm)
        }
-      
+
   else                                                                     //if print button is not pressed
       {WiFi.softAP(ssid,password);                                        //ssid declared in setup, pw recalled from eeprom or use default
       Serial.println("password = 123456789");
@@ -372,11 +378,11 @@ void loop(){
                line2 =  header.substring(header.indexOf("Line2=")+6,header.indexOf("&Line3="));
                line3 =  header.substring(header.indexOf("Line3=")+6,header.indexOf("&Line4="));
                // Check if line 4 is end of data or if checkbox info follows
-               if (headerT.indexOf("&check") >= 0) 
+               if (headerT.indexOf("&check") >= 0)
                     {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf("&check"));}
-                else 
+                else
                     {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf(" HTTP"));}
-               
+
                // Check if checkbox1 is checked
 
                if (headerT.indexOf("&checkbox1") >= 0) {                   //if 'checkbox1' shows in string the checkbox is checked
@@ -490,9 +496,9 @@ void loop(){
 
             client.println("<body>");
             client.println("<h1>Pro Tournament Scales</h1>");                                             // Web Page Heading
-            
-    
-            if (!is_settings) {  //------------ Second Screen HTML code ------------------------------------------                                                
+
+
+            if (!is_settings) {  //------------ Second Screen HTML code ------------------------------------------
                //-------------Form to enter information-----------------------------------------
                 client.println("<div class=\"middle-form\">");
                 client.println("<form action=\"/\" method=\"GET\">");
@@ -661,7 +667,7 @@ void print_ticket(void)
                Serial2.write(0x21);
                Serial2.write(0x38);
 
-               
+
                Serial2.write(0x1D);                 //turn smoothing on
                Serial2.write(0x62);
                Serial2.write('1');
@@ -866,13 +872,13 @@ line1.toCharArray(temp_str1,30);
                    }
                else              //--------print pts name in reverse text---------------
                   {
-                  
+
 
 //                    Serial2.write(0x1D);                 // set text size to small size
 //                    Serial2.write(0x21);
 //                    Serial2.write(0x00);
                     set_text_size(0x00);
-                   
+
 //                    Serial2.write(0x1D);                //reverse text toggle on
 //                    Serial2.write('B');
 //                    Serial2.write('1');                 //1 = turn on reverse 0= turn off reverse
@@ -914,15 +920,15 @@ void set_text_size(unsigned int size)      //set font size on printer
       Serial2.write(0x21);
       Serial2.write(size);                 // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
       }
-      
+
 void set_text_reverse(bool on_off)      //set or clear reverse text
       {
-      Serial2.write(0x1D);                 
+      Serial2.write(0x1D);
       Serial2.write('B');
       if (on_off)
           Serial2.write('1');                 //1= on 0= off
       else
-          Serial2.write('0');    
+          Serial2.write('0');
       }
 
 void clear_radio_rx_array(void)                          //routine to clear radio rx buffer
@@ -935,59 +941,162 @@ void clear_radio_rx_array(void)                          //routine to clear radi
     }
 //----Process radio string if flag is set----
 void processRadioString()
-         {
-         if(radio_rx_array[radio_rx_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))//end of string and start of string accepted
-              {
-              if (radio_rx_array[7] == 0x2E)                        //lb mode if decimal is in 7th position
-                 {
-                 if (radio_rx_array[0] == 0x02)
-                         {statt=1;                                 //lb  mode in H2
-                  //       output_string = "";                      //clear the string
-                         memmove(output_string,radio_rx_array+3,7);
-                   //      clear_232_buffer();    
-                         clear_radio_rx_array();
-                         }
-                   else 
-                         {statt=3;                                //lb mode in 357
-                 //        output_string = "";
-                         memmove(output_string,radio_rx_array+4,6);         
-                //         clear_232_buffer();
-                         clear_radio_rx_array();
-                         }
-                 }
-                 
-              else
-                 { 
-                 
-                  if (radio_rx_array[14] == 0x7A)                //if z is in 14 position
-                         {statt=4;                              //lb/oz mode in 357
-                 //        output_string = "";
-                         memmove(output_string,radio_rx_array+3,10);
-                  //       clear_232_buffer();
-                         clear_radio_rx_array();
-                         }
-                  else
-                         { statt=2;                              //lb oz mode in H2
-                 //        output_string = "";
-                         memmove(output_string,radio_rx_array+2,12);
-                 //        clear_232_buffer();
-                         clear_radio_rx_array();
-                         }
-                 }
-              sprintf(weight,"%s",output_string);                 //save value to string named weight
-              radio_rx_pointer=0;                               //reset pointer
-              clear_radio_rx_array();                               //clear buffer
-              }
-              else                                                //send error to SM (serial monitor)
-              {
-               Serial.println("unable to process radio rx string");
-               Serial.println("if(radio_rx_array[radio_buff_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))");
+{
+if(radio_rx_array[radio_rx_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))//end of string and start of string accepted
+  {
+  if (radio_rx_array[7] == 0x2E)                        //lb mode if decimal is in 7th position
+     {
+     if (radio_rx_array[0] == 0x02)
+             {statt=1;                                 //lb  mode in H2
+      //       output_string = "";                      //clear the string
+             memmove(output_string,radio_rx_array+3,7);
+       //      clear_232_buffer();
+             clear_radio_rx_array();
+             }
+       else
+             {statt=3;                                //lb mode in 357
+     //        output_string = "";
+             memmove(output_string,radio_rx_array+4,6);
+    //         clear_232_buffer();
+             clear_radio_rx_array();
+             }
+     }
 
-              }   
-          }//void processRadioString()
-       
-           
-    
+  else
+     {
+
+      if (radio_rx_array[14] == 0x7A)                //if z is in 14 position
+             {statt=4;                              //lb/oz mode in 357
+     //        output_string = "";
+             memmove(output_string,radio_rx_array+3,10);
+      //       clear_232_buffer();
+             clear_radio_rx_array();
+             }
+      else
+             { statt=2;                              //lb oz mode in H2
+     //        output_string = "";
+             memmove(output_string,radio_rx_array+2,12);
+     //        clear_232_buffer();
+             clear_radio_rx_array();
+             }
+     }
+  sprintf(weight,"%s",output_string);                 //save value to string named weight
+  radio_rx_pointer=0;                               //reset pointer
+  clear_radio_rx_array();                               //clear buffer
+  }
+  else                                                //send error to SM (serial monitor)
+  {
+   Serial.println("unable to process radio rx string");
+   Serial.println("if(radio_rx_array[radio_buff_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))");
+
+  }
+}//void processRadioString()
+
+
+//------------------------- UPDATE FIRMWARE FROM SD CARD -----------------------
+/*
+   Name:      SD_Update.ino
+   Created:   12.09.2017 15:07:17
+   Author:    Frederik Merz <frederik.merz@novalight.de>
+   Purpose:   Update firmware from SD card
+   Steps:
+   1. Flash this image to the ESP32 an run it
+   2. Copy update.bin to a SD-Card, you can basically
+    compile this or any other example
+    then copy and rename the app binary to the sd card root
+   3. Connect SD-Card as shown in SD_MMC example,
+    this can also be adapted for SPI
+   3. After successfull update and reboot, ESP32 shall start the new app
+ */
+// perform the actual update from a given stream
+void performUpdate(Stream &updateSource, size_t updateSize) {
+        if (Update.begin(updateSize)) {
+                size_t written = Update.writeStream(updateSource);
+                if (written == updateSize) {
+                        Serial.println("Written : " + String(written) + " successfully");
+                }
+                else {
+                        Serial.println("Written only : " + String(written) + "/" + String(updateSize) + ". Retry?");
+                }
+                if (Update.end()) {
+                        Serial.println("OTA done!");
+                        if (Update.isFinished()) {
+                                Serial.println("Update successfully completed. Rebooting.");
+                        }
+                        else {
+                                Serial.println("Update not finished? Something went wrong!");
+                        }
+                }
+                else {
+                        Serial.println("Error Occurred. Error #: " + String(Update.getError()));
+                }
+
+        }
+        else
+        {
+                Serial.println("Not enough space to begin OTA");
+        }
+}
+
+// check given FS for valid update.bin and perform update if available
+void updateFromFS(fs::FS &fs, String updateFileName) {
+        File updateBin = fs.open(updateFileName);
+        if (updateBin) {
+                if(updateBin.isDirectory()) {
+                        Serial.println("Error, update.bin is not a file");
+                        updateBin.close();
+                        return;
+                }
+
+                size_t updateSize = updateBin.size();
+
+                if (updateSize > 0) {
+                        Serial.println("Try to start update");
+                        performUpdate(updateBin, updateSize);
+                }
+                else {
+                        Serial.println("Error, file is empty");
+                }
+
+                updateBin.close();
+
+                // whe finished remove the binary from sd card to indicate end of the process
+                fs.remove("/update.bin");
+        }
+        else {
+                Serial.println("Could not load update.bin from sd root");
+        }
+}
+
+void updateFirmware() {
+        uint8_t cardType;
+        Serial.println("Welcome to the SD-Update example!");
+
+        // You can uncomment this and build again
+        //Serial.println("Update successfull");
+
+        //first init and check SD card
+        if (!SD.begin()) {
+                rebootEspWithReason("Card Mount Failed");
+        }
+
+        cardType = SD.cardType();
+
+        if (cardType == CARD_NONE) {
+                rebootEspWithReason("No SD card attached");
+        }else{
+                updateFromFS(SD, "/update.bin");
+        }
+}
+
+void rebootEspWithReason(String reason){
+        Serial.println(reason);
+        delay(1000);
+        ESP.restart();
+}
+//------------------------- END SD CARD UPDATE -----------------------
+
+
 //void write_string(int  address,int  string[])
 //     {
 //     int ctr = 0;                                    //set counter to zero
@@ -1152,119 +1261,6 @@ void processRadioString()
 //  EEPROM.writeString(address, gratitude);
 //  Serial.println(EEPROM.readString(address));
 
-//------------------------- reflash program from sd card -------------------------------------------------
-/*
- Name:      SD_Update.ino
- Created:   12.09.2017 15:07:17
- Author:    Frederik Merz <frederik.merz@novalight.de>
- Purpose:   Update firmware from SD card
- Steps:
-   1. Flash this image to the ESP32 an run it
-   2. Copy update.bin to a SD-Card, you can basically
-      compile this or any other example
-      then copy and rename the app binary to the sd card root
-   3. Connect SD-Card as shown in SD_MMC example,
-      this can also be adapted for SPI
-   3. After successfull update and reboot, ESP32 shall start the new app
-*/
-
-//#include <Update.h>
-//#include <FS.h>
-//#include <SD_MMC.h>
-
-// perform the actual update from a given stream
-void performUpdate(Stream &updateSource, size_t updateSize) {
-   if (Update.begin(updateSize)) {
-      size_t written = Update.writeStream(updateSource);
-      if (written == updateSize) {
-         Serial.println("Written : " + String(written) + " successfully");
-      }
-      else {
-         Serial.println("Written only : " + String(written) + "/" + String(updateSize) + ". Retry?");
-      }
-      if (Update.end()) {
-         Serial.println("OTA done!");
-         if (Update.isFinished()) {
-            Serial.println("Update successfully completed. Rebooting.");
-         }
-         else {
-            Serial.println("Update not finished? Something went wrong!");
-         }
-      }
-      else {
-         Serial.println("Error Occurred. Error #: " + String(Update.getError()));
-      }
-
-   }
-   else
-   {
-      Serial.println("Not enough space to begin OTA");
-   }
-}
-
-// check given FS for valid update.bin and perform update if available
-void updateFromFS(fs::FS &fs) {
-   File updateBin = fs.open("/update.bin");
-   if (updateBin) {
-      if(updateBin.isDirectory()){
-         Serial.println("Error, update.bin is not a file");
-         updateBin.close();
-         return;
-      }
-
-      size_t updateSize = updateBin.size();
-
-      if (updateSize > 0) {
-         Serial.println("Try to start update");
-         performUpdate(updateBin, updateSize);
-      }
-      else {
-         Serial.println("Error, file is empty");
-      }
-
-      updateBin.close();
-
-      // whe finished remove the binary from sd card to indicate end of the process
-      fs.remove("/update.bin");
-   }
-   else {
-      Serial.println("Could not load update.bin from sd root");
-   }
-}
-
-//void setup() {
-//   uint8_t cardType;
-//   Serial.begin(115200);
-//   Serial.println("Welcome to the SD-Update example!");
-//
-//   // You can uncomment this and build again
-//   // Serial.println("Update successfull");
-//
-//   //first init and check SD card
-//   if (!SD_MMC.begin()) {
-//      rebootEspWithReason("Card Mount Failed");
-//   }
-//
-//   cardType = SD_MMC.cardType();
-//
-//   if (cardType == CARD_NONE) {
-//      rebootEspWithReason("No SD_MMC card attached");
-//   }else{
-//      updateFromFS(SD_MMC);
-//  }
-//}
-
-void rebootEspWithReason(String reason){
-    Serial.println(reason);
-    delay(1000);
-    ESP.restart();
-}
-
-//will not be reached
-//void loop() {
-
-//}
-
 
 /*---------------------------Code to be added ------------------------------------------------
 
@@ -1272,30 +1268,30 @@ void rebootEspWithReason(String reason){
    a.save and recall password form eeprom
 2. Save all weights to array to print out at end of Tournament
 3. Save all names printed on Line 4 with weight to be printed out at end of tournament
-4.    
+4.
 
 //-----------------CCS code from pic hotspot printer (delete when done with) tlc-------------------------
  //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++                    //
-//                         H2 radio board 
+//                         H2 radio board
 // Read signal form H2 indicator, convert to TS string and send out through uart                           //
 //reads rs-232 string and displays the number in the TS style string                                       //
 //                                                                                                         //
 //                              ___________________                                                        //
 //                             [                   ]
 //                   5v--2.2k->|1 MCLR       B7  28|<---
-//                            >|2 A0         B6  27|<--- 
-//                         --->|3 A1         B5  26|<--- 
-//                         --->|4 A2         B4  25|<--- 
-//                            >|5 A3         B3  24|<--- 
-//                            >|6 A4         B2  23|<--- 
-//                            >|7 A5         B1  22|<--- 
+//                            >|2 A0         B6  27|<---
+//                         --->|3 A1         B5  26|<---
+//                         --->|4 A2         B4  25|<---
+//                            >|5 A3         B3  24|<---
+//                            >|6 A4         B2  23|<---
+//                            >|7 A5         B1  22|<---
 //                   GND-------|8 Vss     INT/B0 21|<--- rx from radio (interupt driven)
 //                        -----|9 OSC1       Vdd 20|-----+5 VOLTS
 //                         ----|10 OSC2      Vss 19|------GND
-//         xmit to scale  ----<|11 C0        C7  18|>-----rs-232 rx (from scale) 
+//         xmit to scale  ----<|11 C0        C7  18|>-----rs-232 rx (from scale)
 //         rx (from radio) ---<|12 C1        C6  17|>----- rs-232 tx to radio
-//                        ----<|13 C2        C5  16|>----- 
-//                        ----<|14 C3        C4  15|>----- 
+//                        ----<|13 C2        C5  16|>-----
+//                        ----<|14 C3        C4  15|>-----
 //                             |___________________|
 //
 //
@@ -1333,7 +1329,7 @@ int1 B_status;
 int16 graphic_word,timer_one,light_delay;
 int32 timer_100us;
 char x,out,radio_buff_pointer;
-char large_text[4]; 
+char large_text[4];
 char weight[15];
 int i;
 int stat;      //1 = h2 lb   2= h2 lb/oz     3 = 357 lb     4 = 357 lb/oz
@@ -1365,7 +1361,7 @@ void serial_isr()
 void TIMER1_isr(void)                                        //timer 1 set for 13.1 ms interrupts
    {
    ++timer_one;
-   }                                   
+   }
 
 
 #int_TIMER2
@@ -1377,7 +1373,7 @@ void TIMER2_isr(void)                                        //timer 2 set for 5
 //**************************************** Start of Main Program *******************************************************************
 void main()
  { setup_oscillator(OSC_8MHZ|OSC_PLL_ON);                 //set for 32 mhz operation
-                                     
+
    setup_adc_ports(NO_ANALOGS);
    setup_adc(ADC_OFF);
    setup_spi(FALSE);
@@ -1396,103 +1392,103 @@ void main()
    radio_buff_pointer = 0;
    process_buffer_flag = 0;
    enable_interrupts(INT_RDA);
-   
-   
+
+
    Line3 = "10/17/18";
    Line2 = "Wilbur Lake";
-   
+
     Line1 = "Pro Tournament Scales Elite Series 1st Day";
 //++++++++++++++++++++++++++++++++++++++++++++++++++  Start of main program loop  ++++++++++++++++++++++++++++++++++++++++++++++++++
    while(1)                                                //Once program enters this loop it will stay here until powered off
       {
-      
+
           if (timer_one >=100)                       //if no signal this timer times out
             {stat = 0;
             timer_one = 1510;
             }
-      
-      
+
+
            restart_wdt();
            if (input(Pin_B0)== 0)               //if switch is pressed
               {//output_toggle(PIN_A4);
                fputc(0x1B,ComB);                //initialize printer
                fputc('@',ComB);
-               
+
                fputc(0x1B,ComB);                //upside down printing
                fputc('{',ComB);
                fputc('1',ComB);
-               
+
                fputc(0x1B,ComB);                //B Font 12x24
                fputc('M',ComB);
                fputc('1',ComB);
-               
+
                fputc(0x1B,ComB);                //justification: center text
                fputc('a',ComB);
                fputc('1',ComB);
-                       
+
                fputc(0x1D,ComB);                //character size : hoizontal x2, vertical x1
                fputc(0x21,ComB);
                fputc(0x11,ComB);
-               
+
                fputc(0x1B,ComB);                 //bold mode on
                fputc(0x21,ComB);
                fputc(0x38,ComB);
-              
+
                fputc(0x1D,ComB);                 //multiply text size by x4 by x4
                fputc(0x21,ComB);
-               fputc(0x44,ComB); 
-               
+               fputc(0x44,ComB);
+
                fputc(0x1D,ComB);                 //turn smoothing on
                fputc(0x62,ComB);
                fputc('1',ComB);
-               
+
                i=0;
                while (I++ <= 8)
                   {
                   fputc(0xC4,ComB);              //horizontal line
                   }
-               fputc(0x0A,ComB); 
+               fputc(0x0A,ComB);
               // weight = "112.56";
-               
+
                if(stat == 1 )                     //h2 lb mode
                   {//sprintf(output_string, "%S",weight);
                    fprintf(ComB,"%s",output_string);  //send weight value
-                   fputc(0x1D,ComB);                 //2x text size 
+                   fputc(0x1D,ComB);                 //2x text size
                    fputc(0x21,ComB);
                    fputc(0x11,ComB);
                    fprintf(ComB,"Lbs\n");             //print "Lbs"
                    output_string = "";                //clear the output string
                   }
-                
-                  
+
+
                else if (stat == 2)                     //h2 lb/oz mode
                   {
                    //sprintf(output_string, "%S",weight); //copy weight to output string
-                   fputc(output_string[1],ComB);          //send out string one byte at a time. 
+                   fputc(output_string[1],ComB);          //send out string one byte at a time.
                    fputc(output_string[2],ComB);          //print lb value
                    fputc(output_string[3],ComB);
                    //fputc(output_string[4],ComB);
                    //fputc(output_string[5],ComB);
-                   fputc(0x1D,ComB);                 //normal text size 
+                   fputc(0x1D,ComB);                 //normal text size
                    fputc(0x21,ComB);
-                   fputc(0x00,ComB); 
+                   fputc(0x00,ComB);
                    fprintf(ComB,"Lb");
-                   fputc(0x1D,ComB);                 //large text size 
+                   fputc(0x1D,ComB);                 //large text size
                    fputc(0x21,ComB);
-                   fputc(0x44,ComB); 
+                   fputc(0x44,ComB);
                    fputc(output_string[5],ComB);     //print oz value
                    fputc(output_string[6],ComB);
                    fputc(output_string[7],ComB);
                    fputc(output_string[8],ComB);
-                 
-                   fputc(0x1D,ComB);                 //normal text size 
+
+                   fputc(0x1D,ComB);                 //normal text size
                    fputc(0x21,ComB);
-                   fputc(0x00,ComB); 
+                   fputc(0x00,ComB);
                    fprintf(ComB,"oz\n");              //print the oz label with return
-                   
+
                    output_string = "";               //clear string
                   }
-                  
+
                else if ( stat == 3)               //357 lb mode
                   {
                    fputc(output_string[0],ComB);  //send weight
@@ -1501,64 +1497,64 @@ void main()
                    fputc(output_string[3],ComB);  //decimal point
                    fputc(output_string[4],ComB);
                    fputc(output_string[5],ComB);
-                   
-                   
+
+
                    fputc(0x1D,ComB);                 //normal text size
                    fputc(0x21,ComB);
-                   fputc(0x11,ComB); 
+                   fputc(0x11,ComB);
                    fprintf(ComB,"Lbs\n");
                    output_string = "";                //clear the output string
                    weight = "";
                   }
-                  
+
                else if (stat == 4)                     //357 lb/oz mode
                   {
                    fputc(output_string[0],ComB);
                    fputc(output_string[1],ComB);      //send lbs
                    fputc(output_string[2],ComB);
-                 
-                   fputc(0x1D,ComB);                 //normal text size 
+
+                   fputc(0x1D,ComB);                 //normal text size
                    fputc(0x21,ComB);
-                   fputc(0x11,ComB); 
+                   fputc(0x11,ComB);
                    fprintf(ComB,"Lb");                //print "lb" label
-                   fputc(0x1D,ComB);                 //large text size 
+                   fputc(0x1D,ComB);                 //large text size
                    fputc(0x21,ComB);
-                   fputc(0x44,ComB); 
-                   fputc(output_string[6],ComB);     
-                   fputc(output_string[7],ComB);     
+                   fputc(0x44,ComB);
+                   fputc(output_string[6],ComB);
+                   fputc(output_string[7],ComB);
                    fputc(output_string[8],ComB);
                    fputc(output_string[9],ComB);
                    fputc(output_string[10],ComB);
-                   fputc(0x1D,ComB);                 //normal text size 
+                   fputc(0x1D,ComB);                 //normal text size
                    fputc(0x21,ComB);
-                   fputc(0x11,ComB); 
+                   fputc(0x11,ComB);
                    fprintf(ComB,"oz\n");
-                   
+
                    output_string = "";               //clear the output string
                    weight = "";
                   }
-                else if (stat == 0)                //no signal  
+                else if (stat == 0)                //no signal
                   {
                   fprintf(ComB,"No Signal");
                   }
-               
+
                fputc(0x1D,ComB);                 //multiply text size by 4 by 4
                fputc(0x21,ComB);
-               fputc(0x44,ComB); 
-               
-               
+               fputc(0x44,ComB);
+
+
                i=0;
                while (I++ <= 8)
                   {
                   fputc(0xC4,ComB);               //horizontal line
                   }
                fputc(0x0A,ComB);
-               
+
                fputc(0x1D,ComB);                //character size(horiz x2   vertical x2)
                fputc('!',ComB);
                fputc(0x11,ComB);
-               
-              //------bottom of box-------------------- 
+
+              //------bottom of box--------------------
                fputc(0xC8,ComB);               //bottom of double line square box
                 i=0;
                while (I++ <= 14)
@@ -1568,9 +1564,9 @@ void main()
                fputc(0xBC,ComB);             //right bottom corner
                fputc(0x0A,ComB);
                //-------------------------------------------------
-              
+
                //fputc(0x0A,ComA);
-               
+
                fputc(0xBA,ComB);            //left side line
                fprintf(ComB,"     ");
                fprintf(ComB,"WEIGHT");
@@ -1583,21 +1579,21 @@ void main()
                fprintf(ComB,"   ");
                fputc(0xBA,ComB);              //right side double line
                fputc(0x0A,ComB);
-                
+
                 fputc(0xC9,ComB);               //top of double line square box
                i=0;
                while (I++ <= 14)
                   {fputc(0xCD,ComB);}
                fputc(0xBB,ComB);
-               
-               
+
+
                fputc(0x1D,ComB);                 //set text size (normal)
                fputc(0x21,ComB);
                fputc(0x00,ComB);
-               
+
                //--------------area to insert tournament name and address and date--------------
                if (Line1!= "")
-               
+
                    { fputc(0x0A,ComB);
                      fputc(0x0A,ComB);
                      fputc(0x0A,ComB);
@@ -1607,8 +1603,8 @@ void main()
                      fputc(0x0A,ComB);
                      fprintf(ComB, Line1);
                      fputc(0x0A,ComB);
-               
-               
+
+
                    }
                else
                   {
@@ -1616,9 +1612,9 @@ void main()
                   fputc(0x1D,ComB);                //reverse text toggle on
                   fputc('B',ComB);
                   fputc('1',Comb);                 //1 = turn on reverse 0= turn off reverse
-                  
+
                   fprintf(ComB,"\n\n\n        Pro Tournament Scales         \n");
-                  
+
                   fputc(0x1D,ComB);                //reverse text toggle off
                   fputc('B',ComB);
                   fputc('0',ComB);
@@ -1629,27 +1625,27 @@ void main()
                fputc(0x1D,ComB);                // "GS" cut paper
                fputc('V',ComB);                 //"V"
                fputc(0x42,ComB);                //decimal 66
-               fputc(0xB0,ComB);                //length to feed before cut (mm)         
+               fputc(0xB0,ComB);                //length to feed before cut (mm)
                delay_ms(200);
                while (input(Pin_B1 == 0))          //wait for switch to be released
                    {delay_ms(5);}
            }//if (input(Pin_B0)== 0)
-          
-       
-       
+
+
+
        if (next_in >= 30)                                   //limit serial recieve buffer to this value
           {next_in = 0;                                    //reset everything if buffer overruns
            stx_flag = 0;
            eox_flag = 0;
           }
-          
-         
-          
+
+
+
   ///-----code below is the software uart that reads the radio and looks for commands coming through the air
        if (kbhit(ComB) ==1)                                        //check for input from radio on software rs232
            { timer_one = 0;                                         //    reset no signal timer
            radio_rx_array[radio_buff_pointer] = fgetc(ComB);                         //get character from software uart
-           
+
             if(radio_rx_array[radio_buff_pointer]== 0x02)                           //check for start of string for scale command
               {radio_buff_pointer=0;
                radio_rx_array[radio_buff_pointer]=0x02;
@@ -1657,15 +1653,15 @@ void main()
              if(radio_rx_array[radio_buff_pointer]== 0x0A)                           //check for start of string for 357 scale command
               {radio_buff_pointer=0;                                               //reset pointer
                radio_rx_array[radio_buff_pointer]=0x0A;
-              } 
-              
-              
-              
+              }
+
+
+
            if(++radio_buff_pointer >30)                                          //increment pointer, reset and clear buffer if overflow
               {radio_buff_pointer=0;
               clear_radio_rx_array();                               //clear buffer on overflow
               }                                                   //buffer overflow, reset pointer to start
-              
+
            if(radio_rx_array[radio_buff_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))//end of string and start of string accepted
               {
               if (radio_rx_array[7] == 0x2E)                        //lb mode if decimal is in 7th position
@@ -1674,21 +1670,21 @@ void main()
                          {stat=1;                                 //lb  mode in H2
                          output_string = "";                      //clear the string
                          memmove(output_string,radio_rx_array+3,7);
-                         clear_232_buffer();    
+                         clear_232_buffer();
                          clear_radio_rx_array();
                          }
-                   else 
+                   else
                          {stat=3;                                //lb mode in 357
                          output_string = "";
-                         memmove(output_string,radio_rx_array+4,6);         
+                         memmove(output_string,radio_rx_array+4,6);
                          clear_232_buffer();
                          clear_radio_rx_array();
                          }
                  }
-                 
+
               else
-                 { 
-                 
+                 {
+
                   if (radio_rx_array[14] == 0x7A)                //if z is in 14 position
                          {stat=4;                              //lb/oz mode in 357
                          output_string = "";
@@ -1706,18 +1702,18 @@ void main()
                  }
               sprintf(weight,"%s",output_string);                 //save value to string named weight
               radio_buff_pointer=0;                                               //reset pointer
-              output_toggle(PIN_A4);                               //flash led 
+              output_toggle(PIN_A4);                               //flash led
               clear_radio_rx_array();                               //clear buffer
-              } 
+              }
            }
-      
-   //--- this is the hardware uart that reads the info coming from the scale   
+
+   //--- this is the hardware uart that reads the info coming from the scale
       if(data_in==1)                                        //get character in uart if "data_in" flag is set
         {data_in = 0;                                      //reset flag used in uart interuupt routine
-       
-       
+
+
        if (buffer[0] !=0xFF)                    //if not a weight string pass character through to radio
-                   { 
+                   {
                    x = next_in-1;                         //save pointer value
                    next_in = 0;                           //reset pointer to prevent overflow
                    disable_interrupts(INT_RDA);
@@ -1734,10 +1730,10 @@ void main()
               }
            else
               {
-              
+
               if ((buffer[next_in-1] == 0x0D) && (buffer[0] ==0xFF) )   //check for end of transmission (carriage return)
                  {
-                  if (buffer[0] == 0xFF )                               //if stx is in first postion of string 
+                  if (buffer[0] == 0xFF )                               //if stx is in first postion of string
                     {
                      memcpy(temp_buffer,buffer,next_in);                //save input string to temp buffer
                      process_buffer_flag = 1;                           //of stx and eox was recieved then set process buffer flag
@@ -1749,23 +1745,23 @@ void main()
                  {clear_232_buffer();}                        //buffer overflow, clear buffer and reset pointer
               }
        if(process_buffer_flag ==1)                         //if buffer is complete then process
-         {  
-          convert_string();                             //send converted output string to remote display and taysys 
+         {
+          convert_string();                             //send converted output string to remote display and taysys
           process_buffer_flag = 0;                        //reset flags
           eox_flag = 0;
           stx_flag = 0;
          }
-      }  
+      }
    }//test3434
-     
+
    }//end for while(1)
 }//end of main()
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //=======================================================Sub Routines===============================================================
 
-void write_string(int8 address,int8 string[]) 
+void write_string(int8 address,int8 string[])
      {
-     int8 ctr = 0;                                    //set counter to zero   
+     int8 ctr = 0;                                    //set counter to zero
      while(string[ctr] !=0)
         {write_eeprom (addresss++, string[ctr])       //write string to eeprom
         ctr++;
@@ -1778,12 +1774,12 @@ void read_string(int8 address, char data)
       char string[120];
       for(i=0;i<= strlen(data)-1; i++)
          {string[i] = read_eeprom(address++);}
-     
-     
-     
-     
-     
-     
+
+
+
+
+
+
      }
 
 void clear_232_buffer(void)
@@ -1804,7 +1800,7 @@ void clear_output_buffer(void)
          }
      next_in = 0;
      }
-     
+
 void clear_radio_rx_array(void)
      {int i=0;
      while(i <= 30)
@@ -1813,7 +1809,7 @@ void clear_radio_rx_array(void)
       }
      next_in = 0;
      }
- 
+
 
 //-------------------------------------------
 
@@ -1822,20 +1818,20 @@ void clear_radio_rx_array(void)
 
 void convert_string(void)
    {                                      //take 11 byte input string and convert to 14 byte ts string
-    
+
    if(buffer[0] == 0xFF)                 //if string starts with 0xFF this is a weight value to send to remotes and taysys
        {
-       
+
        output_string[14] = 0x00;
        output_string[13] = 0x0D;               //"cr" carriage return
        if (buffer[3] ==0x4c)
           {
            output_string[12] = 0x48;             //(changes to H when locked)
-          } 
+          }
        else
           {output_string[12] = 0x4D;}             //"M" indicates movement
        output_string[11] = 0x47;                //"G" or "N" for gross mode or net mode
-       output_string[10] = 0x4C;                //"L"  indicates lbs   
+       output_string[10] = 0x4C;                //"L"  indicates lbs
        output_string[9] =  buffer[9];           //hundreths column
        output_string[8] =  buffer[8];           //tenths column
        output_string[7] =  buffer[7];                //"." decimal point
@@ -1854,7 +1850,7 @@ void convert_string(void)
 
       fprintf(ComB,"%s",temp_buffer);
      }
-    
+
    }
 
 
