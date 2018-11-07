@@ -194,8 +194,8 @@ void setup()
     //---------- configure and start oled display ---------
     u8g2.begin();                                               //start up oled display
     u8g2.clearBuffer();                                         //clear oled buffer
-   u8g2.setFont(u8g2_font_ncenB08_tr);                       // roman style 8 pixel (larger and bolder than the 8 bit arial)
-   // u8g2.setFont(u8g2_font_ncenB14_tr);                       //roman style 14 pixel
+    u8g2.setFont(u8g2_font_ncenB08_tr);                       // roman style 8 pixel (larger and bolder than the 8 bit arial)
+    // u8g2.setFont(u8g2_font_ncenB14_tr);                       //roman style 14 pixel
    // u8g2.setFont(u8g2_font_5x7_tr);                              //8 bit arial (very small text)
    // u8g2.setFont(u8g2_font_pressstart2p_8u);                     //7 pixel high font bold characters (upper case alpabit only)
     u8g2.sendBuffer();                                          //clear display
@@ -335,10 +335,9 @@ void loop(){
            radio_rx_pointer ++;                     //increment pointer
             if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
               {
-              u8g2.clearBuffer();
-	           u8g2.setFont(u8g2_font_ncenB14_tr);                       //roman style 14 pixel
-               u8g2.drawStr(3,39,radio_rx_array);
-                 u8g2.setFont(u8g2_font_ncenB08_tr);   
+               set_text_size(33); 
+               u8g2.clearBuffer();
+               u8g2.drawStr(3,8,radio_rx_array);  
                 u8g2.sendBuffer(); 
               Serial.println(radio_rx_array);     //***diagnostic send serial 1(radio) input data to serial monitor
                radio_rx_ready = true;               //set flag so buffer will process
