@@ -64,6 +64,7 @@ pin assignment
 #include <Update.h>
 #include <FS.h>
 #include <SD.h>
+#include <SPI.h>
 
 #include "css.h"      // refrence to css file to bring in CSS styles
 #include "SDfunc.h"   // refrence the SD card functions
