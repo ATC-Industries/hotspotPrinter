@@ -1,13 +1,78 @@
+/**
+ * Reboot the ESP processer and give a reason
+ * @param reason Reason String
+ */
 void rebootEspWithReason(String reason);
+
+/**
+ * Creates a Director in the specified path on the open SD card
+ * @param fs   SD
+ * @param path Path you want to create directory in should include name of directory to create
+ */
 void createDir(fs::FS &fs, const char * path);
+
+/**
+ * Deletes a directory
+ * @param fs   SD
+ * @param path A Path to the dirctory you want to delete
+ */
 void removeDir(fs::FS &fs, const char * path);
+
+/**
+ * Open file and read it's content to serial
+ * @param fs   SD
+ * @param path path to file you want to read
+ */
 void readFile(fs::FS &fs, const char * path);
+
+/**
+ * Open and a file and write char* to it.  This will destroy any previous data in doc
+ * @param fs      SD
+ * @param path    path to file
+ * @param message char* string of what you want to write to file
+ */
 void writeFile(fs::FS &fs, const char * path, const char * message);
+
+/**
+ * append to the opened file like write but adds char* to end of file.
+ * @param fs      SD
+ * @param path    path to file
+ * @param message char* string of what you want to append to file
+ */
 void appendFile(fs::FS &fs, const char * path, const char * message);
+
+/**
+ * rename a file.  this would be used to move a file as well
+ * @param fs    SD
+ * @param path1 path to oridinal file
+ * @param path2 new path
+ */
 void renameFile(fs::FS &fs, const char * path1, const char * path2);
+
+/**
+ * delete a file
+ * @param fs   SD
+ * @param path path to file
+ */
 void deleteFile(fs::FS &fs, const char * path);
+
+/**
+ * test that you can open a file and print info to serial
+ * @param fs   SD
+ * @param path path to file
+ */
 void testFileIO(fs::FS &fs, const char * path);
+
+/**
+ * perform the actual update from a given stream
+ * @param updateSource file Stream
+ * @param updateSize   size of the update
+ */
 void performUpdate(Stream &updateSource, size_t updateSize);
+
+/**
+ * Run the Update.  you can attatch this to a button or something to initiate and update.
+ */
 void updateFirmware();
 
 
