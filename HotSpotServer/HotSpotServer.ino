@@ -566,16 +566,16 @@ void loop(){
 
                 client.println("<input type=\"submit\" value=\"Save Settings\" class=\"btn btn-primary btn-lg btn-block\">");
 
-                 client.println("<input type=\"submit\" value=\"Update Software\" class=\"btn btn-primary btn-lg btn-block\">");
+                 client.println("<input type=\"submit\" value=\"Update Software\" class=\"btn btn-success btn-lg btn-block\">");
 
-                  client.println("<input type=\"submit\" value=\"Send  Results to Printer\" class=\"btn btn-primary btn-lg btn-block\">");
+                  client.println("<input type=\"submit\" value=\"Send  Results to Printer\" class=\"btn btn-danger btn-lg btn-block\">");
 
                 client.println("</form>");
 
                 // Test a progress bar
                 int progressPercent = 25;
-                client.println("<div class=\"progress\">");
-                client.println("    <div class=\"progress-bar\" role=\"progressbar\" style=\"width: " + progressPercent + "%;\" aria-valuenow=\"" + progressPercent + "\" aria-valuemin=\"0\" aria-valuemax=\"100\">" + progressPercent + "%</div>");
+                client.println("<div class=\"progress\"><br>");
+                client.println(" <div class=\"progress-bar\" role=\"progressbar\" style=\"width: 25%;\" aria-valuenow=\"25\" aria-valuemin=\"0\" aria-valuemax=\"100\">25%</div>");
                 client.println("</div>");
                 is_settings = false;                                                               //clear flag
             }
@@ -623,8 +623,8 @@ String char_replace_http(String str) {
   str.replace("%28", "(");
   str.replace("%29", ")");
   str.replace("%2A", "*");
-   str.replace("%2B", "+");
-   str.replace("%2C", ",");
+  str.replace("%2B", "+");
+  str.replace("%2C", ",");
   str.replace("%2D", "-");
   str.replace("%2E", ".");
   str.replace("%2F", "/");
