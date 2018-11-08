@@ -338,16 +338,16 @@ void loop(){
               u8g2.clearBuffer();
 	           u8g2.setFont(u8g2_font_ncenB14_tr);                       //roman style 14 pixel
                u8g2.drawStr(3,39,radio_rx_array);
-                 u8g2.setFont(u8g2_font_ncenB08_tr);   
-                u8g2.sendBuffer(); 
+                 u8g2.setFont(u8g2_font_ncenB08_tr);
+                u8g2.sendBuffer();
               Serial.println(radio_rx_array);     //***diagnostic send serial 1(radio) input data to serial monitor
                radio_rx_ready = true;               //set flag so buffer will process
                clear_radio_rx_array();             //clear buffer
-               
+
                }
           }
-          
-          
+
+
 
 //-------------- start client routine ----------------------------------------------------------------
 
@@ -565,12 +565,18 @@ void loop(){
 
 
                 client.println("<input type=\"submit\" value=\"Save Settings\" class=\"btn btn-primary btn-lg btn-block\">");
-                
+
                  client.println("<input type=\"submit\" value=\"Update Software\" class=\"btn btn-primary btn-lg btn-block\">");
-                 
+
                   client.println("<input type=\"submit\" value=\"Send  Results to Printer\" class=\"btn btn-primary btn-lg btn-block\">");
 
                 client.println("</form>");
+
+                // Test a progress bar
+                int progressPercent = 25;
+                client.println("<div class=\"progress\">");
+                client.println("    <div class=\"progress-bar\" role=\"progressbar\" style=\"width: " + progressPercent + "%;\" aria-valuenow=\"" + progressPercent + "\" aria-valuemin=\"0\" aria-valuemax=\"100\">" + progressPercent + "%</div>");
+                client.println("</div>");
                 is_settings = false;                                                               //clear flag
             }
 
@@ -1071,7 +1077,7 @@ void clear_radio_rx_array(void)                          //routine to clear radi
      radio_rx_pointer= 0;                             //reset  pointer
     }
 
-    
+
 //----------------------Process radio string if flag is set--------------------------------
 void processRadioString()
 {
