@@ -1,8 +1,8 @@
 
 
 /**************************************************************
-Terry Clarkson & Adam Clarkson
-11/02/18
+  Terry Clarkson & Adam Clarkson
+  11/02/18
 ***************************************************************
            [NOTE- TO-Do list located at bottom of this file]
 
@@ -91,11 +91,11 @@ String line1 = "";
 String line2 = "";
 String line3= "";
 String line4 = "";
-char temp_str1[30];
-char temp_str2[30];
-char temp_str3[30];
-char temp_str4[30];
-char radio_rx_array[30];                          //array being recieved on xbee radio
+char temp_str1[31];
+char temp_str2[31];
+char temp_str3[31];
+char temp_str4[31];
+char radio_rx_array[31];                          //array being recieved on xbee radio
 bool radio_rx_ready = false;                         // whether the rec radio string is complete
 int radio_rx_pointer;                               //pointer for radio rx buffer
 int statt;      //1 = h2 lb   2= h2 lb/oz     3 = 357 lb     4 = 357 lb/oz
@@ -200,43 +200,45 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
 void setup()
-{
-     pinMode(2,INPUT_PULLUP);                                       //set pin 2 as the pushbutton input to print with pullup
+    {
+     pinMode(2,INPUT_PULLUP);                                    //set pin 2 as the pushbutton input to print with pullup
 
     //----------- setup 1us counter ---------
-    timer = timerBegin(0, 80, true);                                //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
-    timerAttachInterrupt(timer,&onTimer,true);                      //"&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
-    timerAlarmWrite(timer, 1000000, true);                          //interupt every 1000000 times
-    timerAlarmEnable(timer);                                        //this line enables the timer declared 3 lines up and starts it
+    timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
+    timerAttachInterrupt(timer,&onTimer,true);            //"&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
+    timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times
+    timerAlarmEnable(timer);                              //this line enables the timer declared 3 lines up and starts it
 
     //---------- configure and start oled display ---------
-    u8g2.begin();                                                   //start up oled display
-    u8g2.clearBuffer();                                             //clear oled buffer
-    u8g2.setFont(u8g2_font_ncenB08_tr);                             // roman style 8 pixel (larger and bolder than the 8 bit arial)
-    // u8g2.setFont(u8g2_font_ncenB14_tr);                          //roman style 14 pixel
-    // u8g2.setFont(u8g2_font_5x7_tr);                              //8 bit arial (very small text)
-    // u8g2.setFont(u8g2_font_pressstart2p_8u);                     //7 pixel high font bold characters (upper case alpabit only)
-    u8g2.sendBuffer();                                              //clear display
+    u8g2.begin();                                            //start up oled display
+    u8g2.clearBuffer();                                      //clear oled buffer
+   u8g2.setFont(u8g2_font_ncenB08_tr);                       // roman style 8 pixel (larger and bolder than the 8 bit arial)
+   // u8g2.setFont(u8g2_font_ncenB14_tr);                    //roman style 14 pixel
+   // u8g2.setFont(u8g2_font_5x7_tr);                        //8 bit arial (very small text)
+   // u8g2.setFont(u8g2_font_pressstart2p_8u);               //7 pixel high font bold characters (upper case alpabit only)
+    u8g2.sendBuffer();                                       //clear display
     ticket = 0;
 
-    //-------------  declare serial ports -----------------------------
-    // Note the format for setting a serial port is as follows:
-    //--> Serial2.begin(baud-rate, protocol, RX pin, TX pin);
-    Serial1.begin(9600, SERIAL_8N1,33,32);                           //serial port for radio tx =32 rx = 33
-    Serial2.begin(9600, SERIAL_8N1,23,17);                           //serial port 2 for thermal printer TX = pin 17 RX = pin 2
-    Serial.begin(115200);                                            //start serial port 0 (debug monitor and programming port)
+   //-------------  declare serial ports -----------------------------
+   // Note the format for setting a serial port is as follows: Serial2.begin(baud-rate, protocol, RX pin, TX pin);
 
-    //--- initialize the EEPROM ---------------------------------------
-    if (!EEPROM.begin(EEPROM_SIZE))                                  //set aside memory for eeprom size
-    {
-        Serial.println("failed to intialize EEPROM");                //display error to monitor
-    }
-    Serial.print("Setting AP (Access Point)…\n");                    // Connect to Wi-Fi network with SSID and password
-    /* Remove the password parameter, if you want the AP (Access Point) to be open
-    if pin 2 is pulled low,(print button pressed) a temporary password will be displayed on the remote
-    dispay and the password will be printed out on the printer*/
-    if (!digitalRead(2))                                                  // if print button is held down during power up
-    {
+   Serial1.begin(9600, SERIAL_8N1,33,32);                   //RADIO, tx =32 rx = 33
+   Serial2.begin(9600, SERIAL_8N1,23,17);                   //THERMAL PRINTER, TX = pin 17 RX = pin 2
+   Serial.begin(115200);                                    //start serial port 0 (debug monitor and programming port)
+
+  //--- initialize the EEPROM ---------------------------------------
+   if (!EEPROM.begin(EEPROM_SIZE))                          //set aside memory for eeprom size
+       {
+       Serial.println("failed to intialize EEPROM");        //display error to monitor
+       }
+
+
+  Serial.print("Setting AP (Access Point)…\n");                         // Connect to Wi-Fi network with SSID and password
+  /* Remove the password parameter, if you want the AP (Access Point) to be open
+  if pin 2 is pulled low,(print button pressed) a temporary password will be displayed on the remote
+  dispay and the password will be printed out on the printer*/
+  if (!digitalRead(2))                                                  // if print button is held down during power up
+       {
         Serial.println("password = 987654321");
         u8g2.clearBuffer();
         u8g2.drawStr(3,10,"Temporary Password");                          //display temp password on oled display
@@ -313,6 +315,19 @@ void setup()
                u8g2.drawStr(3,28,temp_str3);
                u8g2.drawStr(3,48,temp_str4);
                u8g2.sendBuffer();                                             //show oled buffe contents on screen
+
+byte Imac[6];
+WiFi.macAddress(Imac);
+  Serial.print("MAC");
+  for(int i=5;i>=0;i--)
+{
+Serial.print(":");
+  Serial.print(Imac[i],HEX);
+}
+
+
+
+
 }
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
@@ -349,17 +364,18 @@ void loop(){
            c = (char)Serial1.read();                //get byte from uart buffer
            radio_rx_array[radio_rx_pointer] += c;                    //add character to radio rx buffer
            radio_rx_pointer ++;                     //increment pointer
+           if (radio_rx_pointer >=30)               //buffer overflow
+              {clear_radio_rx_array();
+               radio_rx_pointer = 0;
+              }
             if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
               {
-              u8g2.clearBuffer();
-	           u8g2.setFont(u8g2_font_ncenB14_tr);                       //roman style 14 pixel
-               u8g2.drawStr(3,39,radio_rx_array);
-                 u8g2.setFont(u8g2_font_ncenB08_tr);
-                u8g2.sendBuffer();
-              Serial.println(radio_rx_array);     //***diagnostic send serial 1(radio) input data to serial monitor
-               radio_rx_ready = true;               //set flag so buffer will process
-               clear_radio_rx_array();             //clear buffer
-
+             u8g2.clearBuffer();
+	           u8g2.setFont(u8g2_font_ncenB14_tr);     //roman style 14 pixel
+             u8g2.drawStr(3,39,radio_rx_array);
+             u8g2.setFont(u8g2_font_ncenB08_tr);     //roman 8 pixel                
+             u8g2.sendBuffer();
+             processRadioString();   
                }
           }
 
@@ -631,208 +647,212 @@ void loop(){
 
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
-{
-    int i=0;
-    String temp_string = "";            //create a temp string
-    Serial2.write(0x1B);                //initialize printer
-    Serial2.write('@');
+              {
+               int i=0;
+               String temp_string = "";            //create a temp string
+               Serial2.write(0x1B);                //initialize printer
+               Serial2.write('@');
 
-    Serial2.write(0x1B);                //upside down printing
-    Serial2.write('{');
-    Serial2.write('1');
+               Serial2.write(0x1B);                //upside down printing
+               Serial2.write('{');
+               Serial2.write('1');
 
-    Serial2.write(0x1B);                //B Font 12x24
-    Serial2.write('M');
-    Serial2.write('1');
+               Serial2.write(0x1B);                //B Font 12x24
+               Serial2.write('M');
+               Serial2.write('1');
 
-    Serial2.write(0x1B);                //justification: center text
-    Serial2.write('a');
-    Serial2.write('1');
+               Serial2.write(0x1B);                //justification: center text
+               Serial2.write('a');
+               Serial2.write('1');
 
-    Serial2.write(0x1B);                 //bold mode on
-    Serial2.write(0x21);
-    Serial2.write(0x38);
+               Serial2.write(0x1B);                 //bold mode on
+               Serial2.write(0x21);
+               Serial2.write(0x38);
 
 
-    Serial2.write(0x1D);                 //turn smoothing on
-    Serial2.write(0x62);
-    Serial2.write('1');
-    set_text_size(0x00);               //1x text size
-    if (line4 != "")
-          {Serial2.println(line4);}      //print sponsor line if anything is in it
+               Serial2.write(0x1D);                 //turn smoothing on
+               Serial2.write(0x62);
+               Serial2.write('1');
+               set_text_size(0x00);               //1x text size
+               if (line4 != "")
+                      {Serial2.println(line4);}      //print sponsor line if anything is in it
 
-    if (checkbox2_status == "checked")
-          { Serial2.println("Sign________________________________________");}  //print signature line
 
-    set_text_size(0x44);               //5x text size
-    i=0;
-    while (i++ <= 8)
-      {Serial2.write(0xC4);}              //horizontal line
-    Serial2.write(0x0A);
+               if (checkbox2_status == "checked")
+                      { Serial2.println("Sign________________________________________");}  //print signature line
 
-    //----------save data to database --------------------------------------------------
-    // weight = "112.56";
-    //line4.toCharArray(temp_str1,30);
-    // *database [ticket][0] = temp_str1;  //save name to data base
-    //  *database [ticket][1] = weight;  //save the weight
+               set_text_size(0x44);               //5x text size
+               i=0;
+               while (i++ <= 8)
+                  {Serial2.write(0xC4);}              //horizontal line
+               Serial2.write(0x0A);
 
-    line1.toCharArray(temp_str1,30);
 
-    if(statt == 1 )                     //h2 lb mode
-    {
-        Serial2.print(output_string);  //send weight value
-        set_text_size(0x11);               //2x text size
-        Serial.printf("Lbs\n");             //print "Lbs"
-        clear_output_buffer();;                //clear the output string
-    }
+              //----------save data to database --------------------------------------------------
+              // weight = "112.56";
+               //line4.toCharArray(temp_str1,30);
+              // *database [ticket][0] = temp_str1;     //save name to data base
+             //  *database [ticket][1] = weight;        //save the weight
 
-    else if (statt == 2)                     //H2 lb/oz mode
-    {
-        Serial2.write(output_string[1]);          //send out string one byte at a time.
-        Serial2.write(output_string[2]);          //print lb value
-        Serial2.write(output_string[3]);
-        Serial2.write(0x1D);                 //normal text size
-        Serial2.write(0x21);
-        Serial2.write(0x00);
-        Serial2.printf("Lb");
-        set_text_size(0x44);               //5x text size
-        Serial2.write(output_string[5]);     //print oz value
-        Serial2.write(output_string[6]);
-        Serial2.write(output_string[7]);
-        Serial2.write(output_string[8]);
-        set_text_size(0x00);               //normal text size
-        Serial2.print("oz\n");              //print the oz label with return
-        clear_output_buffer();;                //clear the output string
-    }
+//                  for (i = 0; i< 30;i++)
+//                      {Serial.print(output_string[i]);}   //*** diagnostic
+//                   Serial.println("line 654- statt =" + String(statt));       //***diag print the statt value 
+              
+               if(statt == 1 )                          //h2 lb mode
+                  {
+                    Serial2.print(output_string);       //send weight value
+                    set_text_size(0x11);                //2x text size
+                    Serial2.println("Lbs");             //print "Lbs"
+                    clear_output_buffer();;             //clear the output string
+                  }
 
-    else if ( statt == 3)               //357 lb mode
-    {
-        Serial2.write(output_string[0]);  //send weight
-        Serial2.write(output_string[1]);
-        Serial2.write(output_string[2]);
-        Serial2.write(output_string[3]);  //decimal point
-        Serial2.write(output_string[4]);
-        Serial2.write(output_string[5]);
-        set_text_size(0x11);
-        Serial2.print("Lbs\n");
-        clear_output_buffer();;                //clear the output string
-    // weight = "";
-    }
 
-    else if (statt == 4)                     //357 lb/oz mode
-    {
-        Serial2.write(output_string[0]);
-        Serial2.write(output_string[1]);      //send lbs
-        Serial2.write(output_string[2]);
+               else if (statt == 2)                     //H2 lb/oz mode
+                    {
+                     Serial2.write(output_string[1]);          //send out string one byte at a time.
+                     Serial2.write(output_string[2]);          //print lb value
+                     Serial2.write(output_string[3]);
+                     set_text_size(0x00);
+                     Serial2.printf("Lb");
+                     set_text_size(0x44);                     //5x text size
+                     Serial2.write(output_string[5]);         //print oz value
+                     Serial2.write(output_string[6]);
+                     Serial2.write(output_string[7]);
+                     Serial2.write(output_string[8]);
+                     set_text_size(0x00);                     //normal text size
+                     Serial2.print("oz\n");                   //print the oz label with return
+                     clear_output_buffer();;                  //clear the output string
+                  }
 
-        set_text_size(0x11);               //2x text size
-        Serial2.printf("Lb");                //print "lb" label
-        set_text_size(0x44);               //5x text size
-        Serial2.write(output_string[6]);
-        Serial2.write(output_string[7]);
-        Serial2.write(output_string[8]);
-        Serial2.write(output_string[9]);
-        Serial2.write(output_string[10]);
-        set_text_size(0x11);
-        Serial2.print("oz\n");
-        clear_output_buffer();              //clear the output string
-    }
-    else if (statt == 0)                //no signal
-    {
-        Serial2.printf("No Signal");
-    }
+               else if ( statt == 3)                          //357 lb mode
+                  {
+                     Serial2.write(output_string[0]);         //send weight
+                     Serial2.write(output_string[1]);
+                     Serial2.write(output_string[2]);
+                     Serial2.write(output_string[3]);         //decimal point
+                     Serial2.write(output_string[4]);
+                     Serial2.write(output_string[5]);
+                     set_text_size(0x11);
+                     Serial2.print("Lbs\n");
+                     clear_output_buffer();;                 //clear the output string
+         // weight = "";
+                  }
 
-    set_text_size(0x44);
+               else if (statt == 4)                         //357 lb/oz mode
+                  {
+                     Serial2.write(output_string[0]);
+                     Serial2.write(output_string[1]);      //send lbs
+                     Serial2.write(output_string[2]);
 
-    i=0;
-    while (i++ <= 8)
-      {Serial2.write(0xC4);}                        //horizontal line character
-    Serial2.write(0x0A);                         //line feed
+                     set_text_size(0x11);                   //2x text size
+                     Serial2.printf("Lb");                  //print "lb" label
+                     set_text_size(0x44);                   //5x text size
+                     Serial2.write(output_string[6]);
+                     Serial2.write(output_string[7]);
+                     Serial2.write(output_string[8]);
+                     Serial2.write(output_string[9]);
+                     Serial2.write(output_string[10]);
+                     set_text_size(0x11);
+                     Serial2.print("oz\n");
+                    clear_output_buffer();                  //clear the output string
+                   }
+                else if (statt == 0)                        //no signal
+                  {
+                  Serial2.printf("No Signal");
+                  }
 
-    set_text_size(0x00);                         //set text to 1x
+               set_text_size(0x44);                        //set text to 5x
+               Serial2.write(0x0A);                        //line feed
+               i=0;
+               while (i++ <= 8)
+                  {Serial2.write(0xC4);}                   //horizontal line character
+               Serial2.write(0x0A);                        //line feed
 
-    if (checkbox3_status == "checked")            //is serialized ticket check box checked
-    {
-        Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
-        Serial2.write(0x0A);
-    }
 
-    set_text_size(0x11);                  //character size(horiz x2   vertical x2)
+               set_text_size(0x00);                        //set text to 1x
 
-    //------bottom of box-------------------------------
-    Serial2.write(0xC8);                   //bottom of double line square box
-    i=0;
-    while (i++ <= 14)
-        {Serial2.write(0xCD);}
-    Serial2.write(0xBC);                     //right bottom corner character
-    Serial2.write(0x0A);
-    //---------------Box with 'Official Weight' printed in it ----------------------
-    Serial2.write(0xBA);                   //left side line
-    Serial2.printf("     ");
-    Serial2.printf("WEIGHT");
-    Serial2.printf("    ");
-    Serial2.write(0xBA);                   //verical line character
-    Serial2.write(0x0A);
-    Serial2.write(0xBA);                   //left side line
-    Serial2.printf("    ");
-    Serial2.printf("OFFICIAL");
-    Serial2.printf("   ");
-    Serial2.write(0xBA);              //right side double line
-    Serial2.write(0x0A);
-    Serial2.write(0xC9);               //top of double line square box
-    i=0;
-    while (i++ <= 14)
-        {Serial2.write(0xCD);}
-    Serial2.write(0xBB);
-    Serial2.write(0x1D);
-    Serial2.write(0x00);
+               if (checkbox3_status == "checked")          //is serialized ticket check box checked
+                   {Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
+                   Serial2.write(0x0A);
+                   }
 
-    //--------------area to insert tournament name and address and date--------------
-    if (line1!= "")                                //if line 1 is not blank
-    {
-        set_text_size(0x00);               //normal text size
 
-        Serial2.write(0x0A);                 //line feeds
-        Serial2.write(0x0A);
-        Serial2.write(0x0A);
+               set_text_size(0x11);                       //character size(horiz x2   vertical x2)
 
-        Serial2.print(line3);               //print 3rd line of text
-        Serial2.write(0x0A);
 
-        Serial2.print(line2);                //print second line of text
-        Serial2.write(0x0A);
+              //------bottom of box-------------------------------
+               Serial2.write(0xC8);                       //bottom of double line square box
+                i=0;
+               while (i++ <= 14)
+                  {Serial2.write(0xCD);}
+               Serial2.write(0xBC);                     //right bottom corner character
+               Serial2.write(0x0A);
+               //---------------Box with 'Official Weight' printed in it ----------------------
+               Serial2.write(0xBA);                     //left side line
+               Serial2.printf("     ");
+               Serial2.printf("WEIGHT");
+               Serial2.printf("    ");
+               Serial2.write(0xBA);                     //verical line character
+               Serial2.write(0x0A);
+               Serial2.write(0xBA);                     //left side line
+               Serial2.printf("    ");
+               Serial2.printf("OFFICIAL");
+               Serial2.printf("   ");
+               Serial2.write(0xBA);                     //right side double line
+               Serial2.write(0x0A);
+               Serial2.write(0xC9);                     //top of double line square box
+               i=0;
+               while (i++ <= 14)
+                    {  Serial2.write(0xCD);}
+               Serial2.write(0xBB);
+               Serial2.write(0x1D);
+               Serial2.write(0x00);
 
-        Serial2.print(line1);                //print first line of text
-        Serial2.write(0x0A);
-    }
-    else              //--------print pts name in reverse text---------------
-    {
-        set_text_size(0x00);
-        set_text_reverse(true);
-        Serial2.printf("\n\n\n        Pro Tournament Scales         \n");
-        set_text_reverse(false);
-        Serial2.printf("stat = %d\n",stat); //diagnostic
-    }
-    //-------------- cut paper-----------------------------
-    Serial2.write(0x1D);                // "GS" cut paper
-    Serial2.write('V');                 //"V"
-    Serial2.write(0x42);                //decimal 66
-    Serial2.write(0xB0);                //length to feed before cut (mm)
-    // delay_ms(200);
-    // while (input(Pin_B1 == 0))          //wait for switch to be released if pressed
-    //     {delay_ms(5);}
-    // ticket = ticket + 1;                        pointer for weigh tickets
-} //end of routine
+               //--------------area to insert tournament name and address and date--------------
+               if (line1!= "")                         //if line 1 is not blank
+                     {
+                     set_text_size(0x00);            //normal text size
+                     Serial2.write(0x0A);            //line feeds
+                     Serial2.write(0x0A);
+                     Serial2.write(0x0A);
+
+                     Serial2.print(line3);           //print 3rd line of text
+                     Serial2.write(0x0A);
+
+                     Serial2.print(line2);           //print second line of text
+                     Serial2.write(0x0A);
+
+                     Serial2.print(line1);           //print first line of text
+                     Serial2.write(0x0A);
+                    }
+               else              //--------print pts name in reverse text---------------
+                   {
+
+                    set_text_size(0x00);
+                    set_text_reverse(true);
+                    Serial2.printf("\n\n\n        Pro Tournament Scales         \n");
+                    set_text_reverse(false);
+                    Serial2.printf("stat = %d\n",stat); //diagnostic
+                   }
+               //-------------- cut paper-----------------------------
+                 Serial2.write(0x1D);                // "GS" cut paper
+                 Serial2.write('V');                 //"V"
+                 Serial2.write(0x42);                //decimal 66
+                 Serial2.write(0xB0);                //length to feed before cut (mm)
+              // delay_ms(200);
+              // while (input(Pin_B1 == 0))          //wait for switch to be released if pressed
+              //     {delay_ms(5);}
+              // ticket = ticket + 1;                        pointer for weigh tickets
+           } //end of routine
 //--------------------------------------------------------------------------------
 void clear_output_buffer(void)
-{
-    int i=0;
-    while(i <= 30)
-    {
-        output_string[i] = 0;
-        i=i+1;
+    {int i=0;
+     while(i <= 30)
+         {output_string[i] = 0;
+          i=i+1;
+         }
     }
-}
+
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //=======================================================Sub Routines===============================================================
@@ -865,48 +885,42 @@ void clear_radio_rx_array(void)                          //routine to clear radi
 
 //----------------------Process radio string if flag is set--------------------------------
 void processRadioString()
-{
+{ char t_string;
+//  memmove(t_string,radio_rx_array,30);         //copy array to string
+//  if (t_string.indexOf("H") >= 0)                     //check for locked value
+//     {Serial.println("H found");}
 if(radio_rx_array[radio_rx_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))//end of string and start of string accepted
   {
-  if (radio_rx_array[7] == 0x2E)                        //lb mode if decimal is in 7th position
+  if (radio_rx_array[7] == 0x2E)                      //lb mode if decimal is in 7th position
      {
      if (radio_rx_array[0] == 0x02)
-             {statt=1;                                 //lb  mode in H2
-      //       output_string = "";                      //clear the string
-             memmove(output_string,radio_rx_array+3,7);
-       //      clear_232_buffer();
-             clear_radio_rx_array();
-             }
-       else
-             {statt=3;                                //lb mode in 357
-     //        output_string = "";
-             memmove(output_string,radio_rx_array+4,6);
-    //         clear_232_buffer();
-             clear_radio_rx_array();
-             }
+         {statt=1;                                    //lb  mode in H2
+         memmove(output_string,radio_rx_array+3,7);   //parse out the output string
+         clear_radio_rx_array();                       //clear the array
+         }
+     else
+         {statt=3;                                    //lb mode in 357
+         memmove(output_string,radio_rx_array+4,6);
+         clear_radio_rx_array();
+         }
      }
 
   else
      {
-
-      if (radio_rx_array[14] == 0x7A)                //if z is in 14 position
-             {statt=4;                              //lb/oz mode in 357
-     //        output_string = "";
-             memmove(output_string,radio_rx_array+3,10);
-      //       clear_232_buffer();
-             clear_radio_rx_array();
-             }
+      if (radio_rx_array[14] == 0x7A)                 //if z is in 14 position
+         {statt=4;                                    //lb/oz mode in 357
+         memmove(output_string,radio_rx_array+3,10);
+         clear_radio_rx_array();
+         }
       else
-             { statt=2;                              //lb oz mode in H2
-     //        output_string = "";
-             memmove(output_string,radio_rx_array+2,12);
-     //        clear_232_buffer();
-             clear_radio_rx_array();
-             }
+         { statt=2;                                   //lb oz mode in H2
+         memmove(output_string,radio_rx_array+2,12);  //create output string from radio rx 
+         clear_radio_rx_array();
+         }
      }
   sprintf(weight,"%s",output_string);                 //save value to string named weight
-  radio_rx_pointer=0;                               //reset pointer
-  clear_radio_rx_array();                               //clear buffer
+  radio_rx_pointer=0;                                 //reset pointer
+  clear_radio_rx_array();                             //clear buffer
   }
   else                                                //send error to SM (serial monitor)
   {
@@ -1675,3 +1689,5 @@ void convert_string(void)
 
 
 */
+
+//add code to read radio serial number
