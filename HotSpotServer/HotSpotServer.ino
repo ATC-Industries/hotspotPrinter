@@ -134,7 +134,9 @@ String settingsCheck3_status = "";
 String settingsCheck2_status = "";
 void settingsPageForm();
 void mainPageForm();
-bool is_settings = false;
+bool is_page_settings = false;
+bool is_page_print = false;
+bool is_page_update = false;
 
 //------------ Assign eeprom save addresses -----------------------------
 const int line1_eeprom_addr = 0;
@@ -381,42 +383,59 @@ void loop(){
 
 //-------------- start client routine ----------------------------------------------------------------
 
-  WiFiClient client = server.available();   // Listen for incoming clients
+    WiFiClient client = server.available();   // Listen for incoming clients
 
-  if (client) {                             // If a new client connects (tablet or cell phone logs on)
-    Serial.println("New Client.");          // print a message out in the serial port monitor
-    String currentLine = "";                // make a String to hold incoming data from the client
-    while (client.connected()) {            // loop while the client's connected
-      if (client.available()) {             // if there's bytes to read from the client,
-        char c = client.read();             // read a byte, then
-        Serial.write(c);                    // print it out the serial monitor
-        header += c;                        //add character to the header string
-        if (c == '\n') {                    // if the byte is a newline character
-          // if the current line is blank, you got two newline characters in a row.
-          // that's the end of the client HTTP request, so send a response:
-          if (currentLine.length() == 0) {
-            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-            // and a content-type so the client knows what's coming, then a blank line:
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:text/html");
-            client.println("Connection: close");
-      //      client.println("Refresh: 5");                                        //refresh browser screen every 5 seconds
-            client.println();
+    if (client) {                             // If a new client connects (tablet or cell phone logs on)
+        Serial.println("New Client.");          // print a message out in the serial port monitor
+        String currentLine = "";                // make a String to hold incoming data from the client
+        while (client.connected()) {            // loop while the client's connected
+            if (client.available()) {             // if there's bytes to read from the client,
+                char c = client.read();             // read a byte, then
+                Serial.write(c);                    // print it out the serial monitor
+                header += c;                        //add character to the header string
+                    if (c == '\n') {                    // if the byte is a newline character
+                        // if the current line is blank, you got two newline characters in a row.
+                        // that's the end of the client HTTP request, so send a response:
+                        if (currentLine.length() == 0) {
+                            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+                            // and a content-type so the client knows what's coming, then a blank line:
+                            client.println("HTTP/1.1 200 OK");
+                            client.println("Content-type:text/html");
+                            client.println("Connection: close");
+                            //client.println("Refresh: 5");                                        //refresh browser screen every 5 seconds
+                            client.println();
 
       //-----read the returned information from form when submit button is pressed and save to memory--------
             String headerT = header.substring(0,header.indexOf("Host:"));      //create substring from begining to the word 'Host:'
 
-            Serial.println("headerT:");                                        //print substring to serial monitor
-            Serial.println(headerT);                                           //value of headerT
-            if ((headerT.indexOf("settings?") >= 0)&& !(header.indexOf("favicon") >= 0))
+        Serial.println("headerT:");                                            //print substring to serial monitor
+        Serial.println(headerT);
+        if(!(header.indexOf("favicon") >= 0)) {                                     //value of headerT
+            if (headerT.indexOf("settings?") >= 0)
             {
-              is_settings = true;
+                    is_page_settings = true;
+                    is_page_print = false;
+                    is_page_update = false;
+            } else if (headerT.indexOf("print?") >= 0) {
+                    print_ticket();
+                    Serial.println("PRINT BUTTON WAS PRESSED ON WEB PAGE");
+                    is_page_settings = false;
+                    is_page_print = true;
+                    is_page_update = false;
+            } else if (headerT.indexOf("update?") >= 0) {
+                    is_page_settings = false;
+                    is_page_print = false;
+                    is_page_update = true;
             }
             else {
-              is_settings = false;
+                    is_page_settings = false;
+                    is_page_print = false;
+                    is_page_update = false;
             }
+        }
             if ((headerT.indexOf("Line1=") >= 0)&& !(header.indexOf("favicon") >= 0))                //if text 'Line1=' is found and text 'favicon' is not found
-               {Serial.println("********found it (screen one) *********************************************");
+               {
+               Serial.println("********found it (screen one) *********************************************");
                line1 =  header.substring(header.indexOf("Line1=")+6,header.indexOf("&Line2="));        //parse out the varible strings for the the 4 lines
                line2 =  header.substring(header.indexOf("Line2=")+6,header.indexOf("&Line3="));
                line3 =  header.substring(header.indexOf("Line3=")+6,header.indexOf("&Line4="));
@@ -491,12 +510,13 @@ void loop(){
             client.println("</head>");
 
             client.println("<body>");
-            client.println("<h1>Pro Tournament Scales</h1>");                                             // Web Page Heading
 
 
-            if (!is_settings) {  //------------ First Screen HTML code ------------------------------------------
+            if (is_page_settings) {  //------------ First Screen HTML code ------------------------------------------
                //-------------Form to enter information-----------------------------------------
                 client.println("<div class=\"middle-form\">");
+                client.println("<h1>Pro Tournament Scales</h1>");
+                client.println("<h2>Settings</h2>");                                         // Web Page Heading
                 client.println("<form action=\"/\" method=\"GET\">");
                                //first entry field
                 client.println("    <div class=\"form-group\">");
@@ -537,46 +557,62 @@ void loop(){
                 client.println("<div><input type=\"checkbox\" id=\"checkbox4\" name=\"checkbox4\" value=\"checkbox4\" " + checkbox4_status + ">");
                 client.println("<label for=\"checkbox3\">Optional Parameter (1)</label></div>");
 
-                //client.println("<button type=\"submit\" class=\"btn btn-primary\">Submit</button>");
                 client.println("<input type=\"submit\" value=\"Submit\" class=\"btn btn-primary btn-lg btn-block\">");
 
                 client.println("</form>");
                 client.println("</div>");
                 client.println("<div class=\"middle-form\">");
+                client.println("<form action=\"/update\" method=\"GET\">");
+                client.println("<input type=\"submit\" value=\"Update\" class=\"btn btn-success btn-lg btn-block\">");
+                client.println("</form>");
+                client.println("</div>");
+            }
+            else if (is_page_update) {
+
+            }else {
+                //client.println("<form action=\"/\" method=\"GET\">");
+                client.println("<h1>Pro Tournament Scales</h1>");
+                client.println("<h2>HotSpot Printer</h2>");
+
+                client.println("<div class=\"middle-form\">");
+                client.println("<form action=\"/print\" method=\"GET\">");
+                client.println("<input type=\"submit\" value=\"Print\" id=\"print\" style=\"height:90vw;\" class=\"btn btn-danger btn-lg btn-block\">");
+                client.println("</form>");
+                client.println("</div>");
+
+                client.println("<div class=\"middle-form\">");
                 client.println("<form action=\"/settings\" method=\"GET\">");
                 client.println("<input type=\"submit\" value=\"Settings\" class=\"btn btn-warning btn-lg btn-block\">");
                 client.println("</form>");
                 client.println("</div>");
-            }
-             else {               //-------------Second Page HTML code -----------------------------------------
-
-                client.println("<form action=\"/\" method=\"GET\">");
-                client.println("<h1>Settings</h1>");
-
-                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck1\" name=\"settingsCheck1\" value=\"settingsCheck1\" " + settingsCheck1_status + ">");
-                client.println("<label for=\"settingsCheck1\">Enable weigh ticket recording</label></div>");
-
-                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck2\" name=\"settingsCheck2\" value=\"settingsCheck2\" " + settingsCheck2_status + ">");
-                client.println("<label for=\"settingsCheck2\">Timestamp weigh tickets</label></div>");
-
-                client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck3\" name=\"settingsCheck3\" value=\"settingsCheck3\" " + settingsCheck3_status + ">");
-                client.println("<label for=\"settingsCheck3\">Update software</label></div>");
-
-
-                client.println("<input type=\"submit\" value=\"Save Settings\" class=\"btn btn-primary btn-lg btn-block\">");
-
-                 client.println("<input type=\"submit\" value=\"Update Software\" class=\"btn btn-success btn-lg btn-block\">");
-
-                  client.println("<input type=\"submit\" value=\"Send  Results to Printer\" class=\"btn btn-danger btn-lg btn-block\">");
-
-                client.println("</form>");
-
-                // Test a progress bar
-                int progressPercent = 25;
-                client.println("<div class=\"progress\"><br>");
-                client.println(" <div class=\"progress-bar\" role=\"progressbar\" style=\"width: 25%;\" aria-valuenow=\"25\" aria-valuemin=\"0\" aria-valuemax=\"100\">25%</div>");
-                client.println("</div>");
-                is_settings = false;                                                               //clear flag
+            //  else {               //-------------Second Page HTML code -----------------------------------------
+            //
+            //     client.println("<form action=\"/\" method=\"GET\">");
+            //     client.println("<h1>Settings</h1>");
+            //
+            //     client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck1\" name=\"settingsCheck1\" value=\"settingsCheck1\" " + settingsCheck1_status + ">");
+            //     client.println("<label for=\"settingsCheck1\">Enable weigh ticket recording</label></div>");
+            //
+            //     client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck2\" name=\"settingsCheck2\" value=\"settingsCheck2\" " + settingsCheck2_status + ">");
+            //     client.println("<label for=\"settingsCheck2\">Timestamp weigh tickets</label></div>");
+            //
+            //     client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck3\" name=\"settingsCheck3\" value=\"settingsCheck3\" " + settingsCheck3_status + ">");
+            //     client.println("<label for=\"settingsCheck3\">Update software</label></div>");
+            //
+            //
+            //     client.println("<input type=\"submit\" value=\"Save Settings\" class=\"btn btn-primary btn-lg btn-block\">");
+            //
+            //     client.println("<input type=\"submit\" value=\"Update Software\" class=\"btn btn-success btn-lg btn-block\">");
+            //
+            //     client.println("<input type=\"submit\" value=\"Send Results to Printer\" class=\"btn btn-danger btn-lg btn-block\">");
+            //
+            //     client.println("</form>");
+            //
+            //     // Test a progress bar
+            //     int progressPercent = 25;
+            //     client.println("<div class=\"progress\"><br>");
+            //     client.println(" <div class=\"progress-bar\" role=\"progressbar\" style=\"width: 25%;\" aria-valuenow=\"25\" aria-valuemin=\"0\" aria-valuemax=\"100\">25%</div>");
+            //     client.println("</div>");
             }
 
             client.println("</body>");
