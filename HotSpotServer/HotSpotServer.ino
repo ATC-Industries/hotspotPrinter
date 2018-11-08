@@ -850,9 +850,9 @@ void clear_radio_rx_array(void)                          //routine to clear radi
 //----------------------Process radio string if flag is set--------------------------------
 void processRadioString()
 { char t_string;
-//  memmove(t_string,radio_rx_array,30);         //copy array to string
-//  if (t_string.indexOf("H") >= 0)                     //check for locked value
-//     {Serial.println("H found");}
+  memmove(output_string,radio_rx_array,29);         //copy array to string
+  if (output_string.indexOf("H") >= 0)                     //check for locked value
+     {Serial.println("H found");}
 if(radio_rx_array[radio_rx_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))//end of string and start of string accepted
   {
   if (radio_rx_array[7] == 0x2E)                      //lb mode if decimal is in 7th position
