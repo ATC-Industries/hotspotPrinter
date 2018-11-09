@@ -55,15 +55,20 @@ void searchForUpdate(fs::FS &fs, const char * dirname){
 
     File file = root.openNextFile();
     String fileName;
+    String arrayOfUpdateFiles[20] = {};
+    int counter = 0;
     while(file){
         if(!file.isDirectory())
         {
             fileName = file.name();
-            if(fileName.indexOf("update") >= 0)
+            if((fileName.indexOf("update") >= 0) && (fileName.indexOf(".bin") >= 0))
             {
                 Serial.println(file.name());
+                arrayOfUpdateFiles[counter] = fileName;
+                counter++;
             }
         }
+
         file = root.openNextFile();
     }
 }
