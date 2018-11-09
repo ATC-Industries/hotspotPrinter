@@ -619,7 +619,7 @@ void loop(){
                             client.println("</form>");
                             client.println("</div>");
                         }
-
+                        client.println("<p class=\"text-right text-muted\">" + String(VERSION_NUMBER[0]) + "." + String(VERSION_NUMBER[1]) + "." + String(VERSION_NUMBER[2]) + "</p>");
                         client.println("</body>");
                         client.println("</html>");
                         client.println();                         // The HTTP response ends with another blank line
