@@ -476,10 +476,10 @@ void loop(){
                             {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf(" HTTP"));}
 
                             // Check if checkbox is checked
-                            checkboxStatus(headerT, checkbox1_is_checked, checkbox1_status, "1");
-                            checkboxStatus(headerT, checkbox2_is_checked, checkbox2_status, "2");
-                            checkboxStatus(headerT, checkbox3_is_checked, checkbox3_status, "3");
-                            checkboxStatus(headerT, checkbox4_is_checked, checkbox4_status, "4");
+                            checkboxStatus(headerT, cb_print_2_copies, checkbox1_status, "1");
+                            checkboxStatus(headerT, cb_print_signature_line, checkbox2_status, "2");
+                            checkboxStatus(headerT, cb_serial_ticket, checkbox3_status, "3");
+                            checkboxStatus(headerT, cb_print_when_locked, checkbox4_status, "4");
 
                             line1 = char_replace_http(line1); //remove and replace http characters with space
                             line2 = char_replace_http(line2);
@@ -491,16 +491,16 @@ void loop(){
                             EEPROM.writeString(line3_eeprom_addr, line3.substring(0,40));
                             EEPROM.writeString(line4_eeprom_addr, line4.substring(0,40));
 
-                            EEPROM.writeBool(checkbox1_eeprom_addr,checkbox1_is_checked); //boolean true if checked false if not checked
-                            EEPROM.writeBool(checkbox2_eeprom_addr,checkbox2_is_checked);
-                            EEPROM.writeBool(checkbox3_eeprom_addr,checkbox3_is_checked);
-                            EEPROM.writeBool(checkbox4_eeprom_addr,checkbox4_is_checked);
+                            EEPROM.writeBool(checkbox1_eeprom_addr,cb_print_2_copies); //boolean true if checked false if not checked
+                            EEPROM.writeBool(checkbox2_eeprom_addr,cb_print_signature_line);
+                            EEPROM.writeBool(checkbox3_eeprom_addr,cb_serial_ticket);
+                            EEPROM.writeBool(checkbox4_eeprom_addr,cb_print_when_locked);
                             EEPROM.commit();                         ////save to eeprom
 
-                            checkbox1_is_checked ? checkbox1_status = "checked" : checkbox1_status = "";
-                            checkbox2_is_checked ? checkbox2_status = "checked" : checkbox2_status = "";
-                            checkbox3_is_checked ? checkbox3_status = "checked" : checkbox3_status = "";
-                            checkbox4_is_checked ? checkbox4_status = "checked" : checkbox4_status = "";
+                            cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";
+                            cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
+                            cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
+                            cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
 
                             Serial.println("********START HEADER*********************************************");
                             Serial.println(header);
