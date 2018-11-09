@@ -388,273 +388,241 @@ void loop(){
 
     WiFiClient client = server.available();   // Listen for incoming clients
 
-    if (client) {                             // If a new client connects (tablet or cell phone logs on)
+    if (client) {                                 // If a new client connects (tablet or cell phone logs on)
         Serial.println("New Client.");          // print a message out in the serial port monitor
         String currentLine = "";                // make a String to hold incoming data from the client
         while (client.connected()) {            // loop while the client's connected
-            if (client.available()) {             // if there's bytes to read from the client,
-                char c = client.read();             // read a byte, then
-                Serial.write(c);                    // print it out the serial monitor
-                header += c;                        //add character to the header string
-                    if (c == '\n') {                    // if the byte is a newline character
-                        // if the current line is blank, you got two newline characters in a row.
-                        // that's the end of the client HTTP request, so send a response:
-                        if (currentLine.length() == 0) {
-                            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-                            // and a content-type so the client knows what's coming, then a blank line:
-                            client.println("HTTP/1.1 200 OK");
-                            client.println("Content-type:text/html");
-                            client.println("Connection: close");
-                            //client.println("Refresh: 5");                                        //refresh browser screen every 5 seconds
-                            client.println();
+            if (client.available()) {         // if there's bytes to read from the client,
+                char c = client.read();     // read a byte, then
+                Serial.write(c);            // print it out the serial monitor
+                header += c;                //add character to the header string
+                if (c == '\n') {                // if the byte is a newline character
+                    // if the current line is blank, you got two newline characters in a row.
+                    // that's the end of the client HTTP request, so send a response:
+                    if (currentLine.length() == 0) {
+                        // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+                        // and a content-type so the client knows what's coming, then a blank line:
+                        client.println("HTTP/1.1 200 OK");
+                        client.println("Content-type:text/html");
+                        client.println("Connection: close");
+                        //client.println("Refresh: 5");                                        //refresh browser screen every 5 seconds
+                        client.println();
 
-      //-----read the returned information from form when submit button is pressed and save to memory--------
-            String headerT = header.substring(0,header.indexOf("Host:"));      //create substring from begining to the word 'Host:'
+                        //-----read the returned information from form when submit button is pressed and save to memory--------
+                        String headerT = header.substring(0,header.indexOf("Host:")); //create substring from begining to the word 'Host:'
 
-        Serial.println("headerT:");                                            //print substring to serial monitor
-        Serial.println(headerT);
-        if(!(header.indexOf("favicon") >= 0)) {                                     //value of headerT
-            if (headerT.indexOf("settings?") >= 0)
-            {
-                    is_page_settings = true;
-                    is_page_print = false;
-                    is_page_update = false;
-            } else if (headerT.indexOf("print?") >= 0) {
-                    print_ticket();
-                    Serial.println("PRINT BUTTON WAS PRESSED ON WEB PAGE");
-                    is_page_settings = false;
-                    is_page_print = true;
-                    is_page_update = false;
-            } else if (headerT.indexOf("update?") >= 0) {
-                    is_page_settings = false;
-                    is_page_print = false;
-                    is_page_update = true;
+                        Serial.println("headerT:");            //print substring to serial monitor
+                        Serial.println(headerT);
+                        if(!(header.indexOf("favicon") >= 0)) {     //value of headerT
+                            if (headerT.indexOf("settings?") >= 0)
+                            {
+                                is_page_settings = true;
+                                is_page_print = false;
+                                is_page_update = false;
+                            } else if (headerT.indexOf("print?") >= 0) {
+                                print_ticket();
+                                Serial.println("PRINT BUTTON WAS PRESSED ON WEB PAGE");
+                                is_page_settings = false;
+                                is_page_print = true;
+                                is_page_update = false;
+                            } else if (headerT.indexOf("update?") >= 0) {
+                                is_page_settings = false;
+                                is_page_print = false;
+                                is_page_update = true;
+                            }
+                            else {
+                                is_page_settings = false;
+                                is_page_print = false;
+                                is_page_update = false;
+                            }
+                        }
+                        if ((headerT.indexOf("Line1=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'Line1=' is found and text 'favicon' is not found
+                        {
+                            Serial.println("********found it (screen one) *********************************************");
+                            line1 =  header.substring(header.indexOf("Line1=")+6,header.indexOf("&Line2="));//parse out the varible strings for the the 4 lines
+                            line2 =  header.substring(header.indexOf("Line2=")+6,header.indexOf("&Line3="));
+                            line3 =  header.substring(header.indexOf("Line3=")+6,header.indexOf("&Line4="));
+                            // Check if line 4 is end of data or if checkbox info follows
+                            if (headerT.indexOf("&check") >= 0)
+                            {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf("&check"));}
+                            else
+                            {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf(" HTTP"));}
+
+                            // Check if checkbox is checked
+                            checkboxStatus(headerT, checkbox1_is_checked, checkbox1_status, "1");
+                            checkboxStatus(headerT, checkbox2_is_checked, checkbox2_status, "2");
+                            checkboxStatus(headerT, checkbox3_is_checked, checkbox3_status, "3");
+                            checkboxStatus(headerT, checkbox4_is_checked, checkbox4_status, "4");
+
+                            line1 = char_replace_http(line1); //remove and replace http characters with space
+                            line2 = char_replace_http(line2);
+                            line3 = char_replace_http(line3);
+                            line4 = char_replace_http(line4);
+                            //-----save varibles to eeprom---------------------------
+                            EEPROM.writeString(line1_eeprom_addr, line1.substring(0,40)); //save input box info after to trimming
+                            EEPROM.writeString(line2_eeprom_addr, line2.substring(0,40));
+                            EEPROM.writeString(line3_eeprom_addr, line3.substring(0,40));
+                            EEPROM.writeString(line4_eeprom_addr, line4.substring(0,40));
+
+                            EEPROM.writeBool(checkbox1_eeprom_addr,checkbox1_is_checked); //boolean true if checked false if not checked
+                            EEPROM.writeBool(checkbox2_eeprom_addr,checkbox2_is_checked);
+                            EEPROM.writeBool(checkbox3_eeprom_addr,checkbox3_is_checked);
+                            EEPROM.writeBool(checkbox4_eeprom_addr,checkbox4_is_checked);
+                            EEPROM.commit();                         ////save to eeprom
+
+                            checkbox1_is_checked ? checkbox1_status = "checked" : checkbox1_status = "";
+                            checkbox2_is_checked ? checkbox2_status = "checked" : checkbox2_status = "";
+                            checkbox3_is_checked ? checkbox3_status = "checked" : checkbox3_status = "";
+                            checkbox4_is_checked ? checkbox4_status = "checked" : checkbox4_status = "";
+
+                            Serial.println("********START HEADER*********************************************");
+                            Serial.println(header);
+                            Serial.println("********END HEADER*********************************************");
+                            Serial.println(line1);
+                            Serial.println(line2);
+                            Serial.println(line3);
+                            Serial.println(line4);
+                            Serial.println("Checkbox1: " + checkbox1_status);
+                            Serial.println("Checkbox2: " + checkbox2_status);
+                            Serial.println("Checkbox3: " + checkbox3_status);
+                            Serial.println("Checkbox4: " + checkbox4_status);
+
+                            line1.toCharArray(temp_str1,30); //must convert string to a character array for oled drawStr() to work
+                            line2.toCharArray(temp_str2,30);
+                            line3.toCharArray(temp_str3,30);
+                            line4.toCharArray(temp_str4,30);
+
+                            u8g2.clearBuffer();
+                            u8g2.drawStr(3,8,temp_str1); //send 4 text entry box values to oled display
+                            u8g2.drawStr(3,18,temp_str2);
+                            u8g2.drawStr(3,28,temp_str3);
+                            u8g2.drawStr(3,48,temp_str4);
+                            u8g2.sendBuffer();
+                        }
+                        else
+                        {
+                                // Do the settings page stuff
+                        }
+                        //--------------- Display the HTML web page---------------------------
+                        client.println("<!DOCTYPE html><html>");
+                        client.println("<head>");
+                        client.println("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+                        client.println("    <link rel=\"icon\" href=\"data:,\">");
+                        //insert CSS
+                        insertCSS(client);
+                        client.println("</head>");
+
+                        client.println("<body>");
+
+
+                        if (is_page_settings) { //------------ First Screen HTML code ------------------------------------------
+                                //-------------Form to enter information-----------------------------------------
+                            client.println("<div class=\"middle-form\">");
+                            client.println("<h1>Pro Tournament Scales</h1>");
+                            client.println("<h2>Settings</h2>");         // Web Page Heading
+                            client.println("<form action=\"/\" method=\"GET\">");
+                            //first entry field
+                            client.println("    <div class=\"form-group\">");
+                            client.println("        <label for=\"Line1\">Line 1</label>");
+                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line1\" id=\"Line1\" value=\"" + line1 + "\">");
+                            client.println("        <small id=\"line1Help\" class=\"form-text text-muted\">Enter the text you want to appear on the top line. ex. The Tournament Name.</small>");
+                            client.println("    </div>");
+                            //second entry field
+                            client.println("    <div class=\"form-group\">");
+                            client.println("        <label for=\"Line2\">Line 2</label>");
+                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line2\" id=\"Line2\" value=\"" + line2 + "\">");
+                            client.println("        <small id=\"line2Help\" class=\"form-text text-muted\">Enter the text you want to appear on the second line. ex. The Tournament Location.</small>");
+                            client.println("    </div>");
+                            //third entry field
+                            client.println("    <div class=\"form-group\">");
+                            client.println("        <label for=\"Line3\">Line 3</label>");
+                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line3\" id=\"Line3\" value=\"" + line3 + "\">");
+                            client.println("        <small id=\"line3Help\" class=\"form-text text-muted\">Enter the text you want to appear on the third line. ex. The Tournament Dates.</small>");
+                            client.println("    </div>");
+                            //fourth entry field
+                            client.println("    <div class=\"form-group\">");
+                            client.println("        <label for=\"Line4\">Line 4</label>");
+                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line4\" id=\"Line4\" value=\"" + line4 + "\">");
+                            client.println("        <small id=\"line4Help\" class=\"form-text text-muted\">Enter the text you want to appear at bottom of ticket. ex. A sponsor message.</small>");
+                            client.println("    </div>");
+
+
+                            client.println("<div><input type=\"checkbox\" id=\"checkbox1\" name=\"checkbox1\" value=\"checkbox1\" " + checkbox1_status + ">");
+                            client.println("<label for=\"checkbox1\">Print 2 Copies</label></div>");
+
+
+                            client.println("<div><input type=\"checkbox\" id=\"checkbox2\" name=\"checkbox2\" value=\"checkbox2\" " + checkbox2_status + ">");
+                            client.println("<label for=\"checkbox2\">Print signature line</label></div>");
+
+                            client.println("<div><input type=\"checkbox\" id=\"checkbox3\" name=\"checkbox3\" value=\"checkbox3\" " + checkbox3_status + ">");
+                            client.println("<label for=\"checkbox3\">Serialized ticket</label></div>");
+
+                            client.println("<div><input type=\"checkbox\" id=\"checkbox4\" name=\"checkbox4\" value=\"checkbox4\" " + checkbox4_status + ">");
+                            client.println("<label for=\"checkbox3\">Optional Parameter (1)</label></div>");
+
+                            client.println("<input type=\"submit\" value=\"Submit\" class=\"btn btn-primary btn-lg btn-block\">");
+
+                            client.println("</form>");
+                            client.println("</div>");
+                            client.println("<div class=\"middle-form\">");
+                            client.println("<form action=\"/update\" method=\"GET\">");
+                            client.println("<input type=\"submit\" value=\"Update\" class=\"btn btn-success btn-lg btn-block\">");
+                            client.println("</form>");
+                            client.println("</div>");
+                        }
+                        else if (is_page_update) {
+                            // TODO Add breif instructions
+
+                            // TODO Update now button
+
+                            // Cancel BUTTON
+                            client.println("<div class=\"middle-form\">");
+                            client.println("<form action=\"/\" method=\"GET\">");
+                            client.println("<input type=\"submit\" value=\"Update\" class=\"btn btn-danger btn-lg btn-block\">");
+                            client.println("</form>");
+                            client.println("</div>");
+                        }else {
+                            client.println("<h1>Pro Tournament Scales</h1>");
+                            client.println("<h2>HotSpot Printer</h2>");
+
+                            client.println("<div class=\"middle-form\">");
+                            client.println("<form action=\"/print\" method=\"GET\">");
+                            client.println("<input type=\"submit\" value=\"Print\" id=\"print\" style=\"height:90vw;\" class=\"btn btn-danger btn-lg btn-block\">");
+                            client.println("</form>");
+                            client.println("</div>");
+
+                            client.println("<div class=\"middle-form\">");
+                            client.println("<form action=\"/settings\" method=\"GET\">");
+                            client.println("<input type=\"submit\" value=\"Settings\" class=\"btn btn-warning btn-lg btn-block\">");
+                            client.println("</form>");
+                            client.println("</div>");
+                        }
+
+                        client.println("</body>");
+                        client.println("</html>");
+                        client.println();                         // The HTTP response ends with another blank line
+                        // Break out of the while loop
+                        break;
+                } else {                                          // if you got a newline, then clear currentLine
+                        currentLine = "";
+                }
             }
-            else {
-                    is_page_settings = false;
-                    is_page_print = false;
-                    is_page_update = false;
-            }
-        }
-            if ((headerT.indexOf("Line1=") >= 0)&& !(header.indexOf("favicon") >= 0))                //if text 'Line1=' is found and text 'favicon' is not found
-               {
-               Serial.println("********found it (screen one) *********************************************");
-               line1 =  header.substring(header.indexOf("Line1=")+6,header.indexOf("&Line2="));        //parse out the varible strings for the the 4 lines
-               line2 =  header.substring(header.indexOf("Line2=")+6,header.indexOf("&Line3="));
-               line3 =  header.substring(header.indexOf("Line3=")+6,header.indexOf("&Line4="));
-               // Check if line 4 is end of data or if checkbox info follows
-               if (headerT.indexOf("&check") >= 0)
-                    {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf("&check"));}
-                else
-                    {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf(" HTTP"));}
-
-               // Check if checkbox is checked
-               checkboxStatus(headerT, checkbox1_is_checked, checkbox1_status, "1");
-               checkboxStatus(headerT, checkbox2_is_checked, checkbox2_status, "2");
-               checkboxStatus(headerT, checkbox3_is_checked, checkbox3_status, "3");
-               checkboxStatus(headerT, checkbox4_is_checked, checkbox4_status, "4");
-
-               line1 = char_replace_http(line1);                     //remove and replace http characters with space
-               line2 = char_replace_http(line2);
-               line3 = char_replace_http(line3);
-               line4 = char_replace_http(line4);
-               //-----save varibles to eeprom---------------------------
-               EEPROM.writeString(line1_eeprom_addr, line1.substring(0,40));                //save input box info after to trimming
-               EEPROM.writeString(line2_eeprom_addr, line2.substring(0,40));
-               EEPROM.writeString(line3_eeprom_addr, line3.substring(0,40));
-               EEPROM.writeString(line4_eeprom_addr, line4.substring(0,40));
-
-               EEPROM.writeBool(checkbox1_eeprom_addr,checkbox1_is_checked);                //boolean true if checked false if not checked
-               EEPROM.writeBool(checkbox2_eeprom_addr,checkbox2_is_checked);
-               EEPROM.writeBool(checkbox3_eeprom_addr,checkbox3_is_checked);
-               EEPROM.writeBool(checkbox4_eeprom_addr,checkbox4_is_checked);
-               EEPROM.commit();                                                             ////save to eeprom
-
-               checkbox1_is_checked ? checkbox1_status = "checked" : checkbox1_status = "";
-               checkbox2_is_checked ? checkbox2_status = "checked" : checkbox2_status = "";
-               checkbox3_is_checked ? checkbox3_status = "checked" : checkbox3_status = "";
-               checkbox4_is_checked ? checkbox4_status = "checked" : checkbox4_status = "";
-
-               Serial.println("********START HEADER*********************************************");
-               Serial.println(header);
-               Serial.println("********END HEADER*********************************************");
-               Serial.println(line1);
-               Serial.println(line2);
-               Serial.println(line3);
-               Serial.println(line4);
-               Serial.println("Checkbox1: " + checkbox1_status);
-               Serial.println("Checkbox2: " + checkbox2_status);
-               Serial.println("Checkbox3: " + checkbox3_status);
-               Serial.println("Checkbox4: " + checkbox4_status);
-
-               line1.toCharArray(temp_str1,30);                       //must convert string to a character array for oled drawStr() to work
-               line2.toCharArray(temp_str2,30);
-               line3.toCharArray(temp_str3,30);
-               line4.toCharArray(temp_str4,30);
-
-               u8g2.clearBuffer();
-               u8g2.drawStr(3,8,temp_str1);                                   //send 4 text entry box values to oled display
-               u8g2.drawStr(3,18,temp_str2);
-               u8g2.drawStr(3,28,temp_str3);
-               u8g2.drawStr(3,48,temp_str4);
-               u8g2.sendBuffer();
-            }
-            else
-            {
-             // Do the settings page stuff
-            }
-            //--------------- Display the HTML web page---------------------------
-            client.println("<!DOCTYPE html><html>");
-            client.println("<head>");
-            client.println("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-            client.println("    <link rel=\"icon\" href=\"data:,\">");
-            //insert CSS
-            insertCSS(client);
-            client.println("</head>");
-
-            client.println("<body>");
-
-
-            if (is_page_settings) {  //------------ First Screen HTML code ------------------------------------------
-               //-------------Form to enter information-----------------------------------------
-                client.println("<div class=\"middle-form\">");
-                client.println("<h1>Pro Tournament Scales</h1>");
-                client.println("<h2>Settings</h2>");                                         // Web Page Heading
-                client.println("<form action=\"/\" method=\"GET\">");
-                               //first entry field
-                client.println("    <div class=\"form-group\">");
-                client.println("        <label for=\"Line1\">Line 1</label>");
-                client.println("        <input type=\"text\" class=\"form-control\" name=\"Line1\" id=\"Line1\" value=\"" + line1 + "\">");
-                client.println("        <small id=\"line1Help\" class=\"form-text text-muted\">Enter the text you want to appear on the top line. ex. The Tournament Name.</small>");
-                client.println("    </div>");
-                                               //second entry field
-                client.println("    <div class=\"form-group\">");
-                client.println("        <label for=\"Line2\">Line 2</label>");
-                client.println("        <input type=\"text\" class=\"form-control\" name=\"Line2\" id=\"Line2\" value=\"" + line2 + "\">");
-                client.println("        <small id=\"line2Help\" class=\"form-text text-muted\">Enter the text you want to appear on the second line. ex. The Tournament Location.</small>");
-                client.println("    </div>");
-                                               //third entry field
-                client.println("    <div class=\"form-group\">");
-                client.println("        <label for=\"Line3\">Line 3</label>");
-                client.println("        <input type=\"text\" class=\"form-control\" name=\"Line3\" id=\"Line3\" value=\"" + line3 + "\">");
-                client.println("        <small id=\"line3Help\" class=\"form-text text-muted\">Enter the text you want to appear on the third line. ex. The Tournament Dates.</small>");
-                client.println("    </div>");
-                                               //fourth entry field
-                client.println("    <div class=\"form-group\">");
-                client.println("        <label for=\"Line4\">Line 4</label>");
-                client.println("        <input type=\"text\" class=\"form-control\" name=\"Line4\" id=\"Line4\" value=\"" + line4 + "\">");
-                client.println("        <small id=\"line4Help\" class=\"form-text text-muted\">Enter the text you want to appear at bottom of ticket. ex. A sponsor message.</small>");
-                client.println("    </div>");
-
-
-                client.println("<div><input type=\"checkbox\" id=\"checkbox1\" name=\"checkbox1\" value=\"checkbox1\" " + checkbox1_status + ">");
-                client.println("<label for=\"checkbox1\">Print 2 Copies</label></div>");
-
-
-                client.println("<div><input type=\"checkbox\" id=\"checkbox2\" name=\"checkbox2\" value=\"checkbox2\" " + checkbox2_status + ">");
-                client.println("<label for=\"checkbox2\">Print signature line</label></div>");
-
-                client.println("<div><input type=\"checkbox\" id=\"checkbox3\" name=\"checkbox3\" value=\"checkbox3\" " + checkbox3_status + ">");
-                client.println("<label for=\"checkbox3\">Serialized ticket</label></div>");
-
-                client.println("<div><input type=\"checkbox\" id=\"checkbox4\" name=\"checkbox4\" value=\"checkbox4\" " + checkbox4_status + ">");
-                client.println("<label for=\"checkbox3\">Optional Parameter (1)</label></div>");
-
-                client.println("<input type=\"submit\" value=\"Submit\" class=\"btn btn-primary btn-lg btn-block\">");
-
-                client.println("</form>");
-                client.println("</div>");
-                client.println("<div class=\"middle-form\">");
-                client.println("<form action=\"/update\" method=\"GET\">");
-                client.println("<input type=\"submit\" value=\"Update\" class=\"btn btn-success btn-lg btn-block\">");
-                client.println("</form>");
-                client.println("</div>");
-            }
-            else if (is_page_update) {
-                // Add breif instructions
-
-                // Check SD card for update file
-
-                // check version number compared to current version number.
-
-                // Cancel BUTTON
-                client.println("<div class=\"middle-form\">");
-                client.println("<form action=\"/\" method=\"GET\">");
-                client.println("<input type=\"submit\" value=\"Update\" class=\"btn btn-danger btn-lg btn-block\">");
-                client.println("</form>");
-                client.println("</div>");
-
-            }else {
-                //client.println("<form action=\"/\" method=\"GET\">");
-                client.println("<h1>Pro Tournament Scales</h1>");
-                client.println("<h2>HotSpot Printer</h2>");
-
-                client.println("<div class=\"middle-form\">");
-                client.println("<form action=\"/print\" method=\"GET\">");
-                client.println("<input type=\"submit\" value=\"Print\" id=\"print\" style=\"height:90vw;\" class=\"btn btn-danger btn-lg btn-block\">");
-                client.println("</form>");
-                client.println("</div>");
-
-                client.println("<div class=\"middle-form\">");
-                client.println("<form action=\"/settings\" method=\"GET\">");
-                client.println("<input type=\"submit\" value=\"Settings\" class=\"btn btn-warning btn-lg btn-block\">");
-                client.println("</form>");
-                client.println("</div>");
-            //  else {               //-------------Second Page HTML code -----------------------------------------
-            //
-            //     client.println("<form action=\"/\" method=\"GET\">");
-            //     client.println("<h1>Settings</h1>");
-            //
-            //     client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck1\" name=\"settingsCheck1\" value=\"settingsCheck1\" " + settingsCheck1_status + ">");
-            //     client.println("<label for=\"settingsCheck1\">Enable weigh ticket recording</label></div>");
-            //
-            //     client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck2\" name=\"settingsCheck2\" value=\"settingsCheck2\" " + settingsCheck2_status + ">");
-            //     client.println("<label for=\"settingsCheck2\">Timestamp weigh tickets</label></div>");
-            //
-            //     client.println("<div align = \"left\"><input type=\"checkbox\" id=\"settingsCheck3\" name=\"settingsCheck3\" value=\"settingsCheck3\" " + settingsCheck3_status + ">");
-            //     client.println("<label for=\"settingsCheck3\">Update software</label></div>");
-            //
-            //
-            //     client.println("<input type=\"submit\" value=\"Save Settings\" class=\"btn btn-primary btn-lg btn-block\">");
-            //
-            //     client.println("<input type=\"submit\" value=\"Update Software\" class=\"btn btn-success btn-lg btn-block\">");
-            //
-            //     client.println("<input type=\"submit\" value=\"Send Results to Printer\" class=\"btn btn-danger btn-lg btn-block\">");
-            //
-            //     client.println("</form>");
-            //
-            //     // Test a progress bar
-            //     int progressPercent = 25;
-            //     client.println("<div class=\"progress\"><br>");
-            //     client.println(" <div class=\"progress-bar\" role=\"progressbar\" style=\"width: 25%;\" aria-valuenow=\"25\" aria-valuemin=\"0\" aria-valuemax=\"100\">25%</div>");
-            //     client.println("</div>");
+            else if (c != '\r') {                                     // if you got anything else but a carriage return character,
+                currentLine += c;                                 // add it to the end of the currentLine
             }
 
-            client.println("</body>");
-            client.println("</html>");
-            client.println();                                                     // The HTTP response ends with another blank line
-            // Break out of the while loop
-            break;
-          } else {                                                                // if you got a newline, then clear currentLine
-            currentLine = "";
-          }
-        }
-        else if (c != '\r') {                                                     // if you got anything else but a carriage return character,
-          currentLine += c;                                                       // add it to the end of the currentLine
-        }
+            }//if (client.available())
+        }//while (client.connected())
 
-      }//if (client.available())
-    }//while (client.connected())
+        header = "";                                                               // Clear the header variable
+        save_header = "";
 
-    header = "";                                                                   // Clear the header variable
-    save_header = "";
+        client.stop();                                                             // Close the connection
+        Serial.println("Client disconnected.");                                    //send status message to serial debug window
+        Serial.println("");
+        u8g2.clearBuffer();                                                         //clear the oled screen buffer
 
-    client.stop();                                                                 // Close the connection
-    Serial.println("Client disconnected.");                                        //send status message to serial debug window
-    Serial.println("");
-    u8g2.clearBuffer();                                                             //clear the oled screen buffer
-
-  }//end of 'If (Client)'
+    }  //end of 'If (Client)'
 
 }//end of program 'loop()'
 
