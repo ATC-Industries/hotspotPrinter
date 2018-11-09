@@ -522,6 +522,7 @@ void loop(){
                         client.println("<head>");
                         client.println("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
                         client.println("    <link rel=\"icon\" href=\"data:,\">");
+                        client.println("    <style>.middle-form{max-width: 500px; margin:auto;padding:10px;}");
                         //insert CSS
                         insertCSS(client);
                         client.println("</head>");
@@ -592,10 +593,9 @@ void loop(){
                             client.println("<form action=\"/updateNow\" method=\"GET\">");
                             client.println("<input type=\"submit\" value=\"Update\" class=\"btn btn-success btn-lg btn-block\">");
                             client.println("</form>");
-                            client.println("</div>");
-
                             // Print message to user dynamically
                             client.println("<p>" + updateMessage + "</p>");
+                            client.println("</div>");
 
                             // Cancel BUTTON
                             client.println("<div class=\"middle-form\">");
@@ -619,7 +619,10 @@ void loop(){
                             client.println("</form>");
                             client.println("</div>");
                         }
+                        // Version number in bottom right of all pages
+                        client.println("<div class=\"middle-form\">");
                         client.println("<p class=\"text-right text-muted\">" + String(VERSION_NUMBER[0]) + "." + String(VERSION_NUMBER[1]) + "." + String(VERSION_NUMBER[2]) + "</p>");
+                        client.println("</div>");
                         client.println("</body>");
                         client.println("</html>");
                         client.println();                         // The HTTP response ends with another blank line
