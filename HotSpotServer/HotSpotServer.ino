@@ -65,6 +65,7 @@ pin assignment
 #include <FS.h>
 #include <SD.h>
 #include <SPI.h>
+#include <LiquidCrystal_I2C.h>                 //4x20 lcd display
 
 #include "css.h"      // refrence to css file to bring in CSS styles
 #include "SDfunc.h"   // refrence the SD card functions
@@ -208,6 +209,13 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 //------------------------------------------------------------------------
 void setup()
     {
+     LiquidCrystal_I2C lcd(0x27,20,4);                      // set the LCD address to 0x27 for a 20 chars and 4 line display
+//    lcd.clear();                                    //clear the display
+//    lcd.setCursor(0,0);                                   //set cursor position
+//    lcd.print(F("Agri-Tronix Corp"));                   //print text to display
+     
+     
+     
      pinMode(2,INPUT_PULLUP);                                    //set pin 2 as the pushbutton input to print with pullup
 
     //----------- setup 1us counter ---------
