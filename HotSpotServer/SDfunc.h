@@ -306,11 +306,12 @@ void performUpdate(Stream &updateSource, size_t updateSize) {
 }
 
 // check given FS for valid update.bin and perform update if available
-void updateFromFS(fs::FS &fs, String updateFileName) {
+void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
         File updateBin = fs.open(updateFileName);
         if (updateBin) {
                 if(updateBin.isDirectory()) {
                         Serial.println("Error, update.bin is not a file");
+                        updateMessage = "Error, update.bin is not a file";
                         updateBin.close();
                         return;
                 }
@@ -323,6 +324,7 @@ void updateFromFS(fs::FS &fs, String updateFileName) {
                 }
                 else {
                         Serial.println("Error, file is empty");
+                        updateMessage = "Error, file is empty";
                 }
 
                 updateBin.close();
@@ -332,6 +334,7 @@ void updateFromFS(fs::FS &fs, String updateFileName) {
         }
         else {
                 Serial.println("Could not load update.bin from sd root");
+                updateMessage = "Could not load update.bin from sd root";
         }
 }
 
@@ -357,8 +360,7 @@ void updateFirmware(String& updateMessage) {
                 rebootEspWithReason("No SD card attached");
                 updateMessage = "No SD card attached";
         }else{
-                updateFromFS(SD, "/update.bin");
-                updateMessage = "Successfully Updated";
+                updateFromFS(SD, "/update.bin", updateMessage);
         }
 }
 
