@@ -639,7 +639,7 @@ void loop(){
 
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/print\" method=\"GET\">");
-                            client.println("<input type=\"submit\" value=\"Print\" id=\"print\" style=\"height:90vw;\" class=\"btn btn-danger btn-lg btn-block\">");
+                            client.println("<input type=\"submit\" value=\"Print\" id=\"print\" style=\"height:250px;\" class=\"btn btn-danger btn-lg btn-block\">");
                             client.println("</form>");
                             client.println("</div>");
 
