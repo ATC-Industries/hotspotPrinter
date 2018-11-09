@@ -553,25 +553,25 @@ void loop(){
                             client.println("    <div class=\"form-group\">");
                             client.println("        <label for=\"Line1\">Line 1</label>");
                             client.println("        <input type=\"text\" class=\"form-control\" name=\"Line1\" id=\"Line1\" value=\"" + line1 + "\">");
-                            client.println("        <small id=\"line1Help\" class=\"form-text text-muted\">Enter the text you want to appear on the top line. ex. The Tournament Name.</small>");
+                            //client.println("        <small id=\"line1Help\" class=\"form-text text-muted\">Enter the text you want to appear on the top line. ex. The Tournament Name.</small>");
                             client.println("    </div>");
                             //second entry field
                             client.println("    <div class=\"form-group\">");
                             client.println("        <label for=\"Line2\">Line 2</label>");
                             client.println("        <input type=\"text\" class=\"form-control\" name=\"Line2\" id=\"Line2\" value=\"" + line2 + "\">");
-                            client.println("        <small id=\"line2Help\" class=\"form-text text-muted\">Enter the text you want to appear on the second line. ex. The Tournament Location.</small>");
+                            //client.println("        <small id=\"line2Help\" class=\"form-text text-muted\">Enter the text you want to appear on the second line. ex. The Tournament Location.</small>");
                             client.println("    </div>");
                             //third entry field
                             client.println("    <div class=\"form-group\">");
                             client.println("        <label for=\"Line3\">Line 3</label>");
                             client.println("        <input type=\"text\" class=\"form-control\" name=\"Line3\" id=\"Line3\" value=\"" + line3 + "\">");
-                            client.println("        <small id=\"line3Help\" class=\"form-text text-muted\">Enter the text you want to appear on the third line. ex. The Tournament Dates.</small>");
+                            //client.println("        <small id=\"line3Help\" class=\"form-text text-muted\">Enter the text you want to appear on the third line. ex. The Tournament Dates.</small>");
                             client.println("    </div>");
                             //fourth entry field
                             client.println("    <div class=\"form-group\">");
                             client.println("        <label for=\"Line4\">Line 4</label>");
                             client.println("        <input type=\"text\" class=\"form-control\" name=\"Line4\" id=\"Line4\" value=\"" + line4 + "\">");
-                            client.println("        <small id=\"line4Help\" class=\"form-text text-muted\">Enter the text you want to appear at bottom of ticket. ex. A sponsor message.</small>");
+                            //client.println("        <small id=\"line4Help\" class=\"form-text text-muted\">Enter the text you want to appear at bottom of ticket. ex. A sponsor message.</small>");
                             client.println("    </div>");
 
 
@@ -599,9 +599,11 @@ void loop(){
                             client.println("</div>");
                         }
                         else if (is_page_update) {
-                            // TODO Add breif instructions
+                            //  Add breif instructions
                             client.println("<div class=\"alert alert-primary\" role=\"alert\">");
                             client.println("This will update the firmare on your device.<br>Insert an SD card with a version of the firmware loaded and click \"Check for Update\".");
+                            client.println("<hr>");
+                            client.println("<p class=\"mb-0\">NOTE: you may need to reconnect to this wifi network after updating.</p>");
                             client.println("</div>");
                             // Update now button
                             client.println("<div class=\"middle-form\">");
@@ -609,7 +611,11 @@ void loop(){
                             client.println("<input type=\"submit\" value=\"Check for Update\" class=\"btn btn-success btn-lg btn-block\">");
                             client.println("</form>");
                             // Print message to user dynamically
+                            client.println("<div class=\"alert alert-danger\" role=\"alert\">");
+                            client.println("<h4 class=\"alert-heading\">Error!</h4>");
                             client.println("<p>" + updateMessage + "</p>");
+                            client.println("<hr>");
+                            client.println("<p class=\"mb-0\">Please make sure you have loaded the update software in the root directory of the SD card.</p>");
                             client.println("</div>");
 
                             // Cancel BUTTON
