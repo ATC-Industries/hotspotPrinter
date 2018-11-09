@@ -75,6 +75,8 @@ pin assignment
 #define TXD2 17
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);     //identify pins used for oled display
 
+//----------------- an integer array to hold the version number ----------------------------------
+const int VERSION_NUMBER[3] = [0,0,1];   // [MAJOR, MINOR, PATCH]
 
 //----------------- Replace with network credentials ----------------------------------
 const char* ssid     = "ProTournament";
@@ -373,9 +375,9 @@ void loop(){
              u8g2.clearBuffer();
 	           u8g2.setFont(u8g2_font_ncenB14_tr);     //roman style 14 pixel
              u8g2.drawStr(3,39,radio_rx_array);
-             u8g2.setFont(u8g2_font_ncenB08_tr);     //roman 8 pixel                
+             u8g2.setFont(u8g2_font_ncenB08_tr);     //roman 8 pixel
              u8g2.sendBuffer();
-             processRadioString();   
+             processRadioString();
                }
           }
 
@@ -568,6 +570,18 @@ void loop(){
                 client.println("</div>");
             }
             else if (is_page_update) {
+                // Add breif instructions
+
+                // Check SD card for update file
+
+                // check version number compared to current version number.
+
+                // Cancel BUTTON
+                client.println("<div class=\"middle-form\">");
+                client.println("<form action=\"/\" method=\"GET\">");
+                client.println("<input type=\"submit\" value=\"Update\" class=\"btn btn-danger btn-lg btn-block\">");
+                client.println("</form>");
+                client.println("</div>");
 
             }else {
                 //client.println("<form action=\"/\" method=\"GET\">");
@@ -696,8 +710,8 @@ void print_ticket(void)
 
 //                  for (i = 0; i< 30;i++)
 //                      {Serial.print(output_string[i]);}   //*** diagnostic
-//                   Serial.println("line 654- statt =" + String(statt));       //***diag print the statt value 
-              
+//                   Serial.println("line 654- statt =" + String(statt));       //***diag print the statt value
+
                if(statt == 1 )                          //h2 lb mode
                   {
                     Serial2.print(output_string);       //send weight value
@@ -886,9 +900,9 @@ void clear_radio_rx_array(void)                          //routine to clear radi
 //----------------------Process radio string if flag is set--------------------------------
 void processRadioString()
 { char t_string;
-  memmove(output_string,radio_rx_array,29);         //copy array to string
-  if (output_string.indexOf("H") >= 0)                     //check for locked value
-     {Serial.println("H found");}
+  // memmove(output_string,radio_rx_array,29);         //copy array to string
+  // if (output_string.indexOf("H") >= 0)                     //check for locked value
+  //    {Serial.println("H found");}
 if(radio_rx_array[radio_rx_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))//end of string and start of string accepted
   {
   if (radio_rx_array[7] == 0x2E)                      //lb mode if decimal is in 7th position
@@ -914,7 +928,7 @@ if(radio_rx_array[radio_rx_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || r
          }
       else
          { statt=2;                                   //lb oz mode in H2
-         memmove(output_string,radio_rx_array+2,12);  //create output string from radio rx 
+         memmove(output_string,radio_rx_array+2,12);  //create output string from radio rx
          clear_radio_rx_array();
          }
      }
