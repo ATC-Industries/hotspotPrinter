@@ -340,7 +340,7 @@ void updateFromFS(fs::FS &fs, String updateFileName) {
  */
 void updateFirmware() {
         uint8_t cardType;
-        Serial.println("Welcome to the SD-Update example!");
+        Serial.println("Updating from SD Card!\nSearching for available updates");
 
         // You can uncomment this and build again
         //Serial.println("Update successfull");

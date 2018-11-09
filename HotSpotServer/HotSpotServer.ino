@@ -76,7 +76,7 @@ pin assignment
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);     //identify pins used for oled display
 
 //----------------- an integer array to hold the version number ----------------------------------
-const int VERSION_NUMBER[3] = [0,0,1];   // [MAJOR, MINOR, PATCH]
+const int VERSION_NUMBER[3] = {0,0,1};   // [MAJOR, MINOR, PATCH]
 
 //----------------- Replace with network credentials ----------------------------------
 const char* ssid     = "ProTournament";
@@ -388,18 +388,23 @@ void loop(){
 
     WiFiClient client = server.available();   // Listen for incoming clients
 
-    if (client) {                                 // If a new client connects (tablet or cell phone logs on)
+    if (client)
+    {                                 // If a new client connects (tablet or cell phone logs on)
         Serial.println("New Client.");          // print a message out in the serial port monitor
         String currentLine = "";                // make a String to hold incoming data from the client
-        while (client.connected()) {            // loop while the client's connected
-            if (client.available()) {         // if there's bytes to read from the client,
+        while (client.connected())
+        {            // loop while the client's connected
+            if (client.available())
+            {         // if there's bytes to read from the client,
                 char c = client.read();     // read a byte, then
                 Serial.write(c);            // print it out the serial monitor
                 header += c;                //add character to the header string
-                if (c == '\n') {                // if the byte is a newline character
+                if (c == '\n')
+                {                // if the byte is a newline character
                     // if the current line is blank, you got two newline characters in a row.
                     // that's the end of the client HTTP request, so send a response:
-                    if (currentLine.length() == 0) {
+                    if (currentLine.length() == 0)
+                    {
                         // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
                         // and a content-type so the client knows what's coming, then a blank line:
                         client.println("HTTP/1.1 200 OK");
@@ -413,29 +418,35 @@ void loop(){
 
                         Serial.println("headerT:");            //print substring to serial monitor
                         Serial.println(headerT);
-                        if(!(header.indexOf("favicon") >= 0)) {     //value of headerT
+                        if(!(header.indexOf("favicon") >= 0))
+                        {     //value of headerT
                             if (headerT.indexOf("settings?") >= 0)
                             {
                                 is_page_settings = true;
                                 is_page_print = false;
                                 is_page_update = false;
-                            } else if (headerT.indexOf("print?") >= 0) {
+                            } else if (headerT.indexOf("print?") >= 0)
+                            {
                                 print_ticket();
                                 Serial.println("PRINT BUTTON WAS PRESSED ON WEB PAGE");
                                 is_page_settings = false;
                                 is_page_print = true;
                                 is_page_update = false;
-                            } else if (headerT.indexOf("update?") >= 0) {
+                            } else if (headerT.indexOf("update?") >= 0)
+                            {
                                 is_page_settings = false;
                                 is_page_print = false;
                                 is_page_update = true;
+                                updateFirmware();
                             }
-                            else {
+                            else
+                            {
                                 is_page_settings = false;
                                 is_page_print = false;
                                 is_page_update = false;
                             }
                         }
+                        // Looks for Line1 in header and then processes the SETTINGS results if found
                         if ((headerT.indexOf("Line1=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'Line1=' is found and text 'favicon' is not found
                         {
                             Serial.println("********found it (screen one) *********************************************");
@@ -501,7 +512,7 @@ void loop(){
                         }
                         else
                         {
-                                // Do the settings page stuff
+                                // do some stuff
                         }
                         //--------------- Display the HTML web page---------------------------
                         client.println("<!DOCTYPE html><html>");
@@ -611,8 +622,8 @@ void loop(){
                 currentLine += c;                                 // add it to the end of the currentLine
             }
 
-            }//if (client.available())
-        }//while (client.connected())
+        }// END if (client.available())
+    }// END while (client.connected())
 
         header = "";                                                               // Clear the header variable
         save_header = "";
