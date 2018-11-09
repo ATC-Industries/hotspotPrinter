@@ -367,7 +367,7 @@ void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
         }
         else {
                 Serial.println("Could not load update.bin from sd root");
-                updateMessage = "Could not load update.bin from sd root";
+                updateMessage += "Could not load update.bin from sd root";
         }
 }
 
@@ -380,14 +380,14 @@ void checkForUpdates(String& updateMessage) {
 
         //first init and check SD card
         if (!SD.begin()) {
-                rebootEspWithReason("Card Mount Failed");
+                //rebootEspWithReason("Card Mount Failed");
                 updateMessage = "Card Mount Failed";
         }
 
         cardType = SD.cardType();
 
         if (cardType == CARD_NONE) {
-                rebootEspWithReason("No SD card attached");
+                //rebootEspWithReason("No SD card attached");
                 updateMessage = "No SD card attached";
         }else{
             listDir(SD, "/update*.bin", 0);
@@ -407,16 +407,18 @@ void updateFirmware(String& updateMessage) {
 
         //first init and check SD card
         if (!SD.begin()) {
-                rebootEspWithReason("Card Mount Failed");
+                //rebootEspWithReason("Card Mount Failed");
                 updateMessage = "Card Mount Failed";
         }
 
         cardType = SD.cardType();
 
         if (cardType == CARD_NONE) {
-                rebootEspWithReason("No SD card attached");
+                //rebootEspWithReason("No SD card attached");
                 updateMessage = "No SD card attached";
         }else{
+
+                listDir(SD, "/update*.bin", 0);
                 searchForUpdate(SD, "/");
                 updateFromFS(SD, "/update.bin", updateMessage);
         }

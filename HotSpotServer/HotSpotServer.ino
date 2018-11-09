@@ -606,18 +606,27 @@ void loop(){
                             client.println("<p class=\"mb-0\">NOTE: you may need to reconnect to this wifi network after updating.</p>");
                             client.println("</div>");
                             // Update now button
-                            client.println("<div class=\"middle-form\">");
-                            client.println("<form action=\"/updateNow\" method=\"GET\">");
-                            client.println("<input type=\"submit\" value=\"Check for Update\" class=\"btn btn-success btn-lg btn-block\">");
-                            client.println("</form>");
+                            if(updateMessage == ""){
+                                client.println("<div class=\"middle-form\">");
+                                client.println("<form action=\"/updateNow\" method=\"GET\">");
+                                client.println("<input type=\"submit\" value=\"Check for Update\" class=\"btn btn-success btn-lg btn-block\">");
+                                client.println("</form>");
+                                client.println("</div>");
+                            }
                             // Print message to user dynamically
-                            client.println("<div class=\"alert alert-danger\" role=\"alert\">");
-                            client.println("<h4 class=\"alert-heading\">Error!</h4>");
-                            client.println("<p>" + updateMessage + "</p>");
-                            client.println("<hr>");
-                            client.println("<p class=\"mb-0\">Please make sure you have loaded the update software in the root directory of the SD card.</p>");
-                            client.println("</div>");
-
+                            if(updateMessage != ""){
+                                client.println("<div class=\"alert alert-danger\" role=\"alert\">");
+                                client.println("<h4 class=\"alert-heading\">Error!</h4>");
+                                client.println("<p>" + updateMessage + "</p>");
+                                client.println("<hr>");
+                                client.println("<p class=\"mb-0\">Please make sure you have loaded the update software in the root directory of the SD card.</p>");
+                                client.println("</div>");
+                                client.println("<div class=\"middle-form\">");
+                                client.println("<form action=\"/updateNow\" method=\"GET\">");
+                                client.println("<input type=\"submit\" value=\"Retry\" class=\"btn btn-success btn-lg btn-block\">");
+                                client.println("</form>");
+                                client.println("</div>");
+                            }
                             // Cancel BUTTON
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/\" method=\"GET\">");
