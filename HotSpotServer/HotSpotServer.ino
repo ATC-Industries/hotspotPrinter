@@ -580,7 +580,7 @@ void loop(){
                             client.println("</div>");
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/update\" method=\"GET\">");
-                            client.println("<input type=\"submit\" value=\"Update\" class=\"btn btn-success btn-lg btn-block\">");
+                            client.println("<input type=\"submit\" value=\"Update Firmware\" class=\"btn btn-success btn-lg btn-block\">");
                             client.println("</form>");
                             client.println("</div>");
                         }
