@@ -109,6 +109,7 @@ bool checkbox2_is_checked;
 bool checkbox3_is_checked;
 bool checkbox4_is_checked;
 bool checkbox5_is_checked;
+bool lock_flag = false;                                     //flag that indicates weight is a locked value
 volatile int ticket;                                        //ticket serial number
 
 String checkbox1_status = "";
@@ -885,11 +886,17 @@ void clear_radio_rx_array(void)                          //routine to clear radi
 
 //----------------------Process radio string if flag is set--------------------------------
 void processRadioString()
-{ char t_string;
-  memmove(output_string,radio_rx_array,29);         //copy array to string
-  if (output_string.indexOf("H") >= 0)                     //check for locked value
-     {Serial.println("H found");}
-if(radio_rx_array[radio_rx_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))//end of string and start of string accepted
+{ int i = 15;
+  lock_flag = false;                                //preset lock flag to false
+  while(i >= 7)                                      //search from  the 7 to the 15th character in array
+      { if (radio_rx_array[i] == 'H')               //check for locked value in string
+           {Serial.println("H found");
+            lock_flag = true;                      //an 'H' was found so set lock flag
+            break;
+           }
+        i--;   
+      }     
+ if(radio_rx_array[radio_rx_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))//end of string and start of string accepted
   {
   if (radio_rx_array[7] == 0x2E)                      //lb mode if decimal is in 7th position
      {
