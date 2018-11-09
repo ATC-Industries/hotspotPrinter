@@ -600,11 +600,13 @@ void loop(){
                         }
                         else if (is_page_update) {
                             // TODO Add breif instructions
-
+                            client.println("<div class=\"alert alert-primary\" role=\"alert\">");
+                            client.println("This will update the firmare on your device.<br>Insert an SD card with a version of the firmware loaded and click \"Check for Update\".");
+                            client.println("</div>");
                             // Update now button
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/updateNow\" method=\"GET\">");
-                            client.println("<input type=\"submit\" value=\"Update\" class=\"btn btn-success btn-lg btn-block\">");
+                            client.println("<input type=\"submit\" value=\"Check for Update\" class=\"btn btn-success btn-lg btn-block\">");
                             client.println("</form>");
                             // Print message to user dynamically
                             client.println("<p>" + updateMessage + "</p>");
