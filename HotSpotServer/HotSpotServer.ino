@@ -595,7 +595,7 @@ void loop(){
                             client.println("</div>");
 
                             // Print message to user dynamically
-                            client.println("<p>" + updateMessage + "</p>")
+                            client.println("<p>" + updateMessage + "</p>");
 
                             // Cancel BUTTON
                             client.println("<div class=\"middle-form\">");

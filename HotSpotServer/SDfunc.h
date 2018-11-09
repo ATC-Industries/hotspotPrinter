@@ -358,7 +358,7 @@ void updateFirmware(String& updateMessage) {
                 updateMessage = "No SD card attached";
         }else{
                 updateFromFS(SD, "/update.bin");
-                updateMessage = "Successfully Updated"
+                updateMessage = "Successfully Updated";
         }
 }
 
