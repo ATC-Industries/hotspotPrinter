@@ -627,6 +627,9 @@ void loop(){
                                 client.println("</form>");
                                 client.println("</div>");
                             }
+                            if (arrayOfUpdateFiles[0] != ""){
+                                printTableOfUpdateFiles(client, arrayOfUpdateFiles);
+                            }
                             // Cancel BUTTON
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/\" method=\"GET\">");

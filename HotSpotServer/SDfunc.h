@@ -1,6 +1,8 @@
 #ifndef __SDFUNC_H__
 #define __SDFUNC_H__
 
+String arrayOfUpdateFiles[20] = {};
+
 void rebootEspWithReason(String reason);
 
 /**
@@ -40,7 +42,7 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
     }
 }
 
-void searchForUpdate(fs::FS &fs, const char * dirname){
+void searchForUpdate(fs::FS &fs, const char * dirname, String arrayOfUpdateFiles[20]){
     Serial.printf("Looking for Update Files in: %s\n", dirname);
 
     File root = fs.open(dirname);
@@ -55,7 +57,6 @@ void searchForUpdate(fs::FS &fs, const char * dirname){
 
     File file = root.openNextFile();
     String fileName;
-    String arrayOfUpdateFiles[20] = {};
     int counter = 0;
     while(file){
         if(!file.isDirectory())
@@ -371,30 +372,6 @@ void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
         }
 }
 
-void checkForUpdates(String& updateMessage) {
-        uint8_t cardType;
-        Serial.println("Searching for available updates");
-
-        // You can uncomment this and build again
-        //Serial.println("Update successfull");
-
-        //first init and check SD card
-        if (!SD.begin()) {
-                //rebootEspWithReason("Card Mount Failed");
-                updateMessage = "Card Mount Failed";
-        }
-
-        cardType = SD.cardType();
-
-        if (cardType == CARD_NONE) {
-                //rebootEspWithReason("No SD card attached");
-                updateMessage = "No SD card attached";
-        }else{
-            listDir(SD, "/update*.bin", 0);
-            updateFromFS(SD, "/update.bin", updateMessage);
-        }
-}
-
 /**
  * Run the Update.  you can attatch this to a button or something to initiate and update.
  */
@@ -417,9 +394,7 @@ void updateFirmware(String& updateMessage) {
                 //rebootEspWithReason("No SD card attached");
                 updateMessage = "No SD card attached";
         }else{
-
-                listDir(SD, "/update*.bin", 0);
-                searchForUpdate(SD, "/");
+                searchForUpdate(SD, "/", arrayOfUpdateFiles);
                 updateFromFS(SD, "/update.bin", updateMessage);
         }
 }
@@ -432,6 +407,28 @@ void rebootEspWithReason(String reason){
         Serial.println(reason);
         delay(1000);
         ESP.restart();
+}
+
+
+void printTableOfUpdateFiles(WiFiClient& client, String arrayOfUpdateFiles[20]){
+    client.println("<table class=\"table\">");
+    client.println(" <thead>");
+    client.println("  <tr>");
+    client.println("   <th scope=\"col\">Version</th>");
+    client.println("   <th scope=\"col\">Notes</th>");
+    client.println("   <th scope=\"col\">Update</th>");
+    client.println("  </tr>");
+    client.println(" </thead>");
+    client.println("<tbody>");
+    for(int i = 0; (i < 20 && arrayOfUpdateFiles[i] != ""); i++){
+        client.println("<tr>");
+          client.println("<td>" + arrayOfUpdateFiles[i] + "</th>");
+          client.println("<td></td>");
+          client.println("<td><form action=\"/update" + String(i) + "\" method=\"GET\"><input type=\"submit\" value=\"Update\" class=\"btn btn-success\"></form></td>");
+        client.println("</tr>");
+    }
+    client.println("</tbody>");
+    client.println("</table>");
 }
 
 #endif
