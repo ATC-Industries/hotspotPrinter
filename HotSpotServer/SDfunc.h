@@ -338,7 +338,7 @@ void updateFromFS(fs::FS &fs, String updateFileName) {
 /**
  * Run the Update.  you can attatch this to a button or something to initiate and update.
  */
-void updateFirmware() {
+void updateFirmware(String& updateMessage) {
         uint8_t cardType;
         Serial.println("Updating from SD Card!\nSearching for available updates");
 
@@ -348,14 +348,17 @@ void updateFirmware() {
         //first init and check SD card
         if (!SD.begin()) {
                 rebootEspWithReason("Card Mount Failed");
+                updateMessage = "Card Mount Failed";
         }
 
         cardType = SD.cardType();
 
         if (cardType == CARD_NONE) {
                 rebootEspWithReason("No SD card attached");
+                updateMessage = "No SD card attached";
         }else{
                 updateFromFS(SD, "/update.bin");
+                updateMessage = "Successfully Updated"
         }
 }
 

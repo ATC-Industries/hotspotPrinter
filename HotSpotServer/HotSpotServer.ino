@@ -387,7 +387,7 @@ void loop(){
 //-------------- start client routine ----------------------------------------------------------------
 
     WiFiClient client = server.available();   // Listen for incoming clients
-
+    String updateMessage = "";
     if (client)
     {                                 // If a new client connects (tablet or cell phone logs on)
         Serial.println("New Client.");          // print a message out in the serial port monitor
@@ -437,11 +437,10 @@ void loop(){
                                 is_page_settings = false;
                                 is_page_print = false;
                                 is_page_update = true;
-                                updateFirmware();
                             }
                             else if (headerT.indexOf("updateNow?") >= 0)
                             {
-                                updateFirmware();
+                                updateFirmware(updateMessage);
                             }
                             else
                             {
@@ -588,13 +587,15 @@ void loop(){
                         else if (is_page_update) {
                             // TODO Add breif instructions
 
-                            // TODO Update now button
+                            // Update now button
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/updateNow\" method=\"GET\">");
-                            client.println("<input type=\"submit\" value=\"Cancel\" class=\"btn btn-success btn-lg btn-block\">");
+                            client.println("<input type=\"submit\" value=\"Update\" class=\"btn btn-success btn-lg btn-block\">");
                             client.println("</form>");
                             client.println("</div>");
 
+                            // Print message to user dynamically
+                            client.println("<p>" + updateMessage + "</p>")
 
                             // Cancel BUTTON
                             client.println("<div class=\"middle-form\">");
