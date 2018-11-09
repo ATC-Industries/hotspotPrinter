@@ -439,6 +439,10 @@ void loop(){
                                 is_page_update = true;
                                 updateFirmware();
                             }
+                            else if (headerT.indexOf("updateNow?") >= 0)
+                            {
+                                updateFirmware();
+                            }
                             else
                             {
                                 is_page_settings = false;
@@ -585,11 +589,17 @@ void loop(){
                             // TODO Add breif instructions
 
                             // TODO Update now button
+                            client.println("<div class=\"middle-form\">");
+                            client.println("<form action=\"/updateNow\" method=\"GET\">");
+                            client.println("<input type=\"submit\" value=\"Cancel\" class=\"btn btn-success btn-lg btn-block\">");
+                            client.println("</form>");
+                            client.println("</div>");
+
 
                             // Cancel BUTTON
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/\" method=\"GET\">");
-                            client.println("<input type=\"submit\" value=\"Update\" class=\"btn btn-danger btn-lg btn-block\">");
+                            client.println("<input type=\"submit\" value=\"Cancel\" class=\"btn btn-danger btn-lg btn-block\">");
                             client.println("</form>");
                             client.println("</div>");
                         }else {
