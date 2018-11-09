@@ -621,7 +621,7 @@ void loop(){
                         }
                         // Version number in bottom right of all pages
                         client.println("<div class=\"middle-form\">");
-                        client.println("<p class=\"text-right text-muted\">" + String(VERSION_NUMBER[0]) + "." + String(VERSION_NUMBER[1]) + "." + String(VERSION_NUMBER[2]) + "</p>");
+                        client.println("<p class=\"text-right text-muted\">version: " + String(VERSION_NUMBER[0]) + "." + String(VERSION_NUMBER[1]) + "." + String(VERSION_NUMBER[2]) + "</p>");
                         client.println("</div>");
                         client.println("</body>");
                         client.println("</html>");
