@@ -104,12 +104,14 @@ char output_string[31];                                  //converted data to sen
 char temp_str[31];
 String temp_val = "";
 char weight[15];
-bool checkbox1_is_checked;
-bool checkbox2_is_checked;
-bool checkbox3_is_checked;
-bool checkbox4_is_checked;
+
+bool cb_print_2_copies;
+bool cb_print_signature_line;
+bool cb_serial_ticket;
+bool cb_print_when_locked;
 bool checkbox5_is_checked;
 bool lock_flag = false;                                     //flag that indicates weight is a locked value
+bool cb_print_on_lock;                                      //check box flag for print on lock
 volatile int ticket;                                        //ticket serial number
 
 String checkbox1_status = "";
@@ -119,6 +121,7 @@ String checkbox4_status = "";
 String checkbox5_status = "";
 volatile int interruptCounter;                             //varible that tracks number of interupts
 int totalInterruptCounter;                                 //counter to track total number of interrupts
+int no_signal_timer;                                       //timeout counter used to display No Signal on display
 char *database[100][2];                                    //database array to hold anglers name and weight
 hw_timer_t * timer = NULL;                                 //in order to configure the timer, we will need
                                                            //a pointer to a variable of type hw_timer_t,
@@ -174,6 +177,7 @@ void IRAM_ATTR onTimer()                                  //this is the actual i
   {
   portENTER_CRITICAL_ISR(&timerMux);
   interruptCounter++;                                      //put code to perform during interrupt here
+  
   portEXIT_CRITICAL_ISR(&timerMux);
   }
 
@@ -294,15 +298,15 @@ void setup()
                line4 = (EEPROM.readString(line4_eeprom_addr));
                serial_number = EEPROM.readUInt(serial_number_addr);
 
-               checkbox1_is_checked = (EEPROM.readBool(checkbox1_eeprom_addr));  //recall checkbox status
-               checkbox2_is_checked = (EEPROM.readBool(checkbox2_eeprom_addr));
-               checkbox3_is_checked = (EEPROM.readBool(checkbox3_eeprom_addr));
-               checkbox4_is_checked = (EEPROM.readBool(checkbox4_eeprom_addr));
+               cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));  //recall checkbox status
+               cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
+               cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
+               cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
 
-               checkbox1_is_checked ? checkbox1_status = "checked" : checkbox1_status = "";    //set 'checkbox#_is_checked' to match 'checkbox#_status'
-               checkbox2_is_checked ? checkbox2_status = "checked" : checkbox2_status = "";
-               checkbox3_is_checked ? checkbox3_status = "checked" : checkbox3_status = "";
-               checkbox4_is_checked ? checkbox4_status = "checked" : checkbox4_status = "";
+               cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";    //set 'checkbox#_is_checked' to match 'checkbox#_status'
+               cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
+               cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
+               cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
 
                line1.toCharArray(temp_str1,30);                               //must convert string to a character array for drawStr() to work
                line2.toCharArray(temp_str2,30);
@@ -342,9 +346,16 @@ void loop(){
       }
 
 
-   if (totalInterruptCounter >=3)                     //if no signal this timer times out
-            {statt = 0;                               //set display mode to 0 so weights do not print
+   if (totalInterruptCounter >=5)                     //if no signal this timer times out
+            {
              totalInterruptCounter = 0;               //reset counter
+             if (++ no_signal_timer >= 2)
+                 {statt = 0;                               //set display mode to 0 so "No Signal" will be displayed
+                 u8g2.clearBuffer();
+                 u8g2.setFont(u8g2_font_ncenB14_tr);     //roman style 14 pixel
+                 u8g2.drawStr(3,39,"No Signal");
+                 u8g2.sendBuffer();
+                 }
             }
    //--------------- read print button routine -------------------------------------------------------
       if (!digitalRead(2))                           //if pushbutton is pressed (low condition), print the ticket
@@ -371,11 +382,13 @@ void loop(){
               }
             if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
               {
+             //-------------didsplay weight on oled -----------------------------------
              u8g2.clearBuffer();
 	           u8g2.setFont(u8g2_font_ncenB14_tr);     //roman style 14 pixel
              u8g2.drawStr(3,39,radio_rx_array);
              u8g2.setFont(u8g2_font_ncenB08_tr);     //roman 8 pixel                
              u8g2.sendBuffer();
+             //------------------------------------------------------------------------
              processRadioString();   
                }
           }
@@ -447,10 +460,10 @@ void loop(){
                     {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf(" HTTP"));}
 
                // Check if checkbox is checked
-               checkboxStatus(headerT, checkbox1_is_checked, checkbox1_status, "1");
-               checkboxStatus(headerT, checkbox2_is_checked, checkbox2_status, "2");
-               checkboxStatus(headerT, checkbox3_is_checked, checkbox3_status, "3");
-               checkboxStatus(headerT, checkbox4_is_checked, checkbox4_status, "4");
+               checkboxStatus(headerT, cb_print_2_copies, checkbox1_status, "1");
+               checkboxStatus(headerT, cb_print_signature_line, checkbox2_status, "2");
+               checkboxStatus(headerT, cb_serial_ticket, checkbox3_status, "3");
+               checkboxStatus(headerT, cb_print_when_locked, checkbox4_status, "4");
 
                line1 = char_replace_http(line1);                     //remove and replace http characters with space
                line2 = char_replace_http(line2);
@@ -462,16 +475,16 @@ void loop(){
                EEPROM.writeString(line3_eeprom_addr, line3.substring(0,40));
                EEPROM.writeString(line4_eeprom_addr, line4.substring(0,40));
 
-               EEPROM.writeBool(checkbox1_eeprom_addr,checkbox1_is_checked);                //boolean true if checked false if not checked
-               EEPROM.writeBool(checkbox2_eeprom_addr,checkbox2_is_checked);
-               EEPROM.writeBool(checkbox3_eeprom_addr,checkbox3_is_checked);
-               EEPROM.writeBool(checkbox4_eeprom_addr,checkbox4_is_checked);
+               EEPROM.writeBool(checkbox1_eeprom_addr,cb_print_2_copies);                //boolean true if checked false if not checked
+               EEPROM.writeBool(checkbox2_eeprom_addr,cb_print_signature_line);
+               EEPROM.writeBool(checkbox3_eeprom_addr,cb_serial_ticket);
+               EEPROM.writeBool(checkbox4_eeprom_addr,cb_print_when_locked);
                EEPROM.commit();                                                             ////save to eeprom
 
-               checkbox1_is_checked ? checkbox1_status = "checked" : checkbox1_status = "";
-               checkbox2_is_checked ? checkbox2_status = "checked" : checkbox2_status = "";
-               checkbox3_is_checked ? checkbox3_status = "checked" : checkbox3_status = "";
-               checkbox4_is_checked ? checkbox4_status = "checked" : checkbox4_status = "";
+               cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";
+               cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
+               cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
+               cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
 
                Serial.println("********START HEADER*********************************************");
                Serial.println(header);
@@ -556,7 +569,7 @@ void loop(){
                 client.println("<label for=\"checkbox3\">Serialized ticket</label></div>");
 
                 client.println("<div><input type=\"checkbox\" id=\"checkbox4\" name=\"checkbox4\" value=\"checkbox4\" " + checkbox4_status + ">");
-                client.println("<label for=\"checkbox3\">Optional Parameter (1)</label></div>");
+                client.println("<label for=\"checkbox3\">Print when Locked</label></div>");
 
                 client.println("<input type=\"submit\" value=\"Submit\" class=\"btn btn-primary btn-lg btn-block\">");
 
@@ -857,14 +870,14 @@ void clear_output_buffer(void)
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //=======================================================Sub Routines===============================================================
-void set_text_size(unsigned int size)      //set font size on printer
+void set_text_size(unsigned int size)               //set font size on printer
       {
       Serial2.write(0x1D);                 // set text size to small size
       Serial2.write(0x21);
       Serial2.write(size);                 // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
       }
 
-void set_text_reverse(bool on_off)      //set or clear reverse text
+void set_text_reverse(bool on_off)                  //set or clear reverse text
       {
       Serial2.write(0x1D);
       Serial2.write('B');
@@ -886,13 +899,14 @@ void clear_radio_rx_array(void)                          //routine to clear radi
 
 //----------------------Process radio string if flag is set--------------------------------
 void processRadioString()
-{ int i = 15;
-  lock_flag = false;                                //preset lock flag to false
-  while(i >= 7)                                      //search from  the 7 to the 15th character in array
-      { if (radio_rx_array[i] == 'H')               //check for locked value in string
-           {Serial.println("H found");
-            lock_flag = true;                      //an 'H' was found so set lock flag
-            break;
+{ int i = 25;
+  no_signal_timer = 0;                                //reset the no signal timer since a reading was sensed
+  lock_flag = false;                                  //preset lock flag to false
+  while(i >= 3)                                       //search from  the 7 to the 15th character in array
+      { if (radio_rx_array[i] == 'H')                 //check for locked value in string
+           {Serial.println("**Locked**");
+            lock_flag = true;                         //an 'H' was found so set lock flag
+            break;                                    //exit the while loop
            }
         i--;   
       }     
@@ -900,15 +914,15 @@ void processRadioString()
   {
   if (radio_rx_array[7] == 0x2E)                      //lb mode if decimal is in 7th position
      {
-     if (radio_rx_array[0] == 0x02)
+     if (radio_rx_array[0] == 0x02)                   //look for stx command     
          {statt=1;                                    //lb  mode in H2
          memmove(output_string,radio_rx_array+3,7);   //parse out the output string
          clear_radio_rx_array();                       //clear the array
          }
      else
          {statt=3;                                    //lb mode in 357
-         memmove(output_string,radio_rx_array+4,6);
-         clear_radio_rx_array();
+         memmove(output_string,radio_rx_array+4,6);   //copy weight numbers to 'output_string'
+         clear_radio_rx_array();                      //clear the radio rx buffer
          }
      }
 
@@ -916,18 +930,18 @@ void processRadioString()
      {
       if (radio_rx_array[14] == 0x7A)                 //if z is in 14 position
          {statt=4;                                    //lb/oz mode in 357
-         memmove(output_string,radio_rx_array+3,10);
-         clear_radio_rx_array();
+         memmove(output_string,radio_rx_array+3,10);  //copy the weight numbers to 'output_string'
+         clear_radio_rx_array();                      //clear the radio rx buffer
          }
       else
          { statt=2;                                   //lb oz mode in H2
          memmove(output_string,radio_rx_array+2,12);  //create output string from radio rx 
-         clear_radio_rx_array();
+         clear_radio_rx_array();                      //clear the radio rx buffer 
          }
      }
   sprintf(weight,"%s",output_string);                 //save value to string named weight
   radio_rx_pointer=0;                                 //reset pointer
-  clear_radio_rx_array();                             //clear buffer
+  clear_radio_rx_array();                             //clear the radio rx buffer
   }
   else                                                //send error to SM (serial monitor)
   {
