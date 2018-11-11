@@ -213,9 +213,9 @@ void setup()
 //    lcd.clear();                                    //clear the display
 //    lcd.setCursor(0,0);                                   //set cursor position
 //    lcd.print(F("Agri-Tronix Corp"));                   //print text to display
-     
-     
-     
+
+
+
      pinMode(2,INPUT_PULLUP);                                    //set pin 2 as the pushbutton input to print with pullup
 
     //----------- setup 1us counter ---------
@@ -553,7 +553,7 @@ void loop(){
 
                         if (is_page_settings) { //------------ First Screen HTML code ------------------------------------------
                                 //-------------Form to enter information-----------------------------------------
-                            client.println("<div class=\"middle-form\">");
+                            client.println(R"(<div class="middle-form">)");
                             client.println("<h1>Pro Tournament Scales</h1>");
                             client.println("<h2>Settings</h2>");         // Web Page Heading
                             client.println("<form action=\"/\" method=\"GET\">");
