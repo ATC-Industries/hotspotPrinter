@@ -127,6 +127,7 @@ int touch_value_2 = 100;
 int touch_value_3 = 100;
 int touch_value_4 = 100;
 int touch_value_5 = 100;
+int read_keyboard_timer;
 bool cb_print_2_copies;
 bool cb_print_signature_line;
 bool cb_serial_ticket;
@@ -195,11 +196,11 @@ void updateFirmware();                                 //  Call this when you wa
 void rebootEspWithReason(String reason);               //  reboot and serial log the reason for faulure
 
 //-------------Interuput routines ----------------------------------------
-void IRAM_ATTR onTimer()                                  //this is the actual interrupt(place before void setup() code)
+void IRAM_ATTR onTimer()                            // (100 ms) this is the actual interrupt(place before void setup() code)
   {
   portENTER_CRITICAL_ISR(&timerMux);
   interruptCounter++;                                      //put code to perform during interrupt here
-
+  read_keyboard_timer++;
   portEXIT_CRITICAL_ISR(&timerMux);
   }
 
@@ -242,17 +243,17 @@ void setup()
     //----------- setup 1us counter ---------
     timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
     timerAttachInterrupt(timer,&onTimer,true);            //"&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
-    timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times
+    timerAlarmWrite(timer, 100000, true);                //interupt every 1000000 times
     timerAlarmEnable(timer);                              //this line enables the timer declared 3 lines up and starts it
 
     //---------- configure and start oled display ---------
     u8g2.begin();                                            //start up oled display
-    u8g2.clearBuffer();                                      //clear oled buffer
-    u8g2.setFont(u8g2_font_ncenB08_tr);                       // roman style 8 pixel (larger and bolder than the 8 bit arial)
+//    u8g2.clearBuffer();                                      //clear oled buffer
+//    u8g2.setFont(u8g2_font_ncenB08_tr);                       // roman style 8 pixel (larger and bolder than the 8 bit arial)
    // u8g2.setFont(u8g2_font_ncenB14_tr);                    //roman style 14 pixel
    // u8g2.setFont(u8g2_font_5x7_tr);                        //8 bit arial (very small text)
    // u8g2.setFont(u8g2_font_pressstart2p_8u);               //7 pixel high font bold characters (upper case alpabit only)
-    u8g2.sendBuffer();                                       //clear display
+//    u8g2.sendBuffer();                                       //clear display
     ticket = 0;
 
    //-------------  declare serial ports -----------------------------
@@ -295,7 +296,7 @@ void setup()
 //        Serial2.write(0x1D);                 //large text size
 //        Serial2.write(0x21);
 //        Serial2.write(0x44);
-        set_text_size(0x44);               //5x text size
+        
         Serial2.println("987654321");
 //        Serial2.write(0x1D);                 //normal text size
 //        Serial2.write(0x21);
@@ -380,6 +381,14 @@ void setup()
       }
 
 }//void setup()
+
+
+
+
+
+
+
+
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
 
@@ -392,28 +401,66 @@ void loop(){
       }
 
 
-   if (totalInterruptCounter >=5)
-            {
-             totalInterruptCounter = 0;               //reset counter
-             if (++ no_signal_timer >= 2)             //if no signal this timer times out
-                 {statt = 0;                          //set display mode to 0 so "No Signal" will be displayed
-//                 u8g2.clearBuffer();
-//                 u8g2.setFont(u8g2_font_ncenB14_tr);  //roman style 14 pixel
-//                 u8g2.drawStr(3,39,"No Signal");
-//                 u8g2.sendBuffer();
+   if (totalInterruptCounter >=50)
+            { totalInterruptCounter = 0;                //reset counter
+             
+             
+             if (++ no_signal_timer >= 2)               //if no signal this timer times out
+                 { statt = 0;                            //set display mode to 0 so "No Signal" will be displayed
                    lcd.clear();
                    lcd.setCursor(5,1);
                    lcd.print("No Signal");
                  }
             }
    //--------------- read print button routine -------------------------------------------------------
-      touch_value_1 = touchRead(TOUCH_PIN1);    //pin IO0
+int trip_point = 70;
+if (read_keyboard_timer >= 2)                          //read keypad every 200 ms
+     {read_keyboard_timer = 0;
+     //lcd.clear();
+     touch_value_1 = touchRead(12);             // read value on pin IO0
+     lcd.setCursor(0,3);
+     if (touch_value_1 < trip_point)
+       {lcd.print(touch_value_1);}
+      else
+      {lcd.print("   ");}
+
+     touch_value_2 = touchRead(13);             // read value on pin IO0
+     lcd.setCursor(5,3);
+     if (touch_value_2 < trip_point)
+       {lcd.print(touch_value_2);}
+     else
+       {lcd.print("   ");}
+       
+     touch_value_3 = touchRead(32);             // read value on pin IO0
+     lcd.setCursor(12,3);
+     if (touch_value_3 < trip_point)
+       {lcd.print(touch_value_3);}
+     else
+        {lcd.print("   ");}  
+      touch_value_4 = touchRead(33);             // read value on pin IO0
+     lcd.setCursor(17,3);
+     if (touch_value_4 < trip_point)
+       {lcd.print(touch_value_4);}
+     else
+       {lcd.print("   ");}
+      touch_value_5 = touchRead(14);             // read value on pin IO0
+     if (touch_value_5 < trip_point)
+       {
+       lcd.setCursor(17,2);
+       lcd.print(touch_value_5);
+       }
+     
+     }
+
+
+//      touch_value_1 = touchRead(4);            // read value on pin IO0
+     
 //      touch_value_2 = touchRead(TOUCH_PIN2);
 //      touch_value_3 = touchRead(TOUCH_PIN3);
 //      touch_value_4 = touchRead(TOUCH_PIN4);
 //      touch_value_5 = touchRead(TOUCH_PIN5);
-       if (touch_value_1 <=50)
-           {Serial.println(touch_value_1);}
+    //   if (touch_value_1 <=50)
+    //       {Serial.println(touch_value_1);}
 //           if (touch_value_2 <=50)
 //           {Serial.println("Touch 2");}
 //           if (touch_value_3 <=50)
@@ -1046,7 +1093,8 @@ void processRadioString()
   else                                                //send error to SM (serial monitor)
   {
    Serial.println("unable to process radio rx string");
-   Serial.println("if(radio_rx_array[radio_buff_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))");
+   clear_radio_rx_array();
+  // Serial.println("if(radio_rx_array[radio_buff_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))");
 
   }
 }//void processRadioString()
