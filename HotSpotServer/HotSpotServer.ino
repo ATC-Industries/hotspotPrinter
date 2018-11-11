@@ -16,31 +16,33 @@ change parameters related to the printing of the weigh ticket.
 Pass word override - power up the system while holding down the print button,default
 pass word is [987654321]
 
+                                                                                                                  __________________________
+pin assignment                                      5 volt--------------------------------------------------------|                         |
+                                  |-------------|     GND  -------------------------------------------------------|                         |
+                            ______|             |_______                                                          |                         |
+            3.3 volts out---|3.3V                   gnd |                                                         |                         |
+                            |EN                    IO23 | ---- SPI MOSI to SD card--------------------------------|                         |
+                            |SVP                   IO22 | ---- SCL pin to 4x20 LCD display --------------|----|   |       SD CARD           |
+                            |SVN                   TXD0 | ---- Serial TX Monitor and programming uart0   |  L |   |                         |
+      ___________           |IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
+     /           \          |IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
+    |             |         |IO32                   GND |                                                ------   |                         |
+    |             |         |IO33                  IO19 | ---- SPI MISO to SD card--------------------------------|                         |
+    |   XBEE      |         |IO25                  IO18 | ---- clock on SD card-----------------------------------|                         |
+    |             |         |IO26                  IO5  | ---- CS on SD card--------------------------------------|                         |
+    |             |         |IO27                  IO17 | ---- TX Uart2 Printer                                   |                         |
+    |             |         |IO14                  IO16 | ---- RX Uart2 Printer                                   |_________________________|
+    |             |         |IO12                  IO4  |
+     -------------     |----|GND                   IO0  |
+       |  |   |--------     |IO13                  IO2  |
+       |  |Radio Uart1 RX---|SD2                   IO15 |
+       |--Radio Uart1 TX----|SD3                   SD1  |
+                            |CMD                   SD0  |
+           5 volts in   ----|5V                    CLK  |
+                            _____________________________
 
-pin assignment
-                            ----------------------------
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
-                            |                           |
+
+
 */
 //------ EEPROM addresses --------------------------------
 //  line 1 -      0 to 49  49 bytes
@@ -58,13 +60,15 @@ pin assignment
 #include <WiFi.h>                                 // Load Wi-Fi library
 #include <Arduino.h>
 #include <U8g2lib.h>                              //driver for oled display
-#include <string.h>
+#include <string.h>                               //enables the string fuctions
 #include <EEPROM.h>                               //driver for eeprom
+
 //------ files for sd card ------------------------
 #include <Update.h>
 #include <FS.h>
-#include <SD.h>
-#include <SPI.h>
+#include <SD.h>                                  //routines for SD card reader/writer
+#include <SPI.h>                                 //SPI functions
+#include <Wire.h>
 #include <LiquidCrystal_I2C.h>                 //4x20 lcd display
 
 #include "css.h"      // refrence to css file to bring in CSS styles
@@ -74,6 +78,16 @@ pin assignment
 
 #define RXD2 16                                     //port 2 serial pins for external printer
 #define TXD2 17
+
+#define TOUCH_PIN0 T0  //pin 24  IO4
+#define TOUCH_PIN1 T1  //pin 23  IO0
+#define TOUCH_PIN2 T2  //pin 22  IO2
+#define TOUCH_PIN3 T3  //pin 21  IO15
+#define TOUCH_PIN4 T4  //pin 20  IO13
+#define TOUCH_PIN5 T5  //pin 24  IO12
+
+
+
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);     //identify pins used for oled display
 
 //----------------- an integer array to hold the version number ----------------------------------
@@ -107,7 +121,12 @@ char output_string[31];                                  //converted data to sen
 char temp_str[31];
 String temp_val = "";
 char weight[15];
-
+int touch_value_0;
+int touch_value_1 = 100;
+int touch_value_2 = 100;
+int touch_value_3 = 100;
+int touch_value_4 = 100;
+int touch_value_5 = 100;
 bool cb_print_2_copies;
 bool cb_print_signature_line;
 bool cb_serial_ticket;
@@ -116,7 +135,7 @@ bool checkbox5_is_checked;
 bool lock_flag = false;                                     //flag that indicates weight is a locked value
 bool cb_print_on_lock;                                      //check box flag for print on lock
 volatile int ticket;                                        //ticket serial number
-
+byte Imac[6];                                               //array to hold the mac address
 String checkbox1_status = "";
 String checkbox2_status = "";
 String checkbox3_status = "";
@@ -201,7 +220,7 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
   }
 }
 
-
+LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 for a 20 chars and 4 line display
 
 
 //--------------------------------------------------------------------------
@@ -209,10 +228,12 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 //------------------------------------------------------------------------
 void setup()
     {
-     LiquidCrystal_I2C lcd(0x27,20,4);                      // set the LCD address to 0x27 for a 20 chars and 4 line display
-//    lcd.clear();                                    //clear the display
-//    lcd.setCursor(0,0);                                   //set cursor position
-//    lcd.print(F("Agri-Tronix Corp"));                   //print text to display
+
+     lcd.init();
+     lcd.backlight();
+     lcd.clear();                                          //clear the display
+     lcd.setCursor(0,0);                                   //set cursor position
+     lcd.print(F("Agri-Tronix Corp"));                     //print text to display
 
 
 
@@ -227,7 +248,7 @@ void setup()
     //---------- configure and start oled display ---------
     u8g2.begin();                                            //start up oled display
     u8g2.clearBuffer();                                      //clear oled buffer
-   u8g2.setFont(u8g2_font_ncenB08_tr);                       // roman style 8 pixel (larger and bolder than the 8 bit arial)
+    u8g2.setFont(u8g2_font_ncenB08_tr);                       // roman style 8 pixel (larger and bolder than the 8 bit arial)
    // u8g2.setFont(u8g2_font_ncenB14_tr);                    //roman style 14 pixel
    // u8g2.setFont(u8g2_font_5x7_tr);                        //8 bit arial (very small text)
    // u8g2.setFont(u8g2_font_pressstart2p_8u);               //7 pixel high font bold characters (upper case alpabit only)
@@ -255,10 +276,14 @@ void setup()
   if (!digitalRead(2))                                                  // if print button is held down during power up
        {
         Serial.println("password = 987654321");
-        u8g2.clearBuffer();
-        u8g2.drawStr(3,10,"Temporary Password");                          //display temp password on oled display
-        u8g2.drawStr(3,40,"987654321");
-        u8g2.sendBuffer();
+//        u8g2.clearBuffer();
+//        u8g2.drawStr(3,10,"Temporary Password");                          //display temp password on oled display
+//        u8g2.drawStr(3,40,"987654321");
+//        u8g2.sendBuffer();
+        lcd.setCursor(0,0);
+        lcd.print("Temporary Password");
+        lcd.setCursor(0,1);
+        lcd.print("987654321");
         while(!digitalRead(2))                                              //loop until button is released
              {delay(50);}
         WiFi.softAP(ssid,"987654321");
@@ -295,20 +320,26 @@ void setup()
   Serial.print("AP IP address: ");                                      //print ip address to SM
   Serial.println(IP);
   server.begin();                                                       //start server
-  u8g2.clearBuffer();                                                   //clear oled buffer
-  u8g2.drawStr(3,10,"SSID = ProTournament");                            // write something to the internal memory
+//  u8g2.clearBuffer();                                                   //clear oled buffer
+//  u8g2.drawStr(3,10,"SSID = ProTournament");                            // write something to the internal memory
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("SSID = ProTournament");
+
   char ip_string[30];                                                   //declare a character array
   sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
-  u8g2.drawStr(3,28,ip_string);                                         //display ip value on oled
-  u8g2.sendBuffer();                                                    //transfer buffer value to screen
+//  u8g2.drawStr(3,28,ip_string);                                         //display ip value on oled
+//  u8g2.sendBuffer();                                                    //transfer buffer value to screen
+    lcd.setCursor(0,1);
+    lcd.print(ip_string);
   delay(5000);                                                          //leave ssid and ip on oled sceen for this delay
                line1 = (EEPROM.readString(line1_eeprom_addr));          //recall values saved in eeprom
                line2 = (EEPROM.readString(line2_eeprom_addr));
                line3 = (EEPROM.readString(line3_eeprom_addr));
                line4 = (EEPROM.readString(line4_eeprom_addr));
-               serial_number = EEPROM.readUInt(serial_number_addr);
+               serial_number = EEPROM.readUInt(serial_number_addr);     //get ticket serial number
 
-               cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));  //recall checkbox status
+               cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));  //recall checkbox status (boolean)
                cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
                cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
                cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
@@ -324,26 +355,31 @@ void setup()
                line4.toCharArray(temp_str4,30);
 
                 // Writing to OLED display
-               u8g2.clearBuffer();
-               u8g2.drawStr(3,8,temp_str1);                                   //send lines of text esp32 to oled display
-               u8g2.drawStr(3,18,temp_str2);
-               u8g2.drawStr(3,28,temp_str3);
-               u8g2.drawStr(3,48,temp_str4);
-               u8g2.sendBuffer();                                             //show oled buffe contents on screen
+//               u8g2.clearBuffer();
+//               u8g2.drawStr(3,8,temp_str1);                                   //send lines of text esp32 to oled display
+//               u8g2.drawStr(3,18,temp_str2);
+//               u8g2.drawStr(3,28,temp_str3);
+//               u8g2.drawStr(3,48,temp_str4);
+//               u8g2.sendBuffer();                                             //show oled buffe contents on screen
+                lcd.clear();
+                lcd.setCursor(0,0);
+                lcd.print(temp_str1);
+                lcd.setCursor(0,1);
+                lcd.print(temp_str2);
+                lcd.setCursor(0,2);
+                lcd.print(temp_str3);
+                lcd.setCursor(0,3);
+                lcd.print(temp_str4);
 
-byte Imac[6];
-WiFi.macAddress(Imac);
-  Serial.print("MAC");
-  for(int i=5;i>=0;i--)
-{
-Serial.print(":");
-  Serial.print(Imac[i],HEX);
-}
+      WiFi.macAddress(Imac);
+        Serial.print("MAC");
+        for(int i=5;i>=0;i--)
+      {
+      Serial.print(":");
+        Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
+      }
 
-
-
-
-}
+}//void setup()
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
 
@@ -356,19 +392,43 @@ void loop(){
       }
 
 
-   if (totalInterruptCounter >=5)                     //if no signal this timer times out
+   if (totalInterruptCounter >=5)
             {
              totalInterruptCounter = 0;               //reset counter
-             if (++ no_signal_timer >= 2)
-                 {statt = 0;                               //set display mode to 0 so "No Signal" will be displayed
-                 u8g2.clearBuffer();
-                 u8g2.setFont(u8g2_font_ncenB14_tr);     //roman style 14 pixel
-                 u8g2.drawStr(3,39,"No Signal");
-                 u8g2.sendBuffer();
+             if (++ no_signal_timer >= 2)             //if no signal this timer times out
+                 {statt = 0;                          //set display mode to 0 so "No Signal" will be displayed
+//                 u8g2.clearBuffer();
+//                 u8g2.setFont(u8g2_font_ncenB14_tr);  //roman style 14 pixel
+//                 u8g2.drawStr(3,39,"No Signal");
+//                 u8g2.sendBuffer();
+                   lcd.clear();
+                   lcd.setCursor(5,1);
+                   lcd.print("No Signal");
                  }
             }
    //--------------- read print button routine -------------------------------------------------------
-      if (!digitalRead(2))                           //if pushbutton is pressed (low condition), print the ticket
+      touch_value_1 = touchRead(TOUCH_PIN1);    //pin IO0
+//      touch_value_2 = touchRead(TOUCH_PIN2);
+//      touch_value_3 = touchRead(TOUCH_PIN3);
+//      touch_value_4 = touchRead(TOUCH_PIN4);
+//      touch_value_5 = touchRead(TOUCH_PIN5);
+       if (touch_value_1 <=50)
+           {Serial.println(touch_value_1);}
+//           if (touch_value_2 <=50)
+//           {Serial.println("Touch 2");}
+//           if (touch_value_3 <=50)
+//           {Serial.println("Touch 3");}
+//           if (touch_value_4 <=50)
+//           {Serial.println("Touch 4");}
+//           if (touch_value_5 <=50)
+//           {Serial.println("Touch 5");}
+
+
+
+
+
+      if (touch_value_1 <=50)
+//      if (!digitalRead(2))                           //if pushbutton is pressed (low condition), print the ticket
       { print_ticket();                              //print the weight ticket
         delay(300);
         if (checkbox1_status == "checked")           //if checkbox "print 2 tickets" is checked
@@ -384,20 +444,24 @@ void loop(){
       if (Serial1.available() > 0)                  //if data in recieve buffer, send to serial monitor
           {char c;
            c = (char)Serial1.read();                //get byte from uart buffer
-           radio_rx_array[radio_rx_pointer] += c;                    //add character to radio rx buffer
+           radio_rx_array[radio_rx_pointer] += c;   //add character to radio rx buffer
            radio_rx_pointer ++;                     //increment pointer
            if (radio_rx_pointer >=30)               //buffer overflow
-              {clear_radio_rx_array();
-               radio_rx_pointer = 0;
+              {clear_radio_rx_array();              //clear rx radio buffer
+               radio_rx_pointer = 0;                //reset the rx radio buffer
               }
             if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
               {
-             //-------------didsplay weight on oled -----------------------------------
-             u8g2.clearBuffer();
-	           u8g2.setFont(u8g2_font_ncenB14_tr);     //roman style 14 pixel
-             u8g2.drawStr(3,39,radio_rx_array);
-             u8g2.setFont(u8g2_font_ncenB08_tr);     //roman 8 pixel
-             u8g2.sendBuffer();
+             //-------------display weight on oled -----------------------------------
+//             u8g2.clearBuffer();
+//	           u8g2.setFont(u8g2_font_ncenB14_tr);     //roman style 14 pixel
+//             u8g2.drawStr(3,39,radio_rx_array);
+//             u8g2.setFont(u8g2_font_ncenB08_tr);     //roman 8 pixel
+//             u8g2.sendBuffer();
+               lcd.clear();
+               lcd.setCursor(4,1);
+               lcd.print(radio_rx_array);
+
              //------------------------------------------------------------------------
              processRadioString();
                }
@@ -439,36 +503,37 @@ void loop(){
 
                         Serial.println("headerT:");            //print substring to serial monitor
                         Serial.println(headerT);
-                        if(!(header.indexOf("favicon") >= 0))
-                        {     //value of headerT
-                            if (headerT.indexOf("settings?") >= 0)
+                        if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
+                        {
+                            if (headerT.indexOf("settings?") >= 0)      //if header contains "settings"
                             {
                                 is_page_settings = true;
                                 is_page_print = false;
                                 is_page_update = false;
-                            } else if (headerT.indexOf("print?") >= 0)
-                            {
-                                print_ticket();
+                            } else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
+                                {
+                                print_ticket();                         //print weigh ticket
                                 Serial.println("PRINT BUTTON WAS PRESSED ON WEB PAGE");
                                 is_page_settings = false;
                                 is_page_print = true;
                                 is_page_update = false;
-                            } else if (headerT.indexOf("update?") >= 0)
-                            {
+                                }
+                             else if (headerT.indexOf("update?") >= 0)
+                                {
                                 is_page_settings = false;
                                 is_page_print = false;
                                 is_page_update = true;
-                            }
+                                }
                             else if (headerT.indexOf("updateNow?") >= 0)
-                            {
+                                {
                                 updateFirmware(updateMessage);
-                            }
+                                }
                             else
-                            {
+                                {
                                 is_page_settings = false;
                                 is_page_print = false;
                                 is_page_update = false;
-                            }
+                                }
                         }
                         // Looks for Line1 in header and then processes the SETTINGS results if found
                         if ((headerT.indexOf("Line1=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'Line1=' is found and text 'favicon' is not found
@@ -509,7 +574,7 @@ void loop(){
                             cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
                             cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
                             cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
-
+                            //-------------- display varibles on serial monitor  -----------------------------------
                             Serial.println("********START HEADER*********************************************");
                             Serial.println(header);
                             Serial.println("********END HEADER*********************************************");
@@ -526,7 +591,7 @@ void loop(){
                             line2.toCharArray(temp_str2,30);
                             line3.toCharArray(temp_str3,30);
                             line4.toCharArray(temp_str4,30);
-
+                            //--------------- display line data on oled -------------------------------------------
                             u8g2.clearBuffer();
                             u8g2.drawStr(3,8,temp_str1); //send 4 text entry box values to oled display
                             u8g2.drawStr(3,18,temp_str2);
@@ -534,7 +599,7 @@ void loop(){
                             u8g2.drawStr(3,48,temp_str4);
                             u8g2.sendBuffer();
                         }
-                        else
+                        else    //if header did not contain text "line1" then run code in else statment below
                         {
                                 // do some stuff
                         }
@@ -638,7 +703,7 @@ void loop(){
                             if (arrayOfUpdateFiles[0] != ""){
                                 printTableOfUpdateFiles(client, arrayOfUpdateFiles);
                             }
-                            // Cancel BUTTON
+                            //------------ Cancel BUTTON ------------------------------
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/\" method=\"GET\">");
                             client.println("<input type=\"submit\" value=\"Cancel\" class=\"btn btn-danger btn-lg btn-block\">");
