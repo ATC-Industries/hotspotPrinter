@@ -68,6 +68,7 @@ pin assignment                                      5 volt----------------------
 #include <FS.h>
 #include <SD.h>                                  //routines for SD card reader/writer
 #include <SPI.h>                                 //SPI functions
+#include <Wire.h>
 #include <LiquidCrystal_I2C.h>                 //4x20 lcd display
 
 #include "css.h"      // refrence to css file to bring in CSS styles
@@ -77,6 +78,16 @@ pin assignment                                      5 volt----------------------
 
 #define RXD2 16                                     //port 2 serial pins for external printer
 #define TXD2 17
+
+#define TOUCH_PIN0 T0  //pin 24  IO4
+#define TOUCH_PIN1 T1  //pin 23  IO0
+#define TOUCH_PIN2 T2  //pin 22  IO2
+#define TOUCH_PIN3 T3  //pin 21  IO15
+#define TOUCH_PIN4 T4  //pin 20  IO13
+#define TOUCH_PIN5 T5  //pin 24  IO12
+
+
+
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);     //identify pins used for oled display
 
 //----------------- an integer array to hold the version number ----------------------------------
@@ -110,7 +121,12 @@ char output_string[31];                                  //converted data to sen
 char temp_str[31];
 String temp_val = "";
 char weight[15];
-
+int touch_value_0;
+int touch_value_1 = 100;
+int touch_value_2 = 100;
+int touch_value_3 = 100;
+int touch_value_4 = 100;
+int touch_value_5 = 100;
 bool cb_print_2_copies;
 bool cb_print_signature_line;
 bool cb_serial_ticket;
@@ -204,7 +220,7 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
   }
 }
 
-
+LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 for a 20 chars and 4 line display
 
 
 //--------------------------------------------------------------------------
@@ -212,10 +228,12 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 //------------------------------------------------------------------------
 void setup()
     {
-     LiquidCrystal_I2C lcd(0x27,20,4);                      // set the LCD address to 0x27 for a 20 chars and 4 line display
-//    lcd.clear();                                          //clear the display
-//    lcd.setCursor(0,0);                                   //set cursor position
-//    lcd.print(F("Agri-Tronix Corp"));                     //print text to display
+    
+     lcd.init();
+     lcd.backlight();
+     lcd.clear();                                          //clear the display
+     lcd.setCursor(0,0);                                   //set cursor position
+     lcd.print(F("Agri-Tronix Corp"));                     //print text to display
      
      
      
@@ -258,10 +276,14 @@ void setup()
   if (!digitalRead(2))                                                  // if print button is held down during power up
        {
         Serial.println("password = 987654321");
-        u8g2.clearBuffer();
-        u8g2.drawStr(3,10,"Temporary Password");                          //display temp password on oled display
-        u8g2.drawStr(3,40,"987654321");
-        u8g2.sendBuffer();
+//        u8g2.clearBuffer();
+//        u8g2.drawStr(3,10,"Temporary Password");                          //display temp password on oled display
+//        u8g2.drawStr(3,40,"987654321");
+//        u8g2.sendBuffer();
+        lcd.setCursor(0,0);
+        lcd.print("Temporary Password");
+        lcd.setCursor(0,1);
+        lcd.print("987654321");
         while(!digitalRead(2))                                              //loop until button is released
              {delay(50);}
         WiFi.softAP(ssid,"987654321");
@@ -298,12 +320,18 @@ void setup()
   Serial.print("AP IP address: ");                                      //print ip address to SM
   Serial.println(IP);
   server.begin();                                                       //start server
-  u8g2.clearBuffer();                                                   //clear oled buffer
-  u8g2.drawStr(3,10,"SSID = ProTournament");                            // write something to the internal memory
+//  u8g2.clearBuffer();                                                   //clear oled buffer
+//  u8g2.drawStr(3,10,"SSID = ProTournament");                            // write something to the internal memory
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("SSID = ProTournament");
+    
   char ip_string[30];                                                   //declare a character array
   sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
-  u8g2.drawStr(3,28,ip_string);                                         //display ip value on oled
-  u8g2.sendBuffer();                                                    //transfer buffer value to screen
+//  u8g2.drawStr(3,28,ip_string);                                         //display ip value on oled
+//  u8g2.sendBuffer();                                                    //transfer buffer value to screen
+    lcd.setCursor(0,1);
+    lcd.print(ip_string);
   delay(5000);                                                          //leave ssid and ip on oled sceen for this delay
                line1 = (EEPROM.readString(line1_eeprom_addr));          //recall values saved in eeprom
                line2 = (EEPROM.readString(line2_eeprom_addr));
@@ -327,13 +355,21 @@ void setup()
                line4.toCharArray(temp_str4,30);
 
                 // Writing to OLED display
-               u8g2.clearBuffer();
-               u8g2.drawStr(3,8,temp_str1);                                   //send lines of text esp32 to oled display
-               u8g2.drawStr(3,18,temp_str2);
-               u8g2.drawStr(3,28,temp_str3);
-               u8g2.drawStr(3,48,temp_str4);
-               u8g2.sendBuffer();                                             //show oled buffe contents on screen
-
+//               u8g2.clearBuffer();
+//               u8g2.drawStr(3,8,temp_str1);                                   //send lines of text esp32 to oled display
+//               u8g2.drawStr(3,18,temp_str2);
+//               u8g2.drawStr(3,28,temp_str3);
+//               u8g2.drawStr(3,48,temp_str4);
+//               u8g2.sendBuffer();                                             //show oled buffe contents on screen
+                lcd.clear();
+                lcd.setCursor(0,0);
+                lcd.print(temp_str1);
+                lcd.setCursor(0,1);
+                lcd.print(temp_str2);
+                lcd.setCursor(0,2);
+                lcd.print(temp_str3);
+                lcd.setCursor(0,3);
+                lcd.print(temp_str4);
       
       WiFi.macAddress(Imac);
         Serial.print("MAC");
@@ -361,14 +397,38 @@ void loop(){
              totalInterruptCounter = 0;               //reset counter
              if (++ no_signal_timer >= 2)             //if no signal this timer times out
                  {statt = 0;                          //set display mode to 0 so "No Signal" will be displayed
-                 u8g2.clearBuffer();
-                 u8g2.setFont(u8g2_font_ncenB14_tr);  //roman style 14 pixel
-                 u8g2.drawStr(3,39,"No Signal");
-                 u8g2.sendBuffer();
+//                 u8g2.clearBuffer();
+//                 u8g2.setFont(u8g2_font_ncenB14_tr);  //roman style 14 pixel
+//                 u8g2.drawStr(3,39,"No Signal");
+//                 u8g2.sendBuffer();
+                   lcd.clear();
+                   lcd.setCursor(5,1);
+                   lcd.print("No Signal"); 
                  }
             }
    //--------------- read print button routine -------------------------------------------------------
-      if (!digitalRead(2))                           //if pushbutton is pressed (low condition), print the ticket
+      touch_value_1 = touchRead(TOUCH_PIN1);    //pin IO0
+//      touch_value_2 = touchRead(TOUCH_PIN2);
+//      touch_value_3 = touchRead(TOUCH_PIN3);
+//      touch_value_4 = touchRead(TOUCH_PIN4);
+//      touch_value_5 = touchRead(TOUCH_PIN5);
+       if (touch_value_1 <=50)
+           {Serial.println(touch_value_1);}
+//           if (touch_value_2 <=50)
+//           {Serial.println("Touch 2");}
+//           if (touch_value_3 <=50)
+//           {Serial.println("Touch 3");}
+//           if (touch_value_4 <=50)
+//           {Serial.println("Touch 4");}
+//           if (touch_value_5 <=50)
+//           {Serial.println("Touch 5");}
+
+
+
+      
+      
+      if (touch_value_1 <=50)
+//      if (!digitalRead(2))                           //if pushbutton is pressed (low condition), print the ticket
       { print_ticket();                              //print the weight ticket
         delay(300);
         if (checkbox1_status == "checked")           //if checkbox "print 2 tickets" is checked
@@ -392,12 +452,16 @@ void loop(){
               }
             if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
               {
-             //-------------didsplay weight on oled -----------------------------------
-             u8g2.clearBuffer();
-	           u8g2.setFont(u8g2_font_ncenB14_tr);     //roman style 14 pixel
-             u8g2.drawStr(3,39,radio_rx_array);
-             u8g2.setFont(u8g2_font_ncenB08_tr);     //roman 8 pixel
-             u8g2.sendBuffer();
+             //-------------display weight on oled -----------------------------------
+//             u8g2.clearBuffer();
+//	           u8g2.setFont(u8g2_font_ncenB14_tr);     //roman style 14 pixel
+//             u8g2.drawStr(3,39,radio_rx_array);
+//             u8g2.setFont(u8g2_font_ncenB08_tr);     //roman 8 pixel
+//             u8g2.sendBuffer();
+               lcd.clear();
+               lcd.setCursor(4,1);
+               lcd.print(radio_rx_array);
+             
              //------------------------------------------------------------------------
              processRadioString();
                }
