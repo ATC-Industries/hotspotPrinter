@@ -24,17 +24,17 @@ pin assignment                                      5 volt----------------------
                             |EN                    IO23 | ---- SPI MOSI to SD card--------------------------------|                         |
                             |SVP                   IO22 | ---- SCL pin to 4x20 LCD display --------------|----|   |       SD CARD           |
                             |SVN                   TXD0 | ---- Serial TX Monitor and programming uart0   |  L |   |                         |
-      ___________           |IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
-     /           \          |IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
-    |             |         |IO32                   GND |                                                ------   |                         |
-    |             |         |IO33                  IO19 | ---- SPI MISO to SD card--------------------------------|                         |
+      ___________      SWF1 |IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
+     /           \     SWF2 |IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
+    |             |    SWF3 |IO32                   GND |                                                ------   |                         |
+    |             |    SWF4 |IO33                  IO19 | ---- SPI MISO to SD card--------------------------------|                         |
     |   XBEE      |         |IO25                  IO18 | ---- clock on SD card-----------------------------------|                         |
     |             |         |IO26                  IO5  | ---- CS on SD card--------------------------------------|                         |
     |             |         |IO27                  IO17 | ---- TX Uart2 Printer                                   |                         |
-    |             |         |IO14                  IO16 | ---- RX Uart2 Printer                                   |_________________________|
-    |             |         |IO12                  IO4  |
-     -------------     |----|GND                   IO0  |
-       |  |   |--------     |IO13                  IO2  |
+    |             |    SWUP |IO14                  IO16 | ---- RX Uart2 Printer                                   |_________________________|
+    |             |    SWDN |IO12                  IO4  | ---- Down button
+     -------------     |----|GND                   IO0  | ---- UP button
+       |  |   |-------- SWPR|IO13                  IO2  | ---- PRT button
        |  |Radio Uart1 RX---|SD2                   IO15 |
        |--Radio Uart1 TX----|SD3                   SD1  |
                             |CMD                   SD0  |
@@ -78,16 +78,16 @@ pin assignment                                      5 volt----------------------
 
 #define RXD2 16                                     //port 2 serial pins for external printer
 #define TXD2 17
+//----------- assign port pins to buttons -----------------------------
+#define button_F1 13  ///works
+#define button_F2 26  //works
 
-#define TOUCH_PIN0 T0  //pin 24  IO4
-#define TOUCH_PIN1 T1  //pin 23  IO0
-#define TOUCH_PIN2 T2  //pin 22  IO2
-#define TOUCH_PIN3 T3  //pin 21  IO15
-#define TOUCH_PIN4 T4  //pin 20  IO13
-#define TOUCH_PIN5 T5  //pin 24  IO12
+#define button_F3 32  //works 
+#define button_F4 14  //not working
 
-
-
+#define button_UP 4  //works
+#define button_DN 0  //works
+#define button_PRINT 2 //works
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);     //identify pins used for oled display
 
 //----------------- an integer array to hold the version number ----------------------------------
@@ -236,10 +236,16 @@ void setup()
      lcd.setCursor(0,0);                                   //set cursor position
      lcd.print(F("Agri-Tronix Corp"));                     //print text to display
 
-
-
-     pinMode(2,INPUT_PULLUP);                                    //set pin 2 as the pushbutton input to print with pullup
-
+     
+     //---- declare input buttons with pullup --------------------------
+     pinMode(button_PRINT,INPUT_PULLUP);                          //print button                           
+     pinMode(button_UP,INPUT_PULLUP);                          //up button
+     pinMode(button_DN,INPUT_PULLUP);                          //down button
+     pinMode(button_F1,INPUT_PULLUP);                          //F1
+     pinMode(button_F2,INPUT_PULLUP);                          //F2
+     pinMode(button_F3,INPUT_PULLUP);                          //F3
+     pinMode(button_F4,INPUT_PULLUP);                          //F4
+     
     //----------- setup 1us counter ---------
     timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
     timerAttachInterrupt(timer,&onTimer,true);            //"&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
@@ -260,7 +266,7 @@ void setup()
    // Note the format for setting a serial port is as follows: Serial2.begin(baud-rate, protocol, RX pin, TX pin);
 
    Serial1.begin(9600, SERIAL_8N1,33,32);                   //RADIO, tx =32 rx = 33
-   Serial2.begin(9600, SERIAL_8N1,23,17);                   //THERMAL PRINTER, TX = pin 17 RX = pin 2
+   Serial2.begin(9600, SERIAL_8N1,16,17);                   //THERMAL PRINTER, TX = pin 17 RX = pin 2
    Serial.begin(115200);                                    //start serial port 0 (debug monitor and programming port)
 
   //--- initialize the EEPROM ---------------------------------------
@@ -274,7 +280,7 @@ void setup()
   /* Remove the password parameter, if you want the AP (Access Point) to be open
   if pin 2 is pulled low,(print button pressed) a temporary password will be displayed on the remote
   dispay and the password will be printed out on the printer*/
-  if (!digitalRead(2))                                                  // if print button is held down during power up
+  if (!digitalRead(13))                                                  // if print button is held down during power up
        {
         Serial.println("password = 987654321");
 //        u8g2.clearBuffer();
@@ -413,41 +419,52 @@ void loop(){
                  }
             }
    //--------------- read print button routine -------------------------------------------------------
-int trip_point = 70;
+
 if (read_keyboard_timer >= 2)                          //read keypad every 200 ms
      {read_keyboard_timer = 0;
      //lcd.clear();
-     touch_value_1 = touchRead(12);             // read value on pin IO0
      lcd.setCursor(0,3);
-     if (touch_value_1 < trip_point)
-       {lcd.print(touch_value_1);}
+     if (!digitalRead(button_PRINT))
+       {lcd.print("PRT");}
       else
       {lcd.print("   ");}
-
-     touch_value_2 = touchRead(13);             // read value on pin IO0
+  
+     lcd.setCursor(0,3);
+     if (!digitalRead(button_F1))
+       {lcd.print("F1");}
+     else
+        {lcd.print("   ");}  
+        
      lcd.setCursor(5,3);
-     if (touch_value_2 < trip_point)
-       {lcd.print(touch_value_2);}
+     if (!digitalRead(button_F2))
+       {lcd.print("F2");}
+     else
+       {lcd.print("   ");}
+
+
+       lcd.setCursor(10,3);
+     if (!digitalRead(button_F3))
+       {lcd.print("F3");}
+     else
+        {lcd.print("   ");}  
+        
+     lcd.setCursor(15,3);
+     if (!digitalRead(button_F4))
+       {lcd.print("F4");}
      else
        {lcd.print("   ");}
        
-     touch_value_3 = touchRead(32);             // read value on pin IO0
-     lcd.setCursor(12,3);
-     if (touch_value_3 < trip_point)
-       {lcd.print(touch_value_3);}
+          
+       lcd.setCursor(15,1);
+     if (!digitalRead(button_UP))
+       {lcd.print("UP");}
      else
-        {lcd.print("   ");}  
-      touch_value_4 = touchRead(33);             // read value on pin IO0
-     lcd.setCursor(17,3);
-     if (touch_value_4 < trip_point)
-       {lcd.print(touch_value_4);}
-     else
-       {lcd.print("   ");}
-      touch_value_5 = touchRead(14);             // read value on pin IO0
-     if (touch_value_5 < trip_point)
+       {lcd.print("   ");}       
+     
+     if (!digitalRead(button_DN))
        {
-       lcd.setCursor(17,2);
-       lcd.print(touch_value_5);
+       lcd.setCursor(15,2);
+       lcd.print("DN");
        }
      
      }
