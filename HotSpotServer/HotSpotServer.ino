@@ -683,60 +683,57 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         if (is_page_settings) { //------------ First Screen HTML code ------------------------------------------
                                 //-------------Form to enter information-----------------------------------------
                             client.println(R"(
-                    <div class="middle-form">
+        <div class="middle-form">
 
-                        )");
-                            client.println("<h1>Pro Tournament Scales</h1>");
-                            client.println("<h2>Settings</h2>");         // Web Page Heading
-                            client.println("<form action=\"/\" method=\"GET\">");
-                            //first entry field
-                            client.println("    <div class=\"form-group\">");
-                            client.println("        <label for=\"Line1\">Line 1</label>");
-                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line1\" id=\"Line1\" value=\"" + line1 + "\">");
-                            //client.println("        <small id=\"line1Help\" class=\"form-text text-muted\">Enter the text you want to appear on the top line. ex. The Tournament Name.</small>");
-                            client.println("    </div>");
-                            //second entry field
-                            client.println("    <div class=\"form-group\">");
-                            client.println("        <label for=\"Line2\">Line 2</label>");
-                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line2\" id=\"Line2\" value=\"" + line2 + "\">");
-                            //client.println("        <small id=\"line2Help\" class=\"form-text text-muted\">Enter the text you want to appear on the second line. ex. The Tournament Location.</small>");
-                            client.println("    </div>");
-                            //third entry field
-                            client.println("    <div class=\"form-group\">");
-                            client.println("        <label for=\"Line3\">Line 3</label>");
-                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line3\" id=\"Line3\" value=\"" + line3 + "\">");
-                            //client.println("        <small id=\"line3Help\" class=\"form-text text-muted\">Enter the text you want to appear on the third line. ex. The Tournament Dates.</small>");
-                            client.println("    </div>");
-                            //fourth entry field
-                            client.println("    <div class=\"form-group\">");
-                            client.println("        <label for=\"Line4\">Line 4</label>");
-                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line4\" id=\"Line4\" value=\"" + line4 + "\">");
-                            //client.println("        <small id=\"line4Help\" class=\"form-text text-muted\">Enter the text you want to appear at bottom of ticket. ex. A sponsor message.</small>");
-                            client.println("    </div>");
+            <h1>Pro Tournament Scales</h1>
+            <h2>Settings</h2>
+            <form action="/" method="GET">
+
+                <div class="form-group">
+                    <label for="Line1">Line 1</label>"
+                    <input type="text" class="form-control" name="Line1" id="Line1" value=")" + line1 + R"(">"
+                    <small id="line1Help" class="form-text text-muted">Enter the text you want to appear on the top line. ex. The Tournament Name.</small>
+                </div>
+                <div class="form-group">
+                    <label for="Line2">Line 2</label>
+                    <input type="text" class="form-control" name="Line2" id="Line2" value=")" + line2 + R"(">"
+                    <small id="line2Help" class="form-text text-muted">Enter the text you want to appear on the second line. ex. The Tournament Location.</small>
+                </div>
+                <div class="form-group">
+                    <label for="Line3">Line 3</label>
+                    <input type="text" class="form-control" name="Line3" id="Line3" value=")" + line3 + R"(">"
+                    <small id="line3Help" class="form-text text-muted">Enter the text you want to appear on the third line. ex. The Tournament Dates.</small>"
+                </div>
+                <div class="form-group">
+                    <label for="Line4">Line 4</label>
+                    <input type="text" class="form-control" name="Line4" id="Line4" value=")" + line4 + R"(">"
+                    <small id="line4Help" class="form-text text-muted">Enter the text you want to appear at bottom of ticket. ex. A sponsor message.</small>
+                </div>
 
 
-                            client.println("<div><input type=\"checkbox\" id=\"checkbox1\" name=\"checkbox1\" value=\"checkbox1\" " + checkbox1_status + ">");
-                            client.println("<label for=\"checkbox1\">Print 2 Copies</label></div>");
+                <div><input type="checkbox" id="checkbox1" name="checkbox1" value="checkbox1" ")" + checkbox1_status + R"(">"
+                    <label for="checkbox1">Print 2 Copies</label></div>
 
 
-                            client.println("<div><input type=\"checkbox\" id=\"checkbox2\" name=\"checkbox2\" value=\"checkbox2\" " + checkbox2_status + ">");
-                            client.println("<label for=\"checkbox2\">Print signature line</label></div>");
+                <div><input type="checkbox" id="checkbox2" name="checkbox2" value="checkbox2" ")" + checkbox2_status + R"(">"
+                    <label for="checkbox2">Print signature line</label></div>
 
-                            client.println("<div><input type=\"checkbox\" id=\"checkbox3\" name=\"checkbox3\" value=\"checkbox3\" " + checkbox3_status + ">");
-                            client.println("<label for=\"checkbox3\">Serialized ticket</label></div>");
+                <div><input type="checkbox" id="checkbox3" name="checkbox3" value=\"checkbox3" ")" + checkbox3_status + R"(">"
+                    <label for="checkbox3">Serialized ticket</label></div>
 
-                            client.println("<div><input type=\"checkbox\" id=\"checkbox4\" name=\"checkbox4\" value=\"checkbox4\" " + checkbox4_status + ">");
-                            client.println("<label for=\"checkbox3\">Optional Parameter (1)</label></div>");
+                <div><input type="checkbox" id=\"checkbox4" name="checkbox4" value="checkbox4" ")" + checkbox4_status + R"(">"
+                    <label for="checkbox3">Optional Parameter (1)</label></div>
 
-                            client.println("<input type=\"submit\" value=\"Submit\" class=\"btn btn-primary btn-lg btn-block\">");
+                <input type="submit" value="Submit" class="btn btn-primary btn-lg btn-block">
 
-                            client.println("</form>");
-                            client.println("</div>");
-                            client.println("<div class=\"middle-form\">");
-                            client.println("<form action=\"/update\" method=\"GET\">");
-                            client.println("<input type=\"submit\" value=\"Update Firmware\" class=\"btn btn-success btn-lg btn-block\">");
-                            client.println("</form>");
-                            client.println("</div>");
+            </form>
+        </div>
+        <div class="middle-form">
+            <form action="/update" method="GET">
+                <input type="submit" value="Update Firmware" class="btn btn-success btn-lg btn-block">
+            </form>
+        </div>
+                            )");
                         }
                         else if (is_page_update) {
                             //  Add breif instructions
