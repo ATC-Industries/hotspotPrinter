@@ -682,10 +682,10 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         if (is_page_settings) { //------------ First Screen HTML code ------------------------------------------
                                 //-------------Form to enter information-----------------------------------------
                             client.println(R"(
-        <div class="middle-form">
+            <div class="middle-form">
+                <h1 class="display-4">PTS</h1>
+                <p class="lead">Settings</p>
 
-            <h1>Pro Tournament Scales</h1>
-            <h2>Settings</h2>
             <form action="/" method="GET">
 
                 <div class="form-group">
@@ -735,6 +735,12 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             )");
                         }
                         else if (is_page_update) {
+                            client.println(R"(
+                            <div class="middle-form">
+                                <h1 class="display-4">PTS</h1>
+                                <p class="lead">Update Firmware</p>
+
+                        )");
                             //  Add breif instructions
                             client.println("<div class=\"alert alert-primary\" role=\"alert\">");
                             client.println("This will update the firmare on your device.<br>Insert an SD card with a version of the firmware loaded and click \"Check for Update\".");
@@ -771,13 +777,13 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             client.println("<form action=\"/\" method=\"GET\">");
                             client.println("<input type=\"submit\" value=\"Cancel\" class=\"btn btn-danger btn-lg btn-block\">");
                             client.println("</form>");
-                            client.println("</div>");
+                            client.println("</div></div>");
                         }else {
 
                             client.println(R"(
                             <div class="middle-form">
-                                <h1>Pro Tournament Scales</h1>
-                                <h2>HotSpot Printer</h2>
+                                <h1 class="display-4">PTS</h1>
+                                <p class="lead">HotSpot Printer</p>
                             </div>
                         )");
 
