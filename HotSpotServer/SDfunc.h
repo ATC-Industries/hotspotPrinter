@@ -364,7 +364,8 @@ void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
                 updateBin.close();
 
                 // whe finished remove the binary from sd card to indicate end of the process
-                fs.remove("/update.bin");
+                //fs.remove("/update.bin");
+                ESP.restart();
         }
         else {
                 Serial.println("Could not load update.bin from sd root");
@@ -377,7 +378,7 @@ void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
  */
 void updateFirmware(String& updateMessage, String updateFile) {
         uint8_t cardType;
-        Serial.println("Updating from SD Card!\nSearching for available updates");
+        Serial.println("Updating from SD Card!");
 
         // You can uncomment this and build again
         //Serial.println("Update successfull");
@@ -404,7 +405,7 @@ void updateFirmware(String& updateMessage, String updateFile) {
  */
 void checkForUpdateFirmware(String& updateMessage) {
         uint8_t cardType;
-        Serial.println("Updating from SD Card!\nSearching for available updates");
+        Serial.println("Searching for available updates");
 
         // You can uncomment this and build again
         //Serial.println("Update successfull");
