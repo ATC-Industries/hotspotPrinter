@@ -656,12 +656,12 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             line3.toCharArray(temp_str3,30);
                             line4.toCharArray(temp_str4,30);
                             //--------------- display line data on oled -------------------------------------------
-                            u8g2.clearBuffer();
-                            u8g2.drawStr(3,8,temp_str1); //send 4 text entry box values to oled display
-                            u8g2.drawStr(3,18,temp_str2);
-                            u8g2.drawStr(3,28,temp_str3);
-                            u8g2.drawStr(3,48,temp_str4);
-                            u8g2.sendBuffer();
+                            // u8g2.clearBuffer();
+                            // u8g2.drawStr(3,8,temp_str1); //send 4 text entry box values to oled display
+                            // u8g2.drawStr(3,18,temp_str2);
+                            // u8g2.drawStr(3,28,temp_str3);
+                            // u8g2.drawStr(3,48,temp_str4);
+                            // u8g2.sendBuffer();
                         }
                         else    //if header did not contain text "line1" then run code in else statment below
                         {
@@ -676,7 +676,6 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         //insert CSS
                         insertCSS(client);
                         client.println("</head>");
-
                         client.println("<body>");
 
 
@@ -690,7 +689,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
             <form action="/" method="GET">
 
                 <div class="form-group">
-                    <label for="Line1">Line 1</label>"
+                    <label for="Line1">Line 1</label>
                     <input type="text" class="form-control" name="Line1" id="Line1" value=")" + line1 + R"(">
                     <small id="line1Help" class="form-text text-muted">Enter the text you want to appear on the top line. ex. The Tournament Name.</small>
                 </div>
@@ -774,8 +773,13 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             client.println("</form>");
                             client.println("</div>");
                         }else {
-                            client.println("<h1>Pro Tournament Scales</h1>");
-                            client.println("<h2>HotSpot Printer</h2>");
+
+                            client.println(R"(
+                            <div class="middle-form">
+                                <h1>Pro Tournament Scales</h1>
+                                <h2>HotSpot Printer</h2>
+                            </div>
+                        )");
 
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/print\" method=\"GET\">");
@@ -790,9 +794,16 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             client.println("</div>");
                         }
                         // Version number in bottom right of all pages
-                        client.println("<div class=\"middle-form\">");
-                        client.println("<p class=\"text-right text-muted\">version: " + String(VERSION_NUMBER[0]) + "." + String(VERSION_NUMBER[1]) + "." + String(VERSION_NUMBER[2]) + "</p>");
-                        client.println("</div>");
+                        client.println(R"(
+                        <nav class="navbar bottom navbar-light bg-light">
+                            <div class="middle-form">
+                                <a class="navbar-brand text-right" href="#"><p class="text-right text-muted">version: )" + String(VERSION_NUMBER[0]) + R"(.)" + String(VERSION_NUMBER[1]) + R"(.)" + String(VERSION_NUMBER[2]) + R"(</p></a>
+                            </div>
+                        </nav>
+                        )");
+                        // client.println("<div class=\"middle-form\">");
+                        // client.println("<p class=\"text-right text-muted\">version: " + String(VERSION_NUMBER[0]) + "." + String(VERSION_NUMBER[1]) + "." + String(VERSION_NUMBER[2]) + "</p>");
+                        // client.println("</div>");
                         client.println("</body>");
                         client.println("</html>");
                         client.println();                         // The HTTP response ends with another blank line
