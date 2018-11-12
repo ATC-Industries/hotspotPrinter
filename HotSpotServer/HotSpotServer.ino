@@ -588,10 +588,16 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 is_page_print = false;
                                 is_page_update = true;
                                 }
-                            else if (headerT.indexOf("updateNow?") >= 0)
+                            else if (headerT.indexOf("checkForUpdate?") >= 0)
                                 {
-                                updateFirmware(updateMessage);
+                                checkForUpdateFirmware(updateMessage);
                                 }
+                            else if (headerT.indexOf("doUpdate") >= 0)
+                            {
+                                String strIndex =  header.substring(header.indexOf("doUpdate")+8,header.indexOf("?"));//parse out the varible strings for the the 4 lines
+                                int index = strIndex.toInt();
+                                updateFirmware(updateMessage, arrayOfUpdateFiles[index]);
+                            }
                             else
                                 {
                                 is_page_settings = false;
@@ -656,12 +662,12 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             line3.toCharArray(temp_str3,30);
                             line4.toCharArray(temp_str4,30);
                             //--------------- display line data on oled -------------------------------------------
-                            u8g2.clearBuffer();
-                            u8g2.drawStr(3,8,temp_str1); //send 4 text entry box values to oled display
-                            u8g2.drawStr(3,18,temp_str2);
-                            u8g2.drawStr(3,28,temp_str3);
-                            u8g2.drawStr(3,48,temp_str4);
-                            u8g2.sendBuffer();
+                            // u8g2.clearBuffer();
+                            // u8g2.drawStr(3,8,temp_str1); //send 4 text entry box values to oled display
+                            // u8g2.drawStr(3,18,temp_str2);
+                            // u8g2.drawStr(3,28,temp_str3);
+                            // u8g2.drawStr(3,48,temp_str4);
+                            // u8g2.sendBuffer();
                         }
                         else    //if header did not contain text "line1" then run code in else statment below
                         {
@@ -676,69 +682,71 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         //insert CSS
                         insertCSS(client);
                         client.println("</head>");
-
                         client.println("<body>");
 
 
                         if (is_page_settings) { //------------ First Screen HTML code ------------------------------------------
                                 //-------------Form to enter information-----------------------------------------
                             client.println(R"(
-                    <div class="middle-form">
+            <div class="middle-form">
+                <h1 class="display-4">PTS</h1>
+                <p class="lead">Settings</p>
 
-                        )");
-                            client.println("<h1>Pro Tournament Scales</h1>");
-                            client.println("<h2>Settings</h2>");         // Web Page Heading
-                            client.println("<form action=\"/\" method=\"GET\">");
-                            //first entry field
-                            client.println("    <div class=\"form-group\">");
-                            client.println("        <label for=\"Line1\">Line 1</label>");
-                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line1\" id=\"Line1\" value=\"" + line1 + "\">");
-                            //client.println("        <small id=\"line1Help\" class=\"form-text text-muted\">Enter the text you want to appear on the top line. ex. The Tournament Name.</small>");
-                            client.println("    </div>");
-                            //second entry field
-                            client.println("    <div class=\"form-group\">");
-                            client.println("        <label for=\"Line2\">Line 2</label>");
-                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line2\" id=\"Line2\" value=\"" + line2 + "\">");
-                            //client.println("        <small id=\"line2Help\" class=\"form-text text-muted\">Enter the text you want to appear on the second line. ex. The Tournament Location.</small>");
-                            client.println("    </div>");
-                            //third entry field
-                            client.println("    <div class=\"form-group\">");
-                            client.println("        <label for=\"Line3\">Line 3</label>");
-                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line3\" id=\"Line3\" value=\"" + line3 + "\">");
-                            //client.println("        <small id=\"line3Help\" class=\"form-text text-muted\">Enter the text you want to appear on the third line. ex. The Tournament Dates.</small>");
-                            client.println("    </div>");
-                            //fourth entry field
-                            client.println("    <div class=\"form-group\">");
-                            client.println("        <label for=\"Line4\">Line 4</label>");
-                            client.println("        <input type=\"text\" class=\"form-control\" name=\"Line4\" id=\"Line4\" value=\"" + line4 + "\">");
-                            //client.println("        <small id=\"line4Help\" class=\"form-text text-muted\">Enter the text you want to appear at bottom of ticket. ex. A sponsor message.</small>");
-                            client.println("    </div>");
+            <form action="/" method="GET">
+
+                <div class="form-group">
+                    <label for="Line1">Line 1</label>
+                    <input type="text" class="form-control" name="Line1" id="Line1" value=")" + line1 + R"(">
+                    <small id="line1Help" class="form-text text-muted">Enter the text you want to appear on the top line. ex. The Tournament Name.</small>
+                </div>
+                <div class="form-group">
+                    <label for="Line2">Line 2</label>
+                    <input type="text" class="form-control" name="Line2" id="Line2" value=")" + line2 + R"(">
+                    <small id="line2Help" class="form-text text-muted">Enter the text you want to appear on the second line. ex. The Tournament Location.</small>
+                </div>
+                <div class="form-group">
+                    <label for="Line3">Line 3</label>
+                    <input type="text" class="form-control" name="Line3" id="Line3" value=")" + line3 + R"(">
+                    <small id="line3Help" class="form-text text-muted">Enter the text you want to appear on the third line. ex. The Tournament Dates.</small>
+                </div>
+                <div class="form-group">
+                    <label for="Line4">Line 4</label>
+                    <input type="text" class="form-control" name="Line4" id="Line4" value=")" + line4 + R"(">
+                    <small id="line4Help" class="form-text text-muted">Enter the text you want to appear at bottom of ticket. ex. A sponsor message.</small>
+                </div>
 
 
-                            client.println("<div><input type=\"checkbox\" id=\"checkbox1\" name=\"checkbox1\" value=\"checkbox1\" " + checkbox1_status + ">");
-                            client.println("<label for=\"checkbox1\">Print 2 Copies</label></div>");
+                <div><input type="checkbox" id="checkbox1" name="checkbox1" value="checkbox1" ")" + checkbox1_status + R"(">
+                    <label for="checkbox1">Print 2 Copies</label></div>
 
 
-                            client.println("<div><input type=\"checkbox\" id=\"checkbox2\" name=\"checkbox2\" value=\"checkbox2\" " + checkbox2_status + ">");
-                            client.println("<label for=\"checkbox2\">Print signature line</label></div>");
+                <div><input type="checkbox" id="checkbox2" name="checkbox2" value="checkbox2" ")" + checkbox2_status + R"(">
+                    <label for="checkbox2">Print signature line</label></div>
 
-                            client.println("<div><input type=\"checkbox\" id=\"checkbox3\" name=\"checkbox3\" value=\"checkbox3\" " + checkbox3_status + ">");
-                            client.println("<label for=\"checkbox3\">Serialized ticket</label></div>");
+                <div><input type="checkbox" id="checkbox3" name="checkbox3" value=\"checkbox3" ")" + checkbox3_status + R"(">
+                    <label for="checkbox3">Serialized ticket</label></div>
 
-                            client.println("<div><input type=\"checkbox\" id=\"checkbox4\" name=\"checkbox4\" value=\"checkbox4\" " + checkbox4_status + ">");
-                            client.println("<label for=\"checkbox3\">Optional Parameter (1)</label></div>");
+                <div><input type="checkbox" id=\"checkbox4" name="checkbox4" value="checkbox4" ")" + checkbox4_status + R"(">
+                    <label for="checkbox3">Optional Parameter (1)</label></div>
 
-                            client.println("<input type=\"submit\" value=\"Submit\" class=\"btn btn-primary btn-lg btn-block\">");
+                <input type="submit" value="Submit" class="btn btn-primary btn-lg btn-block">
 
-                            client.println("</form>");
-                            client.println("</div>");
-                            client.println("<div class=\"middle-form\">");
-                            client.println("<form action=\"/update\" method=\"GET\">");
-                            client.println("<input type=\"submit\" value=\"Update Firmware\" class=\"btn btn-success btn-lg btn-block\">");
-                            client.println("</form>");
-                            client.println("</div>");
+            </form>
+        </div>
+        <div class="middle-form">
+            <form action="/update" method="GET">
+                <input type="submit" value="Update Firmware" class="btn btn-success btn-lg btn-block">
+            </form>
+        </div>
+                            )");
                         }
                         else if (is_page_update) {
+                            client.println(R"(
+                            <div class="middle-form">
+                                <h1 class="display-4">PTS</h1>
+                                <p class="lead">Update Firmware</p>
+
+                        )");
                             //  Add breif instructions
                             client.println("<div class=\"alert alert-primary\" role=\"alert\">");
                             client.println("This will update the firmare on your device.<br>Insert an SD card with a version of the firmware loaded and click \"Check for Update\".");
@@ -748,7 +756,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             // Update now button
                             if(updateMessage == ""){
                                 client.println("<div class=\"middle-form\">");
-                                client.println("<form action=\"/updateNow\" method=\"GET\">");
+                                client.println("<form action=\"/checkForUpdate\" method=\"GET\">");
                                 client.println("<input type=\"submit\" value=\"Check for Update\" class=\"btn btn-success btn-lg btn-block\">");
                                 client.println("</form>");
                                 client.println("</div>");
@@ -775,10 +783,15 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             client.println("<form action=\"/\" method=\"GET\">");
                             client.println("<input type=\"submit\" value=\"Cancel\" class=\"btn btn-danger btn-lg btn-block\">");
                             client.println("</form>");
-                            client.println("</div>");
+                            client.println("</div></div>");
                         }else {
-                            client.println("<h1>Pro Tournament Scales</h1>");
-                            client.println("<h2>HotSpot Printer</h2>");
+
+                            client.println(R"(
+                            <div class="middle-form">
+                                <h1 class="display-4">PTS</h1>
+                                <p class="lead">HotSpot Printer</p>
+                            </div>
+                        )");
 
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/print\" method=\"GET\">");
@@ -793,9 +806,16 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             client.println("</div>");
                         }
                         // Version number in bottom right of all pages
-                        client.println("<div class=\"middle-form\">");
-                        client.println("<p class=\"text-right text-muted\">version: " + String(VERSION_NUMBER[0]) + "." + String(VERSION_NUMBER[1]) + "." + String(VERSION_NUMBER[2]) + "</p>");
-                        client.println("</div>");
+                        client.println(R"(
+                        <nav class="navbar bottom navbar-light bg-light">
+                            <div class="middle-form">
+                                <a class="navbar-brand text-right" href="#"><p class="text-right text-muted">version: )" + String(VERSION_NUMBER[0]) + R"(.)" + String(VERSION_NUMBER[1]) + R"(.)" + String(VERSION_NUMBER[2]) + R"(</p></a>
+                            </div>
+                        </nav>
+                        )");
+                        // client.println("<div class=\"middle-form\">");
+                        // client.println("<p class=\"text-right text-muted\">version: " + String(VERSION_NUMBER[0]) + "." + String(VERSION_NUMBER[1]) + "." + String(VERSION_NUMBER[2]) + "</p>");
+                        // client.println("</div>");
                         client.println("</body>");
                         client.println("</html>");
                         client.println();                         // The HTTP response ends with another blank line
