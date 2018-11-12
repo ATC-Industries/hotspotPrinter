@@ -1903,4 +1903,13 @@ void convert_string(void)
 
 */
 
+// sample html code for tabs
+//      <ul class="nav nav-pills dark-tabs">
+//      <li role="presentation" class="active dark-tabs-li">lt;a href="#" class="dark-tabs-a">Create</a><</li>
+//      <li role="presentation" class="dark-tabs-li"><a href="#" class="dark-tabs-a">Design</a>></li>
+//      <li role="presentation" class="dark-tabs-li"><a href="#" class="dark-tabs-a">settings</a></li>
+//      <li role="presentation" class="dark-tabs-li"><a href="#" class="dark-tabs-a">share</a></li>
+//      <li role="presentation" class="dark-tabs-li"><a href="#" class="dark-tabs-a">results</a></li>
+//    </ul>
+
 //add code to read radio serial number
