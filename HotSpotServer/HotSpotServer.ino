@@ -88,7 +88,7 @@ pin assignment                                      5 volt----------------------
 //U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);     //identify pins used for oled display
 
 //----------------- an integer array to hold the version number ----------------------------------
-const int VERSION_NUMBER[3] = {0,0,1};   // [MAJOR, MINOR, PATCH]
+const int VERSION_NUMBER[3] = {0,0,4};   // [MAJOR, MINOR, PATCH]
 
 //----------------- Replace with network credentials ----------------------------------
 const char* ssid     = "ProTournament";
@@ -521,6 +521,10 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 }
                             else if (headerT.indexOf("checkForUpdate?") >= 0)
                                 {
+                                // Clear update file array
+                                // for(int i = 0; i < 20; i++) {
+                                //     arrayOfUpdateFiles[i] = "";
+                                // }
                                 checkForUpdateFirmware(updateMessage);
                                 }
                             else if (headerT.indexOf("doUpdate") >= 0)
@@ -592,7 +596,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 //                            line2.toCharArray(temp_str2,30);
 //                            line3.toCharArray(temp_str3,30);
 //                            line4.toCharArray(temp_str4,30);
-                           
+
                         }
                         else    //if header did not contain text "line1" then run code in else statment below
                         {
@@ -695,7 +699,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 client.println("<p class=\"mb-0\">Please make sure you have loaded the update software in the root directory of the SD card.</p>");
                                 client.println("</div>");
                                 client.println("<div class=\"middle-form\">");
-                                client.println("<form action=\"/updateNow\" method=\"GET\">");
+                                client.println("<form action=\"/checkForUpdate\" method=\"GET\">");
                                 client.println("<input type=\"submit\" value=\"Retry\" class=\"btn btn-success btn-lg btn-block\">");
                                 client.println("</form>");
                                 client.println("</div>");
