@@ -221,7 +221,7 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
   }
 }
 
-LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 for a 20 chars and 4 line display
+LiquidCrystal_I2C lcd(0x27,20,4);                      // set the LCD address to 0x27 for a 20 chars and 4 line display
 
 
 //--------------------------------------------------------------------------
@@ -296,7 +296,7 @@ void setup()
 //        Serial2.write(0x1D);                 //large text size
 //        Serial2.write(0x21);
 //        Serial2.write(0x44);
-        
+
         Serial2.println("987654321");
 //        Serial2.write(0x1D);                 //normal text size
 //        Serial2.write(0x21);
@@ -403,8 +403,8 @@ void loop(){
 
    if (totalInterruptCounter >=50)
             { totalInterruptCounter = 0;                //reset counter
-             
-             
+
+
              if (++ no_signal_timer >= 2)               //if no signal this timer times out
                  { statt = 0;                            //set display mode to 0 so "No Signal" will be displayed
                    lcd.clear();
@@ -430,13 +430,13 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
        {lcd.print(touch_value_2);}
      else
        {lcd.print("   ");}
-       
+
      touch_value_3 = touchRead(32);             // read value on pin IO0
      lcd.setCursor(12,3);
      if (touch_value_3 < trip_point)
        {lcd.print(touch_value_3);}
      else
-        {lcd.print("   ");}  
+        {lcd.print("   ");}
       touch_value_4 = touchRead(33);             // read value on pin IO0
      lcd.setCursor(17,3);
      if (touch_value_4 < trip_point)
@@ -449,12 +449,12 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
        lcd.setCursor(17,2);
        lcd.print(touch_value_5);
        }
-     
+
      }
 
 
 //      touch_value_1 = touchRead(4);            // read value on pin IO0
-     
+
 //      touch_value_2 = touchRead(TOUCH_PIN2);
 //      touch_value_3 = touchRead(TOUCH_PIN3);
 //      touch_value_4 = touchRead(TOUCH_PIN4);
@@ -665,7 +665,10 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 
                         if (is_page_settings) { //------------ First Screen HTML code ------------------------------------------
                                 //-------------Form to enter information-----------------------------------------
-                            client.println(R"(<div class="middle-form">)");
+                            client.println(R"(
+                    <div class="middle-form">
+
+                        )");
                             client.println("<h1>Pro Tournament Scales</h1>");
                             client.println("<h2>Settings</h2>");         // Web Page Heading
                             client.println("<form action=\"/\" method=\"GET\">");
