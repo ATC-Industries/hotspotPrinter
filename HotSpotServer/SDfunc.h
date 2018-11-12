@@ -411,19 +411,26 @@ void rebootEspWithReason(String reason){
 
 
 void printTableOfUpdateFiles(WiFiClient& client, String arrayOfUpdateFiles[20]){
+    // create a second array to hold the version numbers
+    String arrayOfUpdateFilesVersionNums[20];
+    for(int i = 0; i < 20; i++){
+        arrayOfUpdateFilesVersionNums[i] = arrayOfUpdateFiles[i].substring(arrayOfUpdateFiles[i].indexOf("/update")+7,arrayOfUpdateFiles[i].indexOf(".bin"));
+        arrayOfUpdateFilesVersionNums[i].replace("_", ".");
+    }
+
     client.println("<table class=\"table\">");
     client.println(" <thead>");
     client.println("  <tr>");
     client.println("   <th scope=\"col\">Version</th>");
     client.println("   <th scope=\"col\">Notes</th>");
-    client.println("   <th scope=\"col\">Update</th>");
+    client.println("   <th scope=\"col\">Version</th>");
     client.println("  </tr>");
     client.println(" </thead>");
     client.println("<tbody>");
     for(int i = 0; (i < 20 && arrayOfUpdateFiles[i] != ""); i++){
         client.println("<tr>");
           client.println("<td>" + arrayOfUpdateFiles[i] + "</th>");
-          client.println("<td></td>");
+          client.println("<td>" + arrayOfUpdateFilesVersionNums[i] + "</td>");
           client.println("<td><form action=\"/update" + String(i) + "\" method=\"GET\"><input type=\"submit\" value=\"Update\" class=\"btn btn-success\"></form></td>");
         client.println("</tr>");
     }
