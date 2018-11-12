@@ -588,10 +588,16 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 is_page_print = false;
                                 is_page_update = true;
                                 }
-                            else if (headerT.indexOf("updateNow?") >= 0)
+                            else if (headerT.indexOf("checkForUpdate?") >= 0)
                                 {
-                                updateFirmware(updateMessage);
+                                checkForUpdateFirmware(updateMessage);
                                 }
+                            else if (headerT.indexOf("doUpdate") >= 0)
+                            {
+                                String strIndex =  header.substring(header.indexOf("doUpdate")+8,header.indexOf("?"));//parse out the varible strings for the the 4 lines
+                                int index = strIndex.toInt();
+                                updateFirmware(updateMessage, arrayOfUpdateFiles[index]);
+                            }
                             else
                                 {
                                 is_page_settings = false;
@@ -750,7 +756,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             // Update now button
                             if(updateMessage == ""){
                                 client.println("<div class=\"middle-form\">");
-                                client.println("<form action=\"/updateNow\" method=\"GET\">");
+                                client.println("<form action=\"/checkForUpdate\" method=\"GET\">");
                                 client.println("<input type=\"submit\" value=\"Check for Update\" class=\"btn btn-success btn-lg btn-block\">");
                                 client.println("</form>");
                                 client.println("</div>");

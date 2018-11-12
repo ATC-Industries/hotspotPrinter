@@ -375,7 +375,7 @@ void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
 /**
  * Run the Update.  you can attatch this to a button or something to initiate and update.
  */
-void updateFirmware(String& updateMessage) {
+void updateFirmware(String& updateMessage, String updateFile) {
         uint8_t cardType;
         Serial.println("Updating from SD Card!\nSearching for available updates");
 
@@ -395,9 +395,37 @@ void updateFirmware(String& updateMessage) {
                 updateMessage = "No SD card attached";
         }else{
                 searchForUpdate(SD, "/", arrayOfUpdateFiles);
-                updateFromFS(SD, "/update.bin", updateMessage);
+                updateFromFS(SD, updateFile, updateMessage);
         }
 }
+
+/**
+ * Open card and check for update files.
+ */
+void checkForUpdateFirmware(String& updateMessage) {
+        uint8_t cardType;
+        Serial.println("Updating from SD Card!\nSearching for available updates");
+
+        // You can uncomment this and build again
+        //Serial.println("Update successfull");
+
+        //first init and check SD card
+        if (!SD.begin()) {
+                //rebootEspWithReason("Card Mount Failed");
+                updateMessage = "Card Mount Failed";
+        }
+
+        cardType = SD.cardType();
+
+        if (cardType == CARD_NONE) {
+                //rebootEspWithReason("No SD card attached");
+                updateMessage = "No SD card attached";
+        }else{
+                searchForUpdate(SD, "/", arrayOfUpdateFiles);
+        }
+}
+
+
 
 /**
  * Reboot the ESP processer and give a reason
@@ -421,9 +449,9 @@ void printTableOfUpdateFiles(WiFiClient& client, String arrayOfUpdateFiles[20]){
     client.println("<table class=\"table\">");
     client.println(" <thead>");
     client.println("  <tr>");
+    client.println("   <th scope=\"col\">Filename</th>");
     client.println("   <th scope=\"col\">Version</th>");
-    client.println("   <th scope=\"col\">Notes</th>");
-    client.println("   <th scope=\"col\">Version</th>");
+    client.println("   <th scope=\"col\">Update</th>");
     client.println("  </tr>");
     client.println(" </thead>");
     client.println("<tbody>");
@@ -431,7 +459,7 @@ void printTableOfUpdateFiles(WiFiClient& client, String arrayOfUpdateFiles[20]){
         client.println("<tr>");
           client.println("<td>" + arrayOfUpdateFiles[i] + "</th>");
           client.println("<td>" + arrayOfUpdateFilesVersionNums[i] + "</td>");
-          client.println("<td><form action=\"/update" + String(i) + "\" method=\"GET\"><input type=\"submit\" value=\"Update\" class=\"btn btn-success\"></form></td>");
+          client.println("<td><form action=\"/doUpdate" + String(i) + "\" method=\"GET\"><input type=\"submit\" value=\"Update\" class=\"btn btn-success\"></form></td>");
         client.println("</tr>");
     }
     client.println("</tbody>");
