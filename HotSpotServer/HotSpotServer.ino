@@ -691,37 +691,37 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 
                 <div class="form-group">
                     <label for="Line1">Line 1</label>"
-                    <input type="text" class="form-control" name="Line1" id="Line1" value=")" + line1 + R"(">"
+                    <input type="text" class="form-control" name="Line1" id="Line1" value=")" + line1 + R"(">
                     <small id="line1Help" class="form-text text-muted">Enter the text you want to appear on the top line. ex. The Tournament Name.</small>
                 </div>
                 <div class="form-group">
                     <label for="Line2">Line 2</label>
-                    <input type="text" class="form-control" name="Line2" id="Line2" value=")" + line2 + R"(">"
+                    <input type="text" class="form-control" name="Line2" id="Line2" value=")" + line2 + R"(">
                     <small id="line2Help" class="form-text text-muted">Enter the text you want to appear on the second line. ex. The Tournament Location.</small>
                 </div>
                 <div class="form-group">
                     <label for="Line3">Line 3</label>
-                    <input type="text" class="form-control" name="Line3" id="Line3" value=")" + line3 + R"(">"
-                    <small id="line3Help" class="form-text text-muted">Enter the text you want to appear on the third line. ex. The Tournament Dates.</small>"
+                    <input type="text" class="form-control" name="Line3" id="Line3" value=")" + line3 + R"(">
+                    <small id="line3Help" class="form-text text-muted">Enter the text you want to appear on the third line. ex. The Tournament Dates.</small>
                 </div>
                 <div class="form-group">
                     <label for="Line4">Line 4</label>
-                    <input type="text" class="form-control" name="Line4" id="Line4" value=")" + line4 + R"(">"
+                    <input type="text" class="form-control" name="Line4" id="Line4" value=")" + line4 + R"(">
                     <small id="line4Help" class="form-text text-muted">Enter the text you want to appear at bottom of ticket. ex. A sponsor message.</small>
                 </div>
 
 
-                <div><input type="checkbox" id="checkbox1" name="checkbox1" value="checkbox1" ")" + checkbox1_status + R"(">"
+                <div><input type="checkbox" id="checkbox1" name="checkbox1" value="checkbox1" ")" + checkbox1_status + R"(">
                     <label for="checkbox1">Print 2 Copies</label></div>
 
 
-                <div><input type="checkbox" id="checkbox2" name="checkbox2" value="checkbox2" ")" + checkbox2_status + R"(">"
+                <div><input type="checkbox" id="checkbox2" name="checkbox2" value="checkbox2" ")" + checkbox2_status + R"(">
                     <label for="checkbox2">Print signature line</label></div>
 
-                <div><input type="checkbox" id="checkbox3" name="checkbox3" value=\"checkbox3" ")" + checkbox3_status + R"(">"
+                <div><input type="checkbox" id="checkbox3" name="checkbox3" value=\"checkbox3" ")" + checkbox3_status + R"(">
                     <label for="checkbox3">Serialized ticket</label></div>
 
-                <div><input type="checkbox" id=\"checkbox4" name="checkbox4" value="checkbox4" ")" + checkbox4_status + R"(">"
+                <div><input type="checkbox" id=\"checkbox4" name="checkbox4" value="checkbox4" ")" + checkbox4_status + R"(">
                     <label for="checkbox3">Optional Parameter (1)</label></div>
 
                 <input type="submit" value="Submit" class="btn btn-primary btn-lg btn-block">
