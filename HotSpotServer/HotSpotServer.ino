@@ -74,7 +74,7 @@ pin assignment                                      5 volt----------------------
 #include "css.h"      // refrence to css file to bring in CSS styles
 #include "SDfunc.h"   // refrence the SD card functions
 
-#define EEPROM_SIZE 2048                            //rom reserved for eeprom storage
+#define EEPROM_SIZE 1024                            //rom reserved for eeprom storage
 
 #define RXD2 16                                     //port 2 serial pins for external printer
 #define TXD2 17
@@ -190,7 +190,7 @@ void insertCSS(WiFiClient& client);                                     //insert
 void performUpdate(Stream &updateSource, size_t updateSize);  // perform the actual update from a given stream
 void updateFromFS(fs::FS &fs, String updateFileName);  //  check given FS for valid update.bin and perform update if available
 void updateFirmware();                                 //  Call this when you want the program to look for an update file on the SD Card
-void rebootEspWithReason(String reason);               //  reboot and serial log the reason for faulure
+void rebootEspWithReason(String reason);               //  reboot and serial log the reason for failure
 
 //-------------Interuput routines ----------------------------------------
 void IRAM_ATTR onTimer()                            // (100 ms) this is the actual interrupt(place before void setup() code)
@@ -235,7 +235,7 @@ void setup()
 
 
      //---- declare input buttons with pullup --------------------------
-     pinMode(button_PRINT,INPUT_PULLUP);                          //print button
+     pinMode(button_PRINT,INPUT_PULLUP);                       //print button
      pinMode(button_F1,INPUT_PULLUP);                          //F1
      pinMode(button_F2,INPUT_PULLUP);                          //F2
      pinMode(button_F3,INPUT_PULLUP);                          //F3
@@ -275,7 +275,7 @@ void setup()
         lcd.setCursor(0,1);
         lcd.print("987654321");
         while(!digitalRead(button_PRINT))                                              //loop until button is released
-             {delay(50);}
+             {delay(30);}
         WiFi.softAP(ssid,"987654321");
 
         //------------ print a ticket with the temp password ----------------------
@@ -295,7 +295,7 @@ void setup()
 
   else                                                                     //if print button is not pressed
       {
-        WiFi.softAP(ssid,password);                                        //ssid declared in setup, pw recalled from eeprom or use default
+      WiFi.softAP(ssid,password);                                        //ssid declared in setup, pw recalled from eeprom or use default
       Serial.println("password = 123456789");
       }
 
@@ -305,9 +305,9 @@ void setup()
   Serial.print("AP IP address: ");                                      //print ip address to SM
   Serial.println(IP);
   server.begin();                                                       //start server
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("SSID = ProTournament");
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("SSID= ProTournament");
 
   char ip_string[30];                                                   //declare a character array
   sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
@@ -353,19 +353,14 @@ void setup()
         Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
       }
 
-}//void setup()
-
-
-
-
-
+}//void setup() ending terminator
 
 
 
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
 
-   if (interruptCounter > 0)                          //every one second 1 sec int is generated
+   if (interruptCounter > 0)                          //every one second 100 msec int is generated
       {
       portENTER_CRITICAL(&timerMux);
       interruptCounter--;                             //reset counter to zero
@@ -376,9 +371,7 @@ void loop(){
 
    if (totalInterruptCounter >=50)
             { totalInterruptCounter = 0;                //reset counter
-
-
-             if (++ no_signal_timer >= 2)               //if no signal this timer times out
+              if (++ no_signal_timer >= 2)               //if no signal this timer times out
                  { statt = 0;                            //set display mode to 0 so "No Signal" will be displayed
                    lcd.clear();
                    lcd.setCursor(5,1);
@@ -388,14 +381,20 @@ void loop(){
    //--------------- read print button routine -------------------------------------------------------
 
 if (read_keyboard_timer >= 2)                          //read keypad every 200 ms
-     {read_keyboard_timer = 0;
-     //lcd.clear();
-     lcd.setCursor(0,3);
-     if (!digitalRead(button_PRINT))
-       {lcd.print("PRT");}                         //PRINT button
-      else
-      {lcd.print("   ");}                          //clear text if not pressed
-
+     {read_keyboard_timer = 0;                         //reset timer
+     
+     if (!digitalRead(button_PRINT))                //if pushbutton is pressed (low condition), print the ticket
+      { print_ticket();                              //print the weight ticket
+        delay(300);
+        if (checkbox1_status == "checked")           //if checkbox "print 2 tickets" is checked
+            {print_ticket();}                        //print second ticket if print 2 copies is selected
+        while (!digitalRead(button_PRINT))           //loop while button is held down
+            {delay(80);}
+        
+       if (checkbox3_status == "checked")            //if check box 'print serial number' is checked
+          {serial_number++;                             //increment serial number
+            EEPROM.writeUInt(serial_number_addr,serial_number);} //save serial number to eeprom
+      }
      lcd.setCursor(0,3);
      if (!digitalRead(button_F1))                   //F1 button
        {lcd.print("F1");}
@@ -422,20 +421,6 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
        {lcd.print("   ");}
 
 
-      }
-
-
-
-      if (touch_value_1 <=50)
-//      if (!digitalRead(2))                           //if pushbutton is pressed (low condition), print the ticket
-      { print_ticket();                              //print the weight ticket
-        delay(300);
-        if (checkbox1_status == "checked")           //if checkbox "print 2 tickets" is checked
-            {print_ticket();}                        //print second ticket if print 2 copies is selected
-        while (!digitalRead(4))                      //loop while button is held down
-            {delay(300);}
-        serial_number++;                             //increment serial number
-        EEPROM.writeUInt(serial_number_addr,serial_number); //save to eeprom
       }
 
 
