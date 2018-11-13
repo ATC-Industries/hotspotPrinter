@@ -421,7 +421,6 @@ void checkForUpdateFirmware(String& updateMessage) {
         if (cardType == CARD_NONE) {
                 //rebootEspWithReason("No SD card attached");
                 updateMessage = "No SD card attached";
-                isSDCardPresent = false;
         }else{
 
                 searchForUpdate(SD, "/", arrayOfUpdateFiles);
