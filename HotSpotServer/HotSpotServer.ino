@@ -580,17 +580,18 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 // do some stuff
                         }
                         //--------------- Display the HTML web page---------------------------
-                        client.println("<!DOCTYPE html><html>");
-                        client.println("<head>");
-                        client.println("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-                        client.println("    <link rel=\"icon\" href=\"data:,\">");
-                        client.println("    <style>.middle-form{max-width: 500px; margin:auto;padding:10px;}");
-                        //insert CSS
-                        insertCSS(client);
-                        client.println("</head>");
+                        // HTML head
+                        client.println(R"(
+                            <!DOCTYPE html><html>");
+                            <head>
+                                <meta name="viewport" content="width=device-width, initial-scale=1">
+                                <link rel="icon" href="data:,">
+                                <style>.middle-form{max-width: 500px; margin:auto;padding:10px;}
+                                )" + insertCSS(client) + R"(
+                            </head>)";
                         client.println("<body>");
 
-                        // svg logo
+                        // svg PTS logo
                         client.println(R"(
                             <div class="middle-form" style="margin-bottom: 10px;">
                             <div class="container">
@@ -722,8 +723,10 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             client.println("<input type=\"submit\" value=\"Cancel\" class=\"btn btn-danger btn-lg btn-block\">");
                             client.println("</form>");
                             client.println("</div></div>");
-                        }else {
-
+                        }
+                        //---------------------  Home screen
+                        else
+                        {
                             client.println(R"(
                                 <div class="col">
                                 <span class="lead align-middle" style="font-size:1.5em;">HotSpot Printer</span>
@@ -734,6 +737,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/print\" method=\"GET\">");
+                            // Print Button
                             client.println(R"(
                                 <button type="submit" value="Print" id="print" style="height:250px;" class="btn btn-danger btn-lg btn-block">
 <div style="margin:auto 35%;color:white;fill:white;">
@@ -744,6 +748,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             client.println("</form>");
                             client.println("</div>");
 
+                            // Settings Button
                             client.println("<div class=\"middle-form\" style=\"margin-top:25px;\">");
                             client.println("<form action=\"/settings\" method=\"GET\">");
                             client.println("<input type=\"submit\" value=\"Settings\" class=\"btn btn-warning btn-lg btn-block\">");
