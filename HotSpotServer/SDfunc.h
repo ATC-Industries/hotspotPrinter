@@ -431,7 +431,7 @@ void checkForUpdateFirmware(String& updateMessage) {
 /**
  * Check if SD card is present
  */
-bool checkForUpdateFirmware() {
+bool isSDCard() {
         uint8_t cardType;
         Serial.println("Checking if SD card is installed");
 

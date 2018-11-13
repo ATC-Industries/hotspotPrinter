@@ -355,7 +355,7 @@ void setup()
       }
 
 // Check if SD card is present
-isSDCardPresent = checkForUpdateFirmware();
+isSDCardPresent = isSDCard();
 }//void setup() ending terminator
 
 
