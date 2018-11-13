@@ -139,6 +139,7 @@ String checkbox2_status = "";
 String checkbox3_status = "";
 String checkbox4_status = "";
 String checkbox5_status = "";
+bool isSDCardPresent = false;
 volatile int interruptCounter;                             //varible that tracks number of interupts
 int totalInterruptCounter;                                 //counter to track total number of interrupts
 int no_signal_timer;                                       //timeout counter used to display No Signal on display
@@ -353,6 +354,8 @@ void setup()
         Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
       }
 
+// Check if SD card is present
+isSDCardPresent = checkForUpdateFirmware();
 }//void setup() ending terminator
 
 
@@ -382,7 +385,7 @@ void loop(){
 
 if (read_keyboard_timer >= 2)                          //read keypad every 200 ms
      {read_keyboard_timer = 0;                         //reset timer
-     
+
      if (!digitalRead(button_PRINT))                //if pushbutton is pressed (low condition), print the ticket
       { print_ticket();                              //print the weight ticket
         delay(300);
@@ -390,7 +393,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
             {print_ticket();}                        //print second ticket if print 2 copies is selected
         while (!digitalRead(button_PRINT))           //loop while button is held down
             {delay(80);}
-        
+
        if (checkbox3_status == "checked")            //if check box 'print serial number' is checked
           {serial_number++;                             //increment serial number
             EEPROM.writeUInt(serial_number_addr,serial_number);} //save serial number to eeprom
@@ -670,12 +673,17 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 
             </form>
         </div>
-        <div class="middle-form">
-            <form action="/update" method="GET">
-                <input type="submit" value="Update Firmware" class="btn btn-success btn-lg btn-block">
-            </form>
-        </div>
-                            )");
+        )");
+                            if(isSDCardPresent)
+                            {
+                                client.println(R"(
+                                    <div class="middle-form">
+                                        <form action="/update" method="GET">
+                                            <input type="submit" value="Update Firmware" class="btn btn-success btn-lg btn-block">
+                                        </form>
+                                    </div>
+                                )");
+                            }
                         }
                         else if (is_page_update) {
                             client.println(R"(
