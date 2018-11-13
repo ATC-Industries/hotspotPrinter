@@ -421,8 +421,39 @@ void checkForUpdateFirmware(String& updateMessage) {
         if (cardType == CARD_NONE) {
                 //rebootEspWithReason("No SD card attached");
                 updateMessage = "No SD card attached";
+                isSDCardPresent = false;
         }else{
+
                 searchForUpdate(SD, "/", arrayOfUpdateFiles);
+        }
+}
+
+/**
+ * Check if SD card is present
+ */
+bool checkForUpdateFirmware() {
+        uint8_t cardType;
+        Serial.println("Checking if SD card is installed");
+
+        // You can uncomment this and build again
+        //Serial.println("Update successfull");
+
+        //first init and check SD card
+        if (!SD.begin()) {
+                //rebootEspWithReason("Card Mount Failed");
+                Serial.println("Card Mount Failed");
+                return false;
+        }
+
+        cardType = SD.cardType();
+
+        if (cardType == CARD_NONE) {
+                //rebootEspWithReason("No SD card attached");
+                Serial.println("No SD card attached");
+                return false;
+        }else{
+            Serial.println("SD Card found");
+            return true;
         }
 }
 
