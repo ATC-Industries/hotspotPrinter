@@ -752,6 +752,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         }
                         // Version number in bottom right of all pages
                         client.println(R"(
+                            </div>
                         <nav class="navbar bottom navbar-light bg-light">
                             <div class="middle-form">
                                 <a class="navbar-brand text-right" href="#"><p class="text-right text-muted">version: )" + String(VERSION_NUMBER[0]) + R"(.)" + String(VERSION_NUMBER[1]) + R"(.)" + String(VERSION_NUMBER[2]) + R"(</p></a>
