@@ -477,7 +477,6 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         client.println("HTTP/1.1 200 OK");
                         client.println("Content-type:text/html");
                         client.println("Connection: close");
-                        //client.println("Refresh: 5");                                        //refresh browser screen every 5 seconds
                         client.println();
 
                         //-----read the returned information from form when submit button is pressed and save to memory--------
@@ -508,10 +507,6 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 }
                             else if (headerT.indexOf("checkForUpdate?") >= 0)
                                 {
-                                // Clear update file array
-                                // for(int i = 0; i < 20; i++) {
-                                //     arrayOfUpdateFiles[i] = "";
-                                // }
                                 checkForUpdateFirmware(updateMessage);
                                 }
                             else if (headerT.indexOf("doUpdate") >= 0)
@@ -578,11 +573,6 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             Serial.println("Checkbox2: " + checkbox2_status);
                             Serial.println("Checkbox3: " + checkbox3_status);
                             Serial.println("Checkbox4: " + checkbox4_status);
-
-//                            line1.toCharArray(temp_str1,30); //must convert string to a character array for oled drawStr() to work
-//                            line2.toCharArray(temp_str2,30);
-//                            line3.toCharArray(temp_str3,30);
-//                            line4.toCharArray(temp_str4,30);
 
                         }
                         else    //if header did not contain text "line1" then run code in else statment below
@@ -768,9 +758,6 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             </div>
                         </nav>
                         )");
-                        // client.println("<div class=\"middle-form\">");
-                        // client.println("<p class=\"text-right text-muted\">version: " + String(VERSION_NUMBER[0]) + "." + String(VERSION_NUMBER[1]) + "." + String(VERSION_NUMBER[2]) + "</p>");
-                        // client.println("</div>");
                         client.println("</body>");
                         client.println("</html>");
                         client.println();                         // The HTTP response ends with another blank line
