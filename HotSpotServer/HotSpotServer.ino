@@ -674,6 +674,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
             </form>
         </div>
         )");
+                            // if the startup flag that determined if an SD card is present then display the update button
                             if(isSDCardPresent)
                             {
                                 client.println(R"(
@@ -685,6 +686,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 )");
                             }
                         }
+                        //   Update page HTML
                         else if (is_page_update) {
                             client.println(R"(
                                 <div class="col">
