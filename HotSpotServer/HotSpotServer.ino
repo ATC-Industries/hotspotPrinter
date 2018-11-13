@@ -73,6 +73,7 @@ pin assignment                                      5 volt----------------------
 
 #include "css.h"      // refrence to css file to bring in CSS styles
 #include "SDfunc.h"   // refrence the SD card functions
+#include "html.h"     // refrence to HTML generation functions
 
 #define EEPROM_SIZE 1024                            //rom reserved for eeprom storage
 
@@ -185,7 +186,7 @@ void print_ticket(void);                              //function to print the we
 void set_text_size(unsigned int size);                //oled set text size routine
 void set_text_reverse(bool on_off);                   //oled set reverse text on/off
 void processRadioString();                            //routine to process radio rx string
-void insertCSS(WiFiClient& client);                                     //insert the CSS style from css.ino
+//void insertCSS(WiFiClient& client);                                     //insert the CSS style from css.ino
 
 /****** SD card update funtion prototypes ***********/
 void performUpdate(Stream &updateSource, size_t updateSize);  // perform the actual update from a given stream
@@ -582,13 +583,15 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         //--------------- Display the HTML web page---------------------------
                         // HTML head
                         client.println(R"(
-                            <!DOCTYPE html><html>");
+                            <!DOCTYPE html>
+                            <html>
                             <head>
                                 <meta name="viewport" content="width=device-width, initial-scale=1">
                                 <link rel="icon" href="data:,">
                                 <style>.middle-form{max-width: 500px; margin:auto;padding:10px;}
-                                )" + insertCSS(client) + R"(
-                            </head>)";
+                            )");
+                            insertCSS(client);
+                        client.println("</head>");
                         client.println("<body>");
 
                         // svg PTS logo
@@ -613,58 +616,24 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 
                         if (is_page_settings) { //------------ First Screen HTML code ------------------------------------------
                                 //-------------Form to enter information-----------------------------------------
-                                client.println(R"(
-                                    <div class="col">
-                                    <span class="lead align-middle" style="font-size:1.5em;">Settings</span>
-                                </div>
-                                </div>
-                                </div>
-                            )");
+                            pageTitle(client, "Settings");
+                            //startForm(client, "[action]")
+                            startForm(client, "/");
+                            //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
+                            inputBox(client, "Line1", line1, "Top Line", true, "Example: The Tournament Name");
+                            inputBox(client, "Line2", line2, "Second Line", true, "Example: The Tournament Location");
+                            inputBox(client, "Line3", line3, "Third Line", true, "Example: The Tournament Dates");
+                            inputBox(client, "Line4", line4, "Bottom Line", true, "Example: A sponsor message");
 
-                            client.println(R"(
+                            checkBox(client, "checkbox1", checkbox1_status, "Print 2 Copies");
+                            checkBox(client, "checkbox2", checkbox2_status, "Print signature line");
+                            checkBox(client, "checkbox3", checkbox3_status, "Serialized ticket");
+                            checkBox(client, "checkbox4", checkbox4_status, "Optional Parameter");
 
-            <form action="/" method="GET">
+                            client.println(R"(<input type="submit" value="Submit" class="btn btn-primary btn-lg btn-block">)");
+                            endForm(client);
+                            endDiv(client);
 
-                <div class="form-group">
-                    <label for="Line1">Top Line</label>
-                    <input type="text" class="form-control" name="Line1" id="Line1" value=")" + line1 + R"(">
-                    <small id="line1Help" class="form-text text-muted">Example: The Tournament Name</small>
-                </div>
-                <div class="form-group">
-                    <label for="Line2">Second Line</label>
-                    <input type="text" class="form-control" name="Line2" id="Line2" value=")" + line2 + R"(">
-                    <small id="line2Help" class="form-text text-muted">Example: The Tournament Location</small>
-                </div>
-                <div class="form-group">
-                    <label for="Line3">Third Line</label>
-                    <input type="text" class="form-control" name="Line3" id="Line3" value=")" + line3 + R"(">
-                    <small id="line3Help" class="form-text text-muted">Example: The Tournament Dates</small>
-                </div>
-                <div class="form-group">
-                    <label for="Line4">Bottom Line</label>
-                    <input type="text" class="form-control" name="Line4" id="Line4" value=")" + line4 + R"(">
-                    <small id="line4Help" class="form-text text-muted">Example: A sponsor message</small>
-                </div>
-
-
-                <div><input type="checkbox" id="checkbox1" name="checkbox1" value="checkbox1" ")" + checkbox1_status + R"(">
-                    <label for="checkbox1">Print 2 Copies</label></div>
-
-
-                <div><input type="checkbox" id="checkbox2" name="checkbox2" value="checkbox2" ")" + checkbox2_status + R"(">
-                    <label for="checkbox2">Print signature line</label></div>
-
-                <div><input type="checkbox" id="checkbox3" name="checkbox3" value=\"checkbox3" ")" + checkbox3_status + R"(">
-                    <label for="checkbox3">Serialized ticket</label></div>
-
-                <div><input type="checkbox" id=\"checkbox4" name="checkbox4" value="checkbox4" ")" + checkbox4_status + R"(">
-                    <label for="checkbox3">Optional Parameter (1)</label></div>
-
-                <input type="submit" value="Submit" class="btn btn-primary btn-lg btn-block">
-
-            </form>
-        </div>
-        )");
                             // if the startup flag that determined if an SD card is present then display the update button
                             if(isSDCardPresent)
                             {
@@ -679,13 +648,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         }
                         //   Update page HTML
                         else if (is_page_update) {
-                            client.println(R"(
-                                <div class="col">
-                                <span class="lead align-middle" style="font-size:1.5em;">Update Firmware</span>
-                            </div>
-                            </div>
-                            </div>
-                        )");
+                            pageTitle(client, "Update Firmware");
                             //  Add breif instructions
                             client.println("<div class=\"alert alert-primary\" role=\"alert\">");
                             client.println("This will update the firmare on your device.<br>Insert an SD card with a version of the firmware loaded and click \"Check for Update\".");
@@ -727,13 +690,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         //---------------------  Home screen
                         else
                         {
-                            client.println(R"(
-                                <div class="col">
-                                <span class="lead align-middle" style="font-size:1.5em;">HotSpot Printer</span>
-                            </div>
-                            </div>
-                            </div>
-                        )");
+                        pageTitle(client, "HotSpot Printer");
 
                             client.println("<div class=\"middle-form\">");
                             client.println("<form action=\"/print\" method=\"GET\">");
