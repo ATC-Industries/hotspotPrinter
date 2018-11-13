@@ -456,8 +456,6 @@ bool isSDCard() {
         }
 }
 
-
-
 /**
  * Reboot the ESP processer and give a reason
  * @param reason Reason String
@@ -468,7 +466,11 @@ void rebootEspWithReason(String reason){
         ESP.restart();
 }
 
-
+/**
+ * Check for update files and print the result in an HTML table
+ * @param client
+ * @param arrayOfUpdateFiles
+ */
 void printTableOfUpdateFiles(WiFiClient& client, String arrayOfUpdateFiles[20]){
     // create a second array to hold the version numbers
     String arrayOfUpdateFilesVersionNums[20];

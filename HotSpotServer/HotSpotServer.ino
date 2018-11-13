@@ -602,7 +602,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 
                         // svg logo
                         client.println(R"(
-                            <div class="middle-form">
+                            <div class="middle-form" style="margin-bottom: 10px;">
                             <div class="container">
                             <div class="row">
                             <div class="col">
