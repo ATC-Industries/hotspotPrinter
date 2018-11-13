@@ -24,19 +24,19 @@ pin assignment                                      5 volt----------------------
                             |EN                    IO23 | ---- SPI MOSI to SD card--------------------------------|                         |
                             |SVP                   IO22 | ---- SCL pin to 4x20 LCD display --------------|----|   |       SD CARD           |
                             |SVN                   TXD0 | ---- Serial TX Monitor and programming uart0   |  L |   |                         |
-      ___________      SWF1 |IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
-     /           \     SWF2 |IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
-    |             |    SWF3 |IO32                   GND |                                                ------   |                         |
-    |             |    SWF4 |IO33                  IO19 | ---- SPI MISO to SD card--------------------------------|                         |
+      ___________           |IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
+     /           \          |IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
+    |             |---------|IO32                   GND |                                                ------   |                         |
+    |             |---------|IO33                  IO19 | ---- SPI MISO to SD card--------------------------------|                         |
     |   XBEE      |         |IO25                  IO18 | ---- clock on SD card-----------------------------------|                         |
-    |             |         |IO26                  IO5  | ---- CS on SD card--------------------------------------|                         |
-    |             |         |IO27                  IO17 | ---- TX Uart2 Printer                                   |                         |
-    |             |    SWUP |IO14                  IO16 | ---- RX Uart2 Printer                                   |_________________________|
-    |             |    SWDN |IO12                  IO4  | ---- Down button
-     -------------     |----|GND                   IO0  | ---- UP button
-       |  |   |-------- SWPR|IO13                  IO2  | ---- PRT button
-       |  |Radio Uart1 RX---|SD2                   IO15 |
-       |--Radio Uart1 TX----|SD3                   SD1  |
+    |             |    F2---|IO26                  IO5  | ---- CS on SD card--------------------------------------|                         |
+    |             |    F4---|IO27                  IO17 | ---- TX Uart2 Printer                                   |                         |
+    |             |         |IO14                  IO16 | ---- RX Uart2 Printer                                   |_________________________|
+    |             |         |IO12                  IO4  | ---- F3
+     -------------          |GND                   IO0  |
+                        F1--|IO13                  IO2  | ---- PRT button
+                            |SD2                   IO15 |
+                            |SD3                   SD1  |
                             |CMD                   SD0  |
            5 volts in   ----|5V                    CLK  |
                             _____________________________
@@ -83,7 +83,7 @@ pin assignment                                      5 volt----------------------
 #define button_F2 26  //works
 
 #define button_F3 4  //works
-#define button_F4 0  //works
+#define button_F4 27  //works
 #define button_PRINT 2 //works
 //U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);     //identify pins used for oled display
 
@@ -252,7 +252,7 @@ void setup()
    // Note the format for setting a serial port is as follows: Serial2.begin(baud-rate, protocol, RX pin, TX pin);
 
    Serial1.begin(9600, SERIAL_8N1,33,32);                   //RADIO, tx =32 rx = 33
-   Serial2.begin(9600, SERIAL_8N1,16,17);                   //THERMAL PRINTER, TX = pin 17 RX = pin 2
+   Serial2.begin(9600, SERIAL_8N1,16,17);                   //THERMAL PRINTER, TX = pin 17 RX = pin 16
    Serial.begin(115200);                                    //start serial port 0 (debug monitor and programming port)
 
   //--- initialize the EEPROM ---------------------------------------
