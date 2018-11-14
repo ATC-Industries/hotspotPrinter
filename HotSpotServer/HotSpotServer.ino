@@ -630,7 +630,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         else if (updatePageFlag) {
                             pageTitle(client, "Update Firmware");
                             //  Add breif instructions
-                            alert(client, primary, "This will update the firmare on your device.<br>Insert an SD card with a version of the firmware loaded and click \"Check for Update\".", "" , "NOTE: you may need to reconnect to this wifi network after updating.")
+                            alert(client, "primary", "This will update the firmare on your device.<br>Insert an SD card with a version of the firmware loaded and click \"Check for Update\".", "" , "NOTE: you may need to reconnect to this wifi network after updating.");
                             // Update now button
                             if(updateMessage == ""){
                               startForm(client, "/checkForUpdate");
@@ -640,7 +640,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             }
                             // Print message to user dynamically
                             if(updateMessage != ""){
-                                alert(client, "danger", updateMessage, "ERROR!", "Please make sure you have loaded the update software in the root directory of the SD card." )
+                                alert(client, "danger", updateMessage, "ERROR!", "Please make sure you have loaded the update software in the root directory of the SD card." );
                                 startForm(client, "checkForUpdate");
                                 button(client, "Retry", "success");
                                 endForm(client);
