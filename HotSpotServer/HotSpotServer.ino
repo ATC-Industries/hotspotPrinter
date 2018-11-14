@@ -619,7 +619,6 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             // if the startup flag that determined if an SD card is present then display the update button
                             if(isSDCardPresent)
                             {
-                              endDiv(client);
                               startForm(client, "/update");
                               button(client, "Update Firmware", "success");
                               endForm(client);
@@ -647,48 +646,25 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 printTableOfUpdateFiles(client, arrayOfUpdateFiles);
                             }
                             //------------ Cancel BUTTON ------------------------------
-                            endDiv(client);
+
                             startForm(client, "/");
                             button(client, "Cancel", "danger");
                             endForm(client);
-                            endDiv(client);
                         }
                         //---------------------  Home screen
                         else
                         {
                         pageTitle(client, "HotSpot Printer");
-
-                            client.println("<div class=\"middle-form\">");
-                            client.println("<form action=\"/print\" method=\"GET\">");
-                            // Print Button
-                            client.println(R"(
-                                <button type="submit" value="Print" id="print" style="height:250px;" class="btn btn-danger btn-lg btn-block">
-<div style="margin:auto 35%;color:white;fill:white;">
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M432 192h-16v-82.75c0-8.49-3.37-16.62-9.37-22.63L329.37 9.37c-6-6-14.14-9.37-22.63-9.37H126.48C109.64 0 96 14.33 96 32v160H80c-44.18 0-80 35.82-80 80v96c0 8.84 7.16 16 16 16h80v112c0 8.84 7.16 16 16 16h288c8.84 0 16-7.16 16-16V384h80c8.84 0 16-7.16 16-16v-96c0-44.18-35.82-80-80-80zM320 45.25L370.75 96H320V45.25zM128.12 32H288v64c0 17.67 14.33 32 32 32h64v64H128.02l.1-160zM384 480H128v-96h256v96zm96-128H32v-80c0-26.47 21.53-48 48-48h352c26.47 0 48 21.53 48 48v80zm-80-88c-13.25 0-24 10.74-24 24 0 13.25 10.75 24 24 24s24-10.75 24-24c0-13.26-10.75-24-24-24z"/></svg>
-                        </div>
-                        <br>Print Ticket
-                                </button>)");
-                            client.println("</form>");
-                            client.println("</div>");
-
-                            // Settings Button
-                            client.println("<div class=\"middle-form\" style=\"margin-top:25px;\">");
-                            client.println("<form action=\"/settings\" method=\"GET\">");
-                            client.println("<input type=\"submit\" value=\"Settings\" class=\"btn btn-warning btn-lg btn-block\">");
-                            client.println("</form>");
-                            client.println("</div>");
+                        startForm(client, "/print");
+                        printButton(client);
+                        endForm(client);
+                        // Settings Button
+                        startForm(client, "/settings");
+                        button(client, "Settings", "warning");
+                        endForm(client);
                         }
                         // Version number in bottom right of all pages
-                        client.println(R"(
-                            </div>
-                        <nav class="navbar bottom navbar-light bg-light">
-                            <div class="middle-form">
-                                <a class="navbar-brand text-right" href="#"><p class="text-right text-muted">version: )" + String(VERSION_NUMBER[0]) + R"(.)" + String(VERSION_NUMBER[1]) + R"(.)" + String(VERSION_NUMBER[2]) + R"(</p></a>
-                            </div>
-                        </nav>
-                        )");
-                        client.println("</body>");
-                        client.println("</html>");
+                        bottomNav(client, VERSION_NUMBER[0], VERSION_NUMBER[1], VERSION_NUMBER[2]);
                         client.println();                         // The HTTP response ends with another blank line
                         // Break out of the while loop
                         break;
