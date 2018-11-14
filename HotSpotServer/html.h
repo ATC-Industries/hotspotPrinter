@@ -72,7 +72,7 @@ void inputBox(WiFiClient client, String name, String nameVar, String label, bool
 }
 void checkBox(WiFiClient client, String name, String nameVar, String label) {
     client.println(R"(<div>
-        <input type="checkbox" id=")" + name + R"(" name=")" + name + R"(" value=")" + name + R"(" ")" + nameVar + R"(">
+        <input type="checkbox" id=")" + name + R"(" name=")" + name + R"(" value=")" + name + R"(" )" + nameVar + R"(>
     <label for=")" + name + R"(">)" + label + R"(</label></div>)");
 }
 void button(WiFiClient client, String value, String context) {
