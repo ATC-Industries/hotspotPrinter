@@ -265,6 +265,10 @@ void setup()
     sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
     lcd.setCursor(0,1);
     lcd.print(ip_string);
+    lcd.setCursor(0,2);
+    char verString[10];
+    sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
+    lcd.print(verString);
     delay(5000);                                                          //leave ssid and ip on oled sceen for this delay
     line1 = (EEPROM.readString(line1_eeprom_addr));          //recall values saved in eeprom
     line2 = (EEPROM.readString(line2_eeprom_addr));
