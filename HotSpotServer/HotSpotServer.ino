@@ -550,7 +550,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
-                        
+
                         if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
                         {
                             if (headerT.indexOf("settings?") >= 0)      //if header contains "settings"
@@ -813,7 +813,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         endForm(client);
                         // Settings Button
                         startForm(client, "/settings");
-                        button(client, "Settings", "warning");
+                        button(client, "Settings", "secondary");
                         endForm(client);
                         }
                         // Version number on bottom of all pages
