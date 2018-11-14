@@ -568,10 +568,14 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             EEPROM.writeBool(checkbox4_eeprom_addr,cb_print_when_locked);
                             EEPROM.commit();                         ////save to eeprom
 
-                            cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";
-                            cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
-                            cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
-                            cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
+                            // ATC: I don't think we need the next 4 lines anymore as I belive the checkboxStatus
+                            //      function 4 blocks above sets the indivudule status. both the bool variable and
+                            //      the string variable.  I leave this REMed out for now but should be deleted if no
+                            //      adverse effects are detected.
+                            // cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";
+                            // cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
+                            // cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
+                            // cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
                             //-------------- display varibles on serial monitor  -----------------------------------
                             Serial.println("********START HEADER*********************************************");
                             Serial.println(header);
