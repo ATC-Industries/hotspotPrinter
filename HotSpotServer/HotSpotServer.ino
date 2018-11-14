@@ -160,9 +160,9 @@ String settingsCheck3_status = "";
 String settingsCheck2_status = "";
 void settingsPageForm();
 void mainPageForm();
-bool is_page_settings = false;
-bool is_page_print = false;
-bool is_page_update = false;
+bool settingsPageFlag = false;
+bool printPageFlag = false;
+bool updatePageFlag = false;
 
 //------------ Assign eeprom save addresses -----------------------------
 const int line1_eeprom_addr = 0;
@@ -489,22 +489,22 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         {
                             if (headerT.indexOf("settings?") >= 0)      //if header contains "settings"
                             {
-                                is_page_settings = true;
-                                is_page_print = false;
-                                is_page_update = false;
+                                settingsPageFlag = true;
+                                printPageFlag = false;
+                                updatePageFlag = false;
                             } else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
                                 {
                                 print_ticket();                         //print weigh ticket
                                 Serial.println("PRINT BUTTON WAS PRESSED ON WEB PAGE");
-                                is_page_settings = false;
-                                is_page_print = true;
-                                is_page_update = false;
+                                settingsPageFlag = false;
+                                printPageFlag = true;
+                                updatePageFlag = false;
                                 }
                              else if (headerT.indexOf("update?") >= 0)
                                 {
-                                is_page_settings = false;
-                                is_page_print = false;
-                                is_page_update = true;
+                                settingsPageFlag = false;
+                                printPageFlag = false;
+                                updatePageFlag = true;
                                 }
                             else if (headerT.indexOf("checkForUpdate?") >= 0)
                                 {
@@ -518,9 +518,9 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             }
                             else
                                 {
-                                is_page_settings = false;
-                                is_page_print = false;
-                                is_page_update = false;
+                                settingsPageFlag = false;
+                                printPageFlag = false;
+                                updatePageFlag = false;
                                 }
                         }
                         // Looks for Line1 in header and then processes the SETTINGS results if found
@@ -597,7 +597,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         // svg PTS logo
                         printPTSLogo(client);
 
-                        if (is_page_settings) { //------------ First Screen HTML code ------------------------------------------
+                        if (settingsPageFlag) { //------------ First Screen HTML code ------------------------------------------
                                 //-------------Form to enter information-----------------------------------------
                             pageTitle(client, "Settings");
                             //startForm(client, "[action]")
@@ -620,45 +620,30 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             // if the startup flag that determined if an SD card is present then display the update button
                             if(isSDCardPresent)
                             {
-                                client.println(R"(
-                                    <div class="middle-form">
-                                        <form action="/update" method="GET">
-                                            <input type="submit" value="Update Firmware" class="btn btn-success btn-lg btn-block">
-                                        </form>
-                                    </div>
-                                )");
+                              startForm(client, "/update");
+                              button(client, "Update Firmware", "success");
+                              endForm(client);
+                              endDiv(client);
                             }
                         }
                         //   Update page HTML
-                        else if (is_page_update) {
+                        else if (updatePageFlag) {
                             pageTitle(client, "Update Firmware");
                             //  Add breif instructions
-                            client.println("<div class=\"alert alert-primary\" role=\"alert\">");
-                            client.println("This will update the firmare on your device.<br>Insert an SD card with a version of the firmware loaded and click \"Check for Update\".");
-                            client.println("<hr>");
-                            client.println("<p class=\"mb-0\">NOTE: you may need to reconnect to this wifi network after updating.</p>");
-                            client.println("</div>");
+                            alert(client, primary, "This will update the firmare on your device.<br>Insert an SD card with a version of the firmware loaded and click \"Check for Update\".", "" , "NOTE: you may need to reconnect to this wifi network after updating.")
                             // Update now button
                             if(updateMessage == ""){
-                                client.println("<div class=\"middle-form\">");
-                                client.println("<form action=\"/checkForUpdate\" method=\"GET\">");
-                                client.println("<input type=\"submit\" value=\"Check for Update\" class=\"btn btn-success btn-lg btn-block\">");
-                                client.println("</form>");
-                                client.println("</div>");
+                              startForm(client, "/checkForUpdate");
+                              button(client, "Check for Update", "success");
+                              endForm(client);
+                              endDiv(client);
                             }
                             // Print message to user dynamically
                             if(updateMessage != ""){
-                                client.println("<div class=\"alert alert-danger\" role=\"alert\">");
-                                client.println("<h4 class=\"alert-heading\">Error!</h4>");
-                                client.println("<p>" + updateMessage + "</p>");
-                                client.println("<hr>");
-                                client.println("<p class=\"mb-0\">Please make sure you have loaded the update software in the root directory of the SD card.</p>");
-                                client.println("</div>");
-                                client.println("<div class=\"middle-form\">");
-                                client.println("<form action=\"/checkForUpdate\" method=\"GET\">");
-                                client.println("<input type=\"submit\" value=\"Retry\" class=\"btn btn-success btn-lg btn-block\">");
-                                client.println("</form>");
-                                client.println("</div>");
+                                alert(client, "danger", updateMessage, "ERROR!", "Please make sure you have loaded the update software in the root directory of the SD card." )
+                                startForm(client, "checkForUpdate");
+                                button(client, "Retry", "success");
+                                endForm(client);
                             }
                             if (arrayOfUpdateFiles[0] != ""){
                                 printTableOfUpdateFiles(client, arrayOfUpdateFiles);

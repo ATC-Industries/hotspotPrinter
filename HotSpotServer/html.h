@@ -61,4 +61,17 @@ void button(WiFiClient client, String value, String context) {
   client.println(R"(<input type="submit" value=")" + value + R"(" class="btn btn-)" + context + R"( btn-lg btn-block">)");
 }
 
+void alert(WiFiClient client, String context, String contentTop, String heading = "", String contentBottom = ""){
+  client.println("<div class=\"alert alert-" + context + "\" role=\"alert\">");
+  if(!(heading = "")){
+    client.println("<h4 class=\"alert-heading\">" + heading + "</h4>");
+  }
+  client.println(contentTop);
+  if(!(contentBottom = "")){
+    client.println("<hr>");
+    client.println("<p class=\"mb-0\">" + contentBottom + "</p>");
+  }
+  client.println("</div>");
+}
+
 #endif
