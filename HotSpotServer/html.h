@@ -19,6 +19,7 @@ void printPTSLogo(WiFiClient client) {
           </svg>
       </div>
       </div>
+      </div>
   )");
 }
 
@@ -52,7 +53,7 @@ void inputBox(WiFiClient client, String name, String nameVar, String label, bool
     if(smallLine){
         client.println(R"(<small id=")" + name + R"(Help" class="form-text text-muted">)" + smallLineText + R"(</small>)");
     }
-    client.println(R"(<div>)");
+    client.println(R"(</div>)");
 }
 void checkBox(WiFiClient client, String name, String nameVar, String label) {
     client.println(R"(<div>
