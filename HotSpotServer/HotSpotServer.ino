@@ -178,108 +178,109 @@ LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to
 //------------------------------------------------------------------------
 void setup()
     {
+    //---------- SETUP LCD -----------------------------------------------------
+    lcd.init();
+    lcd.backlight();
+    lcd.clear();                            // clear the display
+    lcd.setCursor(0,0);                     // set cursor position
+    lcd.print(F("Agri-Tronix Corp"));       // print text to display
 
-     lcd.init();
-     lcd.backlight();
-     lcd.clear();                                          //clear the display
-     lcd.setCursor(0,0);                                   //set cursor position
-     lcd.print(F("Agri-Tronix Corp"));                     //print text to display
+    //---------- declare input buttons with pullup -----------------------------
+    pinMode(button_PRINT,INPUT_PULLUP);    // print button
+    pinMode(button_F1,INPUT_PULLUP);       // F1
+    pinMode(button_F2,INPUT_PULLUP);       // F2
+    pinMode(button_F3,INPUT_PULLUP);       // F3
+    pinMode(button_F4,INPUT_PULLUP);       // F4
 
-     //---- declare input buttons with pullup --------------------------
-     pinMode(button_PRINT,INPUT_PULLUP);                       //print button
-     pinMode(button_F1,INPUT_PULLUP);                          //F1
-     pinMode(button_F2,INPUT_PULLUP);                          //F2
-     pinMode(button_F3,INPUT_PULLUP);                          //F3
-     pinMode(button_F4,INPUT_PULLUP);                          //F4
-
-    //----------- setup 1us counter ---------
-    timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
-    timerAttachInterrupt(timer,&onTimer,true);            //"&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
-    timerAlarmWrite(timer, 100000, true);                //interupt every 1000000 times
-    timerAlarmEnable(timer);                              //this line enables the timer declared 3 lines up and starts it
+    //----------- setup 1us counter --------------------------------------------
+    timer = timerBegin(0, 80, true);            // "0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
+    timerAttachInterrupt(timer,&onTimer,true);  // "&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
+    timerAlarmWrite(timer, 100000, true);       // interupt every 1000000 times
+    timerAlarmEnable(timer);                    // this line enables the timer declared 3 lines up and starts it
     ticket = 0;
 
-   //-------------  declare serial ports -----------------------------
-   // Note the format for setting a serial port is as follows: Serial2.begin(baud-rate, protocol, RX pin, TX pin);
+    //-------------  declare serial ports --------------------------------------
+    /*   Note the format for setting a serial port is as follows:
+        Serial2.begin(baud-rate, protocol, RX pin, TX pin);  */
+    Serial1.begin(9600, SERIAL_8N1,33,32);     // RADIO, tx =32 rx = 33
+    Serial2.begin(9600, SERIAL_8N1,16,17);     // THERMAL PRINTER, TX = pin 17 RX = pin 16
+    Serial.begin(115200);                      // start serial port 0 (debug monitor and programming port)
 
-   Serial1.begin(9600, SERIAL_8N1,33,32);                   //RADIO, tx =32 rx = 33
-   Serial2.begin(9600, SERIAL_8N1,16,17);                   //THERMAL PRINTER, TX = pin 17 RX = pin 16
-   Serial.begin(115200);                                    //start serial port 0 (debug monitor and programming port)
-
-  //--- initialize the EEPROM ---------------------------------------
-   if (!EEPROM.begin(EEPROM_SIZE))                          //set aside memory for eeprom size
-       {
-       Serial.println("failed to intialize EEPROM");        //display error to monitor
-       }
+    //------------- initialize the EEPROM --------------------------------------
+    if (!EEPROM.begin(EEPROM_SIZE))                          //set aside memory for eeprom size
+        {
+        Serial.println("failed to intialize EEPROM");        //display error to monitor
+        }
 
 
-  Serial.print("Setting AP (Access Point)…\n");                         // Connect to Wi-Fi network with SSID and password
-  /* Remove the password parameter, if you want the AP (Access Point) to be open
-  if pin 2 is pulled low,(print button pressed) a temporary password will be displayed on the remote
-  dispay and the password will be printed out on the printer*/
-  if (!digitalRead(13))                                                  // if print button is held down during power up
-       {
+    Serial.print("Setting AP (Access Point)…\n");   // Connect to Wi-Fi network with SSID and password
+    /* Remove the password parameter, if you want the AP (Access Point) to be open
+       if pin 2 is pulled low,(print button pressed) a temporary password will
+       be displayed on the remote dispay and the password will be printed out on
+       the printer  */
+    if (!digitalRead(13))       // if print button is held down during power up
+        {
         Serial.println("password = 987654321");
 
         lcd.setCursor(0,0);
         lcd.print("Temporary Password");
         lcd.setCursor(0,1);
         lcd.print("987654321");
-        while(!digitalRead(button_PRINT))                                              //loop until button is released
-             {delay(30);}
+        while(!digitalRead(button_PRINT))    //loop until button is released
+            {delay(30);}
         WiFi.softAP(ssid,"987654321");
 
-        //------------ print a ticket with the temp password ----------------------
+        //------------ print a ticket with the temp password -------------------
         Serial2.println("________________________________________");
         Serial2.println("Temporary password to use ");
         Serial2.println(" ");
-          set_text_size(0x00);
+        set_text_size(0x00);
         Serial2.println("987654321");
         set_text_size(0x00);               //normal text size
         Serial2.println("Reset your password with an 8-digit password\n\rmade up of letters and numbers");
-        //-------------- cut paper-----------------------------
+        //-------------- cut paper----------------------------------------------
         Serial2.write(0x1D);                // "GS" cut paper
-        Serial2.write('V');                 //"V"
-        Serial2.write(0x42);                //decimal 66
-        Serial2.write(0xB0);                //length to feed before cut (mm)
-       }
+        Serial2.write('V');                 // "V"
+        Serial2.write(0x42);                // decimal 66
+        Serial2.write(0xB0);                // length to feed before cut (mm)
+        }
 
-  else                                                                     //if print button is not pressed
-      {
-      WiFi.softAP(ssid,password);                                        //ssid declared in setup, pw recalled from eeprom or use default
-      Serial.println("password = 123456789");
-      }
+    else                                      //if print button is not pressed
+        {
+        WiFi.softAP(ssid,password);           //ssid declared in setup, pw recalled from eeprom or use default
+        Serial.println("password = 123456789");
+        }
 
-        //.softAP(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connection)
+    //.softAP(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connection)
 
-  IPAddress IP = WiFi.softAPIP();                                       //get the ip address
-  Serial.print("AP IP address: ");                                      //print ip address to SM
-  Serial.println(IP);
-  server.begin();                                                       //start server
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("SSID= ProTournament");
+    IPAddress IP = WiFi.softAPIP();                                       //get the ip address
+    Serial.print("AP IP address: ");                                      //print ip address to SM
+    Serial.println(IP);
+    server.begin();                                                       //start server
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("SSID= ProTournament");
 
-  char ip_string[30];                                                   //declare a character array
-  sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
+    char ip_string[30];                                                   //declare a character array
+    sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
     lcd.setCursor(0,1);
     lcd.print(ip_string);
-  delay(5000);                                                          //leave ssid and ip on oled sceen for this delay
-     line1 = (EEPROM.readString(line1_eeprom_addr));          //recall values saved in eeprom
-     line2 = (EEPROM.readString(line2_eeprom_addr));
-     line3 = (EEPROM.readString(line3_eeprom_addr));
-     line4 = (EEPROM.readString(line4_eeprom_addr));
-     serial_number = EEPROM.readUInt(serial_number_addr);     //get ticket serial number
+    delay(5000);                                                          //leave ssid and ip on oled sceen for this delay
+    line1 = (EEPROM.readString(line1_eeprom_addr));          //recall values saved in eeprom
+    line2 = (EEPROM.readString(line2_eeprom_addr));
+    line3 = (EEPROM.readString(line3_eeprom_addr));
+    line4 = (EEPROM.readString(line4_eeprom_addr));
+    serial_number = EEPROM.readUInt(serial_number_addr);     //get ticket serial number
 
-     cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));  //recall checkbox status (boolean)
-     cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
-     cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
-     cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
+    cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));  //recall checkbox status (boolean)
+    cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
+    cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
+    cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
 
-     cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";    //set 'checkbox#_is_checked' to match 'checkbox#_status'
-     cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
-     cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
-     cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
+    cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";    //set 'checkbox#_is_checked' to match 'checkbox#_status'
+    cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
+    cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
+    cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
 
     lcd.clear();
     lcd.setCursor(0,0);
