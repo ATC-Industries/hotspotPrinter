@@ -126,6 +126,7 @@ int touch_value_3 = 100;
 int touch_value_4 = 100;
 int touch_value_5 = 100;
 int read_keyboard_timer;
+bool no_sig_flag = 0;                                      //flag to prevent display from updating on no change of No Signal message
 bool cb_print_2_copies;
 bool cb_print_signature_line;
 bool cb_serial_ticket;
@@ -133,6 +134,7 @@ bool cb_print_when_locked;
 bool checkbox5_is_checked;
 bool lock_flag = false;                                     //flag that indicates weight is a locked value
 bool cb_print_on_lock;                                      //check box flag for print on lock
+bool isSDCardPresent = false;
 volatile int ticket;                                        //ticket serial number
 byte Imac[6];                                               //array to hold the mac address
 String checkbox1_status = "";
@@ -140,7 +142,7 @@ String checkbox2_status = "";
 String checkbox3_status = "";
 String checkbox4_status = "";
 String checkbox5_status = "";
-bool isSDCardPresent = false;
+
 volatile int interruptCounter;                             //varible that tracks number of interupts
 int totalInterruptCounter;                                 //counter to track total number of interrupts
 int no_signal_timer;                                       //timeout counter used to display No Signal on display
@@ -316,44 +318,44 @@ void setup()
     lcd.setCursor(0,1);
     lcd.print(ip_string);
   delay(5000);                                                          //leave ssid and ip on oled sceen for this delay
-               line1 = (EEPROM.readString(line1_eeprom_addr));          //recall values saved in eeprom
-               line2 = (EEPROM.readString(line2_eeprom_addr));
-               line3 = (EEPROM.readString(line3_eeprom_addr));
-               line4 = (EEPROM.readString(line4_eeprom_addr));
-               serial_number = EEPROM.readUInt(serial_number_addr);     //get ticket serial number
+     line1 = (EEPROM.readString(line1_eeprom_addr));          //recall values saved in eeprom
+     line2 = (EEPROM.readString(line2_eeprom_addr));
+     line3 = (EEPROM.readString(line3_eeprom_addr));
+     line4 = (EEPROM.readString(line4_eeprom_addr));
+     serial_number = EEPROM.readUInt(serial_number_addr);     //get ticket serial number
+  
+     cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));  //recall checkbox status (boolean)
+     cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
+     cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
+     cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
+  
+     cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";    //set 'checkbox#_is_checked' to match 'checkbox#_status'
+     cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
+     cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
+     cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
+  
+     line1.toCharArray(temp_str1,30);                               //must convert string to a character array for drawStr() to work
+     line2.toCharArray(temp_str2,30);
+     line3.toCharArray(temp_str3,30);
+     line4.toCharArray(temp_str4,30);
+  
+    lcd.clear(); 
+    lcd.setCursor(0,0);
+    lcd.print(temp_str1);
+    lcd.setCursor(0,1);
+    lcd.print(temp_str2);
+    lcd.setCursor(0,2);
+    lcd.print(temp_str3);
+    lcd.setCursor(0,3);
+    lcd.print(temp_str4);
 
-               cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));  //recall checkbox status (boolean)
-               cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
-               cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
-               cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
-
-               cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";    //set 'checkbox#_is_checked' to match 'checkbox#_status'
-               cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
-               cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
-               cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
-
-               line1.toCharArray(temp_str1,30);                               //must convert string to a character array for drawStr() to work
-               line2.toCharArray(temp_str2,30);
-               line3.toCharArray(temp_str3,30);
-               line4.toCharArray(temp_str4,30);
-
-                lcd.clear();
-                lcd.setCursor(0,0);
-                lcd.print(temp_str1);
-                lcd.setCursor(0,1);
-                lcd.print(temp_str2);
-                lcd.setCursor(0,2);
-                lcd.print(temp_str3);
-                lcd.setCursor(0,3);
-                lcd.print(temp_str4);
-
-      WiFi.macAddress(Imac);
-        Serial.print("MAC");
-        for(int i=5;i>=0;i--)
-      {
-      Serial.print(":");
-        Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
-      }
+    WiFi.macAddress(Imac);
+      Serial.print("MAC");
+      for(int i=5;i>=0;i--)
+    {
+    Serial.print(":");
+      Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
+    }
 
 // Check if SD card is present
 isSDCardPresent = isSDCard();
@@ -377,18 +379,25 @@ void loop(){
             { totalInterruptCounter = 0;                //reset counter
               if (++ no_signal_timer >= 2)               //if no signal this timer times out
                  { statt = 0;                            //set display mode to 0 so "No Signal" will be displayed
-                   lcd.clear();
-                   lcd.setCursor(5,1);
-                   lcd.print("No Signal");
+                   if (!no_sig_flag)                    //if flag is not set
+                     {
+                     lcd.clear();
+                     lcd.setCursor(3,1);
+                     lcd.print("** No Signal **");
+                     }
+                   no_sig_flag = 1;                     //set flag so display will not update every loop
                  }
             }
-   //--------------- read print button routine -------------------------------------------------------
+   //--------------- read  button routines -------------------------------------------------------
 
 if (read_keyboard_timer >= 2)                          //read keypad every 200 ms
      {read_keyboard_timer = 0;                         //reset timer
 
      if (!digitalRead(button_PRINT))                //if pushbutton is pressed (low condition), print the ticket
-      { print_ticket();                              //print the weight ticket
+      { lcd.clear();
+        lcd.setCursor(3,1);
+        lcd.print("PRINTING...");
+        print_ticket();                              //print the weight ticket
         delay(300);
         if (checkbox1_status == "checked")           //if checkbox "print 2 tickets" is checked
             {print_ticket();}                        //print second ticket if print 2 copies is selected
@@ -441,6 +450,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
             if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
               {
              //-------------display weight on LCD-----------------------------------
+               no_sig_flag = 0;                     //clear flag use in no sig message routine
                lcd.clear();
                lcd.setCursor(4,1);
                lcd.print(radio_rx_array);
