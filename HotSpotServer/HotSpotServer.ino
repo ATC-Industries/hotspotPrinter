@@ -590,6 +590,8 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             Serial.println("Checkbox4: " + checkbox4_status);
 
                         }
+                        // ATC: This else statement is totally unnecessary and only
+                        //      serves as a place holder for future expansion
                         else    //if header did not contain text "line1" then run code in else statment below
                         {
                                 // do some stuff
@@ -604,7 +606,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             //startForm(client, "[action]")
                             startForm(client, "/");
                             //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
-                            inputBox(client, "Line1", line1, "Top Line", true, "Example: The Tournament Name");
+                            inputBox(client, "Line1", line1, "Top Line", false, "Example: The Tournament Name");
                             inputBox(client, "Line2", line2, "Second Line", true, "Example: The Tournament Location");
                             inputBox(client, "Line3", line3, "Third Line", true, "Example: The Tournament Dates");
                             inputBox(client, "Line4", line4, "Bottom Line", true, "Example: A sponsor message");
@@ -627,7 +629,6 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             }
                         }
 //--RENDER UPDATE PAGE----------------------------------------------------------
-                        //   Update page HTML
                         else if (updatePageFlag) {
                             pageTitle(client, "Update Firmware");
                             //  Add breif instructions
