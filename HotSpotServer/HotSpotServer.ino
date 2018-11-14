@@ -259,10 +259,10 @@ void setup()
     server.begin();                                                       //start server
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.print("SSID= ProTournament");
+    lcd.print("SSID = ProTournament");
 
     char ip_string[30];                                                   //declare a character array
-    sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
+    sprintf(ip_string,"IP   = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
     lcd.setCursor(0,1);
     lcd.print(ip_string);
     lcd.setCursor(0,2);
