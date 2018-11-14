@@ -325,8 +325,8 @@ void loop(){
                    if (!no_sig_flag)                    //if flag is not set
                      {
                      lcd.clear();
-                     lcd.setCursor(3,1);
-                     lcd.print("** No Signal **");
+                     lcd.setCursor(2,1);
+                     lcd.print("** No  Signal **");
                      }
                    no_sig_flag = 1;                     //set flag so display will not update every loop
                  }
@@ -357,20 +357,20 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
      else
         {lcd.print("   ");}
 
-     lcd.setCursor(5,3);
+     lcd.setCursor(6,3);
      if (!digitalRead(button_F2))                   //F2 button
        {lcd.print("F2");}
      else
        {lcd.print("   ");}
 
 
-       lcd.setCursor(10,3);
+       lcd.setCursor(11,3);
      if (!digitalRead(button_F3))                   //F3 button
        {lcd.print("F3");}
      else
         {lcd.print("   ");}
 
-     lcd.setCursor(15,3);
+     lcd.setCursor(17,3);
      if (!digitalRead(button_F4))                   //F4 button
        {lcd.print("F4");}
      else
