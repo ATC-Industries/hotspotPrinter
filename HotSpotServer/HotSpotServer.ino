@@ -594,14 +594,12 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         {
                                 // do some stuff
                         }
-                        //--------------- Display the HTML web page---------------------------
+//--RENDER HTML-----------------------------------------------------------------
                         htmlHead(client);
-
                         // svg PTS logo
                         printPTSLogo(client);
-
-                        if (settingsPageFlag) { //------------ First Screen HTML code ------------------------------------------
-                                //-------------Form to enter information-----------------------------------------
+//--RENDER SETTINGS PAGE--------------------------------------------------------
+                        if (settingsPageFlag) {
                             pageTitle(client, "Settings");
                             //startForm(client, "[action]")
                             startForm(client, "/");
@@ -610,23 +608,25 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             inputBox(client, "Line2", line2, "Second Line", true, "Example: The Tournament Location");
                             inputBox(client, "Line3", line3, "Third Line", true, "Example: The Tournament Dates");
                             inputBox(client, "Line4", line4, "Bottom Line", true, "Example: A sponsor message");
-
+                            //checkBox(client, "[String name of variable]", [actual variable], "[String label]")
                             checkBox(client, "checkbox1", checkbox1_status, "Print 2 Copies");
                             checkBox(client, "checkbox2", checkbox2_status, "Print signature line");
                             checkBox(client, "checkbox3", checkbox3_status, "Serialized ticket");
                             checkBox(client, "checkbox4", checkbox4_status, "Optional Parameter");
-
+                            // Submit Button
                             button(client, "submit", "primary");
                             endForm(client);
 
                             // if the startup flag that determined if an SD card is present then display the update button
                             if(isSDCardPresent)
                             {
+                              // update button
                               startForm(client, "/update");
                               button(client, "Update Firmware", "success");
                               endForm(client);
                             }
                         }
+//--RENDER UPDATE PAGE----------------------------------------------------------
                         //   Update page HTML
                         else if (updatePageFlag) {
                             pageTitle(client, "Update Firmware");
@@ -645,20 +645,21 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 button(client, "Retry", "success");
                                 endForm(client);
                             }
+                            // Print table of update files
                             if (arrayOfUpdateFiles[0] != ""){
                                 printTableOfUpdateFiles(client, arrayOfUpdateFiles);
                             }
-                            //------------ Cancel BUTTON ------------------------------
-
+                            // Cancel button
                             startForm(client, "/");
                             button(client, "Cancel", "danger");
                             endForm(client);
                         }
-                        //---------------------  Home screen
+//--RENDER HOME SCREEN----------------------------------------------------------
                         else
                         {
                         pageTitle(client, "HotSpot Printer");
                         startForm(client, "/print");
+                        // Big print button
                         printButton(client);
                         endForm(client);
                         // Settings Button
@@ -666,32 +667,32 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         button(client, "Settings", "warning");
                         endForm(client);
                         }
-                        // Version number in bottom right of all pages
+                        // Version number on bottom of all pages
                         bottomNav(client, VERSION_NUMBER[0], VERSION_NUMBER[1], VERSION_NUMBER[2]);
-                        client.println();                         // The HTTP response ends with another blank line
-                        // Break out of the while loop
-                        break;
-                } else {                                          // if you got a newline, then clear currentLine
+//--END RENDER HTML-------------------------------------------------------------
+                        client.println();       // The HTTP response ends with another blank line
+                        break;                  // Break out of the while loop
+                } else {                        // if you got a newline, then clear currentLine
                         currentLine = "";
                 }
             }
-            else if (c != '\r') {                                     // if you got anything else but a carriage return character,
-                currentLine += c;                                 // add it to the end of the currentLine
+            else if (c != '\r') {               // if you got anything else but a carriage return character,
+                currentLine += c;               // add it to the end of the currentLine
             }
 
-        }// END if (client.available())
-    }// END while (client.connected())
+        } // END if (client.available())
+    } // END while (client.connected())
 
-        header = "";                                                               // Clear the header variable
+        header = "";                            // Clear the header variable
         save_header = "";
 
-        client.stop();                                                             // Close the connection
-        Serial.println("Client disconnected.");                                    //send status message to serial debug window
+        client.stop();                         // Close the connection
+        Serial.println("Client disconnected.");//send status message to serial debug window
         Serial.println("");
 
     }  //end of 'If (Client)'
 
-}//end of program 'loop()'
+} //end of program 'loop()'
 
 //%%%%%%%%%%%%%%%%%%%%%% functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
