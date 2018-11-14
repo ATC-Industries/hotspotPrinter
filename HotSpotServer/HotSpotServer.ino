@@ -130,6 +130,7 @@ bool checkbox5_is_checked;      // If checkbox should show checked or not
 bool lock_flag = false;         // flag that indicates weight is a locked value
 bool cb_print_on_lock;          // check box flag for print on lock
 bool isSDCardPresent = false;   // Flag checked on startup true if SD card is found
+bool diagnostic_flag = false;   // Flag to send all Serial Monitor diagnostic to printer 
 String passwordMessage = "";
 bool passSuccess = false;
 volatile int ticket;            // ticket serial number
@@ -191,12 +192,7 @@ LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to
 void setup()
     {
     //---------- SETUP LCD -----------------------------------------------------
-    lcd.init();
-    lcd.backlight();
-    lcd.clear();                            // clear the display
-    lcd.setCursor(0,0);                     // set cursor position
-    lcd.print(F("Agri-Tronix Corp"));       // print text to display
-
+    
     //---------- declare input buttons with pullup -----------------------------
     pinMode(button_PRINT,INPUT_PULLUP);    // print button
     pinMode(button_F1,INPUT_PULLUP);       // F1
@@ -217,6 +213,38 @@ void setup()
     Serial1.begin(9600, SERIAL_8N1,33,32);     // RADIO, tx =32 rx = 33
     Serial2.begin(9600, SERIAL_8N1,16,17);     // THERMAL PRINTER,  RX = pin 16  TX = pin 17
     Serial.begin(115200);                      // start serial port 0 (debug monitor and programming port)
+    delay(1000);                               //time for the serial ports to setup
+
+    lcd.init();
+    lcd.backlight();
+    
+    //--------------- diagnostic mode if F1 is held on cold boot ------------------------------------------
+    
+    if (!digitalRead(button_F1))                                     //^^^ If button 1 held on cold start, turn on diagnostic mode
+        {diagnostic_flag = true;
+         Serial2.write(0x1B);                //initialize printer
+         Serial2.write('@');
+
+         Serial2.write(0x1B);                //upside down printing
+         Serial2.write('{');
+         Serial2.write('1');
+
+         Serial2.write(0x1B);                //B Font 12x24
+         Serial2.write('M');
+         Serial2.write('1');
+         Serial2.write(0x0A);
+         lcd.clear();
+         lcd.setCursor(2,1);
+         lcd.print("  Diagnostic  Mode");
+         Serial2.println("-------- Entering Diagnostic Mode -----------");                             //^^^ send message to printer
+         Serial2.println("Turn printer 'OFF' and then 'ON' to exit diagnostic mode");
+         Serial2.write(0x0A);                                           //line feed
+         while (!digitalRead(button_F1))                                 //loop while F1 is held down
+              {delay(50);}
+         lcd.clear();     
+        }
+
+    
 
     //------------- initialize the EEPROM --------------------------------------
     if (!EEPROM.begin(EEPROM_SIZE))                          //set aside memory for eeprom size
@@ -232,7 +260,7 @@ void setup()
        if pin 2 is pulled low,(print button pressed) a temporary password will
        be displayed on the remote dispay and the password will be printed out on
        the printer  */
-    if (!digitalRead(13))       // if print button is held down during power up
+    if (!digitalRead(button_PRINT))       // if print button is held down during power up
         {
         // TODO All this `if` needs to be deleted and maybe replaced with enter diagnostic mode
         Serial.println("password = 987654321");
@@ -241,18 +269,21 @@ void setup()
         lcd.print("Temporary Password");
         lcd.setCursor(0,1);
         lcd.print("987654321");
+       
         while(!digitalRead(button_PRINT))    //loop until button is released
             {delay(30);}
-        WiFi.softAP(ssid,"987654321");
+        WiFi.softAP(ssid,"987654321");          //start wifi hub requiring temporary password
 
         //------------ print a ticket with the temp password -------------------
-        Serial2.println("________________________________________");
-        Serial2.println("Temporary password to use ");
+        Serial2.println("______________________________________________");
+        Serial2.println("Temporary password");
         Serial2.println(" ");
-        set_text_size(0x00);
-        Serial2.println("987654321");
+        set_text_size(0x22);
+        Serial2.println("** 987654321 **");
+        Serial2.println("   ");
         set_text_size(0x00);               //normal text size
-        Serial2.println("Reset your password with an 8-digit password\n\rmade up of letters and numbers");
+        Serial2.println("Reset your password using phone or tablet.\n\rEnter an 8-digit password.");
+         Serial2.println("______________________________________________");
         //-------------- cut paper----------------------------------------------
         Serial2.write(0x1D);                // "GS" cut paper
         Serial2.write('V');                 // "V"
@@ -272,16 +303,45 @@ void setup()
     IPAddress IP = WiFi.softAPIP();                                       //get the ip address
     Serial.print("AP IP address: ");                                      //print ip address to SM
     Serial.println(IP);
+//    Serial2.print("AP IP address: ");                                     //send ip address to printer on cold boot
+//    Serial2.println(IP);
+//  
     server.begin();                                                       //start server
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.print("SSID = ProTournament");
+    set_text_size(0X11);
+    lcd.print("WiFi network:");
+    lcd.setCursor(0,1);
+    lcd.print("     ProTournament");
 
-    char ip_string[30];                                                   //declare a character array
-    sprintf(ip_string,"IP   = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
+     char ip_string[30];                                                   //declare a character array
+    sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
+    set_text_size(0X00);
+    Serial2.println("----------------------------------------------------------");
+    set_text_size(0x11);
+    Serial2.write(0x0A);
+    Serial2.println(ip_string);
+    Serial2.write(0x0A);
+    set_text_size(0x00);
+    Serial2.println("in the address bar at top of the browser screen.");
+    Serial2.println("Open your browser and enter the following IP address");
+    Serial2.write(0x0A);
+    Serial2.println("---------------------------------------------------------");
+    
+    set_text_size(0X11);
+    Serial2.println("WiFi network = ProTournament");
+    Serial2.write(0x0A);
+    set_text_size(0X00);
+    Serial2.println("Use phone or tablet to log onto the following network site");
     lcd.setCursor(0,1);
     lcd.print(ip_string);
     lcd.setCursor(0,2);
+    Serial2.write(0x0A);
+    Serial2.println("----------------------------------------------------------");
+    cut_paper();
+   
+    
+    
     char verString[10];
     sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
     lcd.print(verString);
@@ -318,10 +378,14 @@ void setup()
     {
     Serial.print(":");
       Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
+    if (diagnostic_flag == true)                                   //^^^ print mac address to printer when in diagnostic mode
+       {Serial2.println(Imac[i],HEX);}  
     }
     Serial.print("\n");
-// Check if SD card is present
-isSDCardPresent = isSDCard();
+   // Check if SD card is present
+   isSDCardPresent = isSDCard();
+   
+
 }//void setup() ending terminator
 
 
@@ -357,7 +421,8 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
      {read_keyboard_timer = 0;                         //reset timer
 
      if (!digitalRead(button_PRINT))                //if pushbutton is pressed (low condition), print the ticket
-      { 
+      { if (diagnostic_flag)
+          {Serial2.println("Print button pressed");}
         print_ticket();                              //print the weight ticket
         delay(300);
         if (checkbox1_status == "checked")           //if checkbox "print 2 tickets" is checked
@@ -377,26 +442,46 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
       }
      lcd.setCursor(0,3);
      if (!digitalRead(button_F1))                   //F1 button
-       {lcd.print("F1");}
+       {lcd.print("F1");
+       if (diagnostic_flag)
+          {Serial2.println("Button F1 pressed");       //^^^ send button press diag to printer
+          // Serial2.write(0x0A);
+          }
+       }
      else
         {lcd.print("   ");}
 
      lcd.setCursor(6,3);
      if (!digitalRead(button_F2))                   //F2 button
-       {lcd.print("F2");}
+       {lcd.print("F2");
+       if (diagnostic_flag)
+          { Serial2.println("Button F2 pressed");      //^^^ send button press diag to printer
+          // Serial2.write(0x0A);
+          }
+       }
      else
        {lcd.print("   ");}
 
 
        lcd.setCursor(11,3);
      if (!digitalRead(button_F3))                   //F3 button
-       {lcd.print("F3");}
+       {lcd.print("F3");
+        if (diagnostic_flag)
+           {Serial2.println("Button F3 pressed");      //^^^ send button press diag to printer
+         //  Serial2.write(0x0A);
+           }       
+       }
      else
         {lcd.print("   ");}
 
      lcd.setCursor(17,3);
      if (!digitalRead(button_F4))                   //F4 button
-       {lcd.print("F4");}
+       {lcd.print("F4");
+       if (diagnostic_flag)
+          { Serial2.println("Button F2 pressed");      //^^^ send button press diag to printer
+          // Serial2.write(0x0A);
+          }
+       }
      else
        {lcd.print("   ");}
 
@@ -417,7 +502,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
             if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
               {
              //-------------display weight on LCD-----------------------------------
-               no_sig_flag = 0;                     //clear flag use in no sig message routine
+               no_sig_flag = 0;                     //clear flag used in no sig message routine
                lcd.clear();
                lcd.setCursor(4,1);
                lcd.print(radio_rx_array);
@@ -967,16 +1052,35 @@ void print_ticket(void)
                     Serial2.printf("stat = %d\n",stat); //diagnostic
                    }
                //-------------- cut paper-----------------------------
+                if (!diagnostic_flag)                                                 //do not cut paper in diagnostic mode
+                 {
                  Serial2.write(0x1D);                // "GS" cut paper
                  Serial2.write('V');                 //"V"
                  Serial2.write(0x42);                //decimal 66
                  Serial2.write(0xB0);                //length to feed before cut (mm)
+                 }
+
+
+               Serial2.write(0x1B);                //justification: left border
+               Serial2.write('a');
+               Serial2.write('0');
+               set_text_size(0x00);                //normal size text
               // delay_ms(200);
               // while (input(Pin_B1 == 0))          //wait for switch to be released if pressed
               //     {delay_ms(5);}
               // ticket = ticket + 1;                        pointer for weigh tickets
            } //end of routine
 //--------------------------------------------------------------------------------
+ void cut_paper(void)    
+     {Serial2.write(0x1D);                // "GS" cut paper
+     Serial2.write('V');                 //"V"
+     Serial2.write(0x42);                //decimal 66
+     Serial2.write(0xB0);                //length to feed before cut (mm)
+     }
+
+
+
+
 void clear_output_buffer(void)
     {int i=0;
      while(i <= 30)
