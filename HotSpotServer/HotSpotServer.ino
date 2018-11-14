@@ -68,11 +68,11 @@ pin assignment                                      5 volt----------------------
 #define RXD2 16                 //port 2 serial pins for external printer
 #define TXD2 17
 //----------- assign port pins to buttons --------------------------------------
-#define button_F1 13    // works
-#define button_F2 26    // works
-#define button_F3 4     // works
-#define button_F4 27    // works
-#define button_PRINT 2  // works
+#define button_F1 13    // 
+#define button_F2 26    // 
+#define button_F3 4     // 
+#define button_F4 27    // 
+#define button_PRINT 2  // 
 
 //------------ Assign eeprom save addresses ------------------------------------
 const int line1_eeprom_addr = 0;        // line 1      -     0 to  49 - 50 bytes
@@ -215,7 +215,7 @@ void setup()
     /*   Note the format for setting a serial port is as follows:
         Serial2.begin(baud-rate, protocol, RX pin, TX pin);  */
     Serial1.begin(9600, SERIAL_8N1,33,32);     // RADIO, tx =32 rx = 33
-    Serial2.begin(9600, SERIAL_8N1,16,17);     // THERMAL PRINTER, TX = pin 17 RX = pin 16
+    Serial2.begin(9600, SERIAL_8N1,16,17);     // THERMAL PRINTER,  RX = pin 16  TX = pin 17
     Serial.begin(115200);                      // start serial port 0 (debug monitor and programming port)
 
     //------------- initialize the EEPROM --------------------------------------
@@ -357,9 +357,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
      {read_keyboard_timer = 0;                         //reset timer
 
      if (!digitalRead(button_PRINT))                //if pushbutton is pressed (low condition), print the ticket
-      { lcd.clear();
-        lcd.setCursor(3,1);
-        lcd.print("PRINTING...");
+      { 
         print_ticket();                              //print the weight ticket
         delay(300);
         if (checkbox1_status == "checked")           //if checkbox "print 2 tickets" is checked
@@ -370,6 +368,12 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
        if (checkbox3_status == "checked")            //if check box 'print serial number' is checked
           {serial_number++;                             //increment serial number
             EEPROM.writeUInt(serial_number_addr,serial_number);} //save serial number to eeprom
+
+       lcd.clear();
+       lcd.setCursor(3,1);
+       lcd.print("PRINTING...");                      //display 'Printing' message to lcd
+       delay(3000);
+       lcd.clear();   
       }
      lcd.setCursor(0,3);
      if (!digitalRead(button_F1))                   //F1 button
