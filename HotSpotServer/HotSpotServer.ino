@@ -44,26 +44,16 @@ pin assignment                                      5 volt----------------------
 
 
 */
-//------ EEPROM addresses --------------------------------
-//  line 1 -      0 to 49  49 bytes
-//  line 2 -      50 to 99  49 bytes
-//  line 3 -      100 to 149  49 bytes
-//  line 4 -      150 to 199 49 bytes
-//  checkbox1 -   200
-//  checkbox2 -   201
-//  checkbox3 -   202
-//  checkbox4 -   203
-//  checkbox5 -   204
 
 
-//------------------INclude files ------------------------------------------
+
+//------------------INclude files ----------------------------------------------
 #include <WiFi.h>                                 // Load Wi-Fi library
 #include <Arduino.h>
-//#include <U8g2lib.h>                              //driver for oled display
 #include <string.h>                               //enables the string fuctions
 #include <EEPROM.h>                               //driver for eeprom
 
-//------ files for sd card ------------------------
+//------ files for sd card -----------------------------------------------------
 #include <Update.h>
 #include <FS.h>
 #include <SD.h>                                  //routines for SD card reader/writer
@@ -79,120 +69,112 @@ pin assignment                                      5 volt----------------------
 
 #define RXD2 16                                     //port 2 serial pins for external printer
 #define TXD2 17
-//----------- assign port pins to buttons -----------------------------
-#define button_F1 13  ///works
-#define button_F2 26  //works
+//----------- assign port pins to buttons --------------------------------------
+#define button_F1 13    // works
+#define button_F2 26    // works
 
-#define button_F3 4  //works
-#define button_F4 27  //works
-#define button_PRINT 2 //works
-//U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);     //identify pins used for oled display
+#define button_F3 4     // works
+#define button_F4 27    // works
+#define button_PRINT 2  // works
 
-//----------------- an integer array to hold the version number ----------------------------------
+//------------ Assign eeprom save addresses ------------------------------------
+const int line1_eeprom_addr = 0;        // line 1      -     0 to  49 - 50 bytes
+const int line2_eeprom_addr = 50;       // line 2      -    50 to  99 - 50 bytes
+const int line3_eeprom_addr = 100;      // line 3      -   100 to 149 - 50 bytes
+const int line4_eeprom_addr = 150;      // line 4      -   150 to 199 - 50 bytes
+
+const int checkbox1_eeprom_addr = 200;  // checkbox1   -   200
+const int checkbox2_eeprom_addr = 201;  // checkbox2   -   201
+const int checkbox3_eeprom_addr = 202;  // checkbox3   -   202
+const int checkbox4_eeprom_addr = 203;  // checkbox4   -   203
+const int serial_number_addr = 204;     // checkbox5   -   204
+
+
+//------------- an integer array to hold the version number---------------------
 const int VERSION_NUMBER[3] = {0,0,4};   // [MAJOR, MINOR, PATCH]
 
-//----------------- Replace with network credentials ----------------------------------
+//----------------- Replace with network credentials ---------------------------
 const char* ssid     = "ProTournament";
 const char* password = "123456789";
-WiFiServer server(80);                                 // Set web server port number to 80
-//--------------------------------------------------------------------------------------------
+WiFiServer server(80);          // Set web server port number to 80
+//------------------------------------------------------------------------------
 
+//-----------------Define varibles----------------------------------------------
+String header;                  // Variable to store the HTTP request header
+String save_header;             //
+String line1 = "";              // String to hold value of Line 1 input box
+String line2 = "";              // String to hold value of Line 2 input box
+String line3 = "";              // String to hold value of Line 3 input box
+String line4 = "";              // String to hold value of Line 4 input box
+char temp_str1[31];             // CharArray to hold value of Line 1 input box
+char temp_str2[31];             // CharArray to hold value of Line 2 input box
+char temp_str3[31];             // CharArray to hold value of Line 3 input box
+char temp_str4[31];             // CharArray to hold value of Line 4 input box
+char radio_rx_array[31];        // array being recieved on xbee radio
+bool radio_rx_ready = false;    // whether the rec radio string is complete
+int radio_rx_pointer;           //pointer for radio rx buffer
+int statt;                      // 1 = h2 lb   2= h2 lb/oz     3 = 357 lb     4 = 357 lb/oz
+int serial_number;              // Stores device serial number
+char output_string[31];         // converted data to send out
+char temp_str[31];              //
+String temp_val = "";           //
+char weight[15];                //
+int touch_value_0;              //
+int touch_value_1 = 100;        //
+int touch_value_2 = 100;        //
+int touch_value_3 = 100;        //
+int touch_value_4 = 100;        //
+int touch_value_5 = 100;        //
+int read_keyboard_timer;        //
+bool no_sig_flag = 0;           // flag to prevent display from updating on no change of No Signal message
+bool cb_print_2_copies;         // If checkbox should show checked or not
+bool cb_print_signature_line;   // If checkbox should show checked or not
+bool cb_serial_ticket;          // If checkbox should show checked or not
+bool cb_print_when_locked;      // If checkbox should show checked or not
+bool checkbox5_is_checked;      // If checkbox should show checked or not
+bool lock_flag = false;         // flag that indicates weight is a locked value
+bool cb_print_on_lock;          // check box flag for print on lock
+bool isSDCardPresent = false;   // Flag checked on startup true if SD card is found
+volatile int ticket;            // ticket serial number
+byte Imac[6];                   // array to hold the mac address
+String checkbox1_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
+String checkbox2_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
+String checkbox3_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
+String checkbox4_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
+String checkbox5_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
+volatile int interruptCounter;  // varible that tracks number of interupts
+int totalInterruptCounter;      // counter to track total number of interrupts
+int no_signal_timer;            // timeout counter used to display No Signal on display
+char *database[100][2];         // database array to hold anglers name and weight
+hw_timer_t * timer = NULL;      /* in order to configure the timer, we will need
+                                   a pointer to a variable of type hw_timer_t,
+                                   which we will later use in the Arduino setup function. */
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+                                /* we will need to declare a variable of type portMUX_TYPE,
+                                   which we will use to take care of the synchronization
+                                   between the main loop and the ISR, when modifying a shared variable. */
+bool settingsPageFlag = false;  // True if on settings page
+bool printPageFlag = false;     // True if on print page
+bool updatePageFlag = false;    // True if on update page
 
-
-//-----------------Define varibles------------------------------------------------------------
-String header;                                        // Variable to store the HTTP request
-String save_header;
-String line1 = "";
-String line2 = "";
-String line3= "";
-String line4 = "";
-char temp_str1[31];
-char temp_str2[31];
-char temp_str3[31];
-char temp_str4[31];
-char radio_rx_array[31];                          //array being recieved on xbee radio
-bool radio_rx_ready = false;                         // whether the rec radio string is complete
-int radio_rx_pointer;                               //pointer for radio rx buffer
-int statt;      //1 = h2 lb   2= h2 lb/oz     3 = 357 lb     4 = 357 lb/oz
-int serial_number;
-char output_string[31];                                  //converted data to send out
-char temp_str[31];
-String temp_val = "";
-char weight[15];
-int touch_value_0;
-int touch_value_1 = 100;
-int touch_value_2 = 100;
-int touch_value_3 = 100;
-int touch_value_4 = 100;
-int touch_value_5 = 100;
-int read_keyboard_timer;
-bool no_sig_flag = 0;                                      //flag to prevent display from updating on no change of No Signal message
-bool cb_print_2_copies;
-bool cb_print_signature_line;
-bool cb_serial_ticket;
-bool cb_print_when_locked;
-bool checkbox5_is_checked;
-bool lock_flag = false;                                     //flag that indicates weight is a locked value
-bool cb_print_on_lock;                                      //check box flag for print on lock
-bool isSDCardPresent = false;
-volatile int ticket;                                        //ticket serial number
-byte Imac[6];                                               //array to hold the mac address
-String checkbox1_status = "";
-String checkbox2_status = "";
-String checkbox3_status = "";
-String checkbox4_status = "";
-String checkbox5_status = "";
-
-volatile int interruptCounter;                             //varible that tracks number of interupts
-int totalInterruptCounter;                                 //counter to track total number of interrupts
-int no_signal_timer;                                       //timeout counter used to display No Signal on display
-char *database[100][2];                                    //database array to hold anglers name and weight
-hw_timer_t * timer = NULL;                                 //in order to configure the timer, we will need
-                                                           //a pointer to a variable of type hw_timer_t,
-                                                           //which we will later use in the Arduino setup function.
-
-
-portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;      //we will need to declare a variable of type portMUX_TYPE,
-                                                           //which we will use to take care of the synchronization
-                                                           //between the main loop and the ISR, when modifying a shared variable.
-
-// ------------ setting variables ---------------------------------------
-String settingsCheck1_status = "";
-String settingsCheck3_status = "";
-String settingsCheck2_status = "";
-bool settingsPageFlag = false;
-bool printPageFlag = false;
-bool updatePageFlag = false;
-
-//------------ Assign eeprom save addresses -----------------------------
-const int line1_eeprom_addr = 0;
-const int line2_eeprom_addr = 50;
-const int line3_eeprom_addr = 100;
-const int line4_eeprom_addr = 150;
-
-const int checkbox1_eeprom_addr= 200;
-const int checkbox2_eeprom_addr= 201;
-const int checkbox3_eeprom_addr= 202;
-const int checkbox4_eeprom_addr= 203;
-const int serial_number_addr = 204;
-
-//----------funtion prototypes -----------------------------------------
+//----------funtion prototypes -------------------------------------------------
 void clear_output_buffer(void);
-void clear_radio_rx_array(void);                      //routine to clear rx buffer from xbee radio
-void print_ticket(void);                              //function to print the weigh ticket
-void set_text_size(unsigned int size);                //oled set text size routine
-void set_text_reverse(bool on_off);                   //oled set reverse text on/off
-void processRadioString();                            //routine to process radio rx string
+void clear_radio_rx_array(void);        // routine to clear rx buffer from xbee radio
+void print_ticket(void);                // function to print the weigh ticket
+void set_text_size(unsigned int size);  // oled set text size routine
+void set_text_reverse(bool on_off);     // oled set reverse text on/off
+void processRadioString();              // routine to process radio rx string
 
-//-------------Interuput routines ----------------------------------------
-void IRAM_ATTR onTimer()                            // (100 ms) this is the actual interrupt(place before void setup() code)
+//-------------Interuput routines ----------------------------------------------
+void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt(place before void setup() code)
   {
   portENTER_CRITICAL_ISR(&timerMux);
-  interruptCounter++;                                      //put code to perform during interrupt here
+  interruptCounter++;                   //put code to perform during interrupt here
   read_keyboard_timer++;
   portEXIT_CRITICAL_ISR(&timerMux);
   }
 
+// Checks status of checkbox and sets flags for proper HTML display
 void checkboxStatus(String h, bool& is_checked, String& status, String number);
 
 LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 or 3f for a 20 chars and 4 line display
