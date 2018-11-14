@@ -217,11 +217,9 @@ void setup()
 
     lcd.init();
     lcd.backlight();
-    
-    //--------------- diagnostic mode if F1 is held on cold boot ------------------------------------------
-    
-    if (!digitalRead(button_F1))                                     //^^^ If button 1 held on cold start, turn on diagnostic mode
-        {diagnostic_flag = true;
+
+
+//--------------Initialize printer for upside down print -----------------------------
          Serial2.write(0x1B);                //initialize printer
          Serial2.write('@');
 
@@ -233,11 +231,17 @@ void setup()
          Serial2.write('M');
          Serial2.write('1');
          Serial2.write(0x0A);
+         set_text_size(0x00);               //set for small font
+    //--------------- diagnostic mode if F1 is held on cold boot ------------------------------------------
+    
+    if (!digitalRead(button_F1))                                     //^^^ If button 1 held on cold start, turn on diagnostic mode
+        {diagnostic_flag = true;
          lcd.clear();
          lcd.setCursor(2,1);
          lcd.print("  Diagnostic  Mode");
-         Serial2.println("-------- Entering Diagnostic Mode -----------");                             //^^^ send message to printer
          Serial2.println("Turn printer 'OFF' and then 'ON' to exit diagnostic mode");
+         
+         Serial2.println("------------- Entering Diagnostic Mode ----------------");                             //^^^ send message to printer
          Serial2.write(0x0A);                                           //line feed
          while (!digitalRead(button_F1))                                 //loop while F1 is held down
               {delay(50);}
@@ -276,20 +280,16 @@ void setup()
 
         //------------ print a ticket with the temp password -------------------
         Serial2.println("______________________________________________");
-        Serial2.println("Temporary password");
+        
         Serial2.println(" ");
         set_text_size(0x22);
         Serial2.println("** 987654321 **");
-        Serial2.println("   ");
         set_text_size(0x00);               //normal text size
-        Serial2.println("Reset your password using phone or tablet.\n\rEnter an 8-digit password.");
-         Serial2.println("______________________________________________");
-        //-------------- cut paper----------------------------------------------
-        Serial2.write(0x1D);                // "GS" cut paper
-        Serial2.write('V');                 // "V"
-        Serial2.write(0x42);                // decimal 66
-        Serial2.write(0xB0);                // length to feed before cut (mm)
-        }
+        Serial2.println("                 Temporary password");
+        Serial2.println("  ");
+        Serial2.println("Reset your WiFi password using phone or tablet.");
+        Serial2.println("______________________________________________");
+       }
 
     else                                      //if print button is not pressed
         {
@@ -550,7 +550,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
-
+                        
                         if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
                         {
                             if (headerT.indexOf("settings?") >= 0)      //if header contains "settings"
@@ -813,7 +813,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                         endForm(client);
                         // Settings Button
                         startForm(client, "/settings");
-                        button(client, "Settings", "secondary");
+                        button(client, "Settings", "warning");
                         endForm(client);
                         }
                         // Version number on bottom of all pages
