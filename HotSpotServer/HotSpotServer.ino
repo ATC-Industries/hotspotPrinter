@@ -47,31 +47,29 @@ pin assignment                                      5 volt----------------------
 
 
 
-//------------------INclude files ----------------------------------------------
-#include <WiFi.h>                                 // Load Wi-Fi library
-#include <Arduino.h>
-#include <EEPROM.h>                               //driver for eeprom
-
+//------ Include files ---------------------------------------------------------
+#include <WiFi.h>               // Load Wi-Fi library
+#include <EEPROM.h>             //driver for eeprom
 //------ files for sd card -----------------------------------------------------
 #include <Update.h>
 #include <FS.h>
-#include <SD.h>                                  //routines for SD card reader/writer
-#include <SPI.h>                                 //SPI functions
+#include <SD.h>                 //routines for SD card reader/writer
+//------ Other include files ---------------------------------------------------
+#include <SPI.h>                //SPI functions
 #include <Wire.h>
-#include <LiquidCrystal_I2C.h>                 //4x20 lcd display
+#include <LiquidCrystal_I2C.h>  //4x20 lcd display
 
-#include "css.h"      // refrence to css file to bring in CSS styles
-#include "SDfunc.h"   // refrence the SD card functions
-#include "html.h"     // refrence to HTML generation functions
+#include "css.h"                // refrence to css file to bring in CSS styles
+#include "SDfunc.h"             // refrence the SD card functions
+#include "html.h"               // refrence to HTML generation functions
 
-#define EEPROM_SIZE 1024                            //rom reserved for eeprom storage
+#define EEPROM_SIZE 1024        //rom reserved for eeprom storage
 
-#define RXD2 16                                     //port 2 serial pins for external printer
+#define RXD2 16                 //port 2 serial pins for external printer
 #define TXD2 17
 //----------- assign port pins to buttons --------------------------------------
 #define button_F1 13    // works
 #define button_F2 26    // works
-
 #define button_F3 4     // works
 #define button_F4 27    // works
 #define button_PRINT 2  // works
