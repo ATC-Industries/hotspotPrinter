@@ -160,8 +160,6 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;      //we will need to dec
 String settingsCheck1_status = "";
 String settingsCheck3_status = "";
 String settingsCheck2_status = "";
-void settingsPageForm();
-void mainPageForm();
 bool settingsPageFlag = false;
 bool printPageFlag = false;
 bool updatePageFlag = false;
@@ -178,23 +176,13 @@ const int checkbox3_eeprom_addr= 202;
 const int checkbox4_eeprom_addr= 203;
 const int serial_number_addr = 204;
 
-
-
 //----------funtion prototypes -----------------------------------------
-String char_replace_http(String str);                 // routine to remove unwanted characters from header file
 void clear_output_buffer(void);
 void clear_radio_rx_array(void);                      //routine to clear rx buffer from xbee radio
 void print_ticket(void);                              //function to print the weigh ticket
 void set_text_size(unsigned int size);                //oled set text size routine
 void set_text_reverse(bool on_off);                   //oled set reverse text on/off
 void processRadioString();                            //routine to process radio rx string
-//void insertCSS(WiFiClient& client);                                     //insert the CSS style from css.ino
-
-/****** SD card update funtion prototypes ***********/
-void performUpdate(Stream &updateSource, size_t updateSize);  // perform the actual update from a given stream
-void updateFromFS(fs::FS &fs, String updateFileName);  //  check given FS for valid update.bin and perform update if available
-void updateFirmware();                                 //  Call this when you want the program to look for an update file on the SD Card
-void rebootEspWithReason(String reason);               //  reboot and serial log the reason for failure
 
 //-------------Interuput routines ----------------------------------------
 void IRAM_ATTR onTimer()                            // (100 ms) this is the actual interrupt(place before void setup() code)
@@ -205,22 +193,7 @@ void IRAM_ATTR onTimer()                            // (100 ms) this is the actu
   portEXIT_CRITICAL_ISR(&timerMux);
   }
 
-/**
- * Checks the status of the checkbox in the header and changes the flag and status string
- * @param h          header string to look at
- * @param is_checked flag that indicates if checkbox is checked
- * @param status     string that indicates if checkbox is checked
- * @param number     String value that indicates the checkbox number
- */
-void checkboxStatus(String h, bool& is_checked, String& status, String number) {
-  if (h.indexOf("&checkbox" + number) >= 0) {                   //if 'checkbox1' shows in string the checkbox is checked
-   is_checked = true;
-   status = "checked";
-  } else {
-   is_checked = false;
-   status = "";                                    //set to null value if not checked
-  }
-}
+void checkboxStatus(String h, bool& is_checked, String& status, String number);
 
 LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 or 3f for a 20 chars and 4 line display
 
@@ -236,7 +209,6 @@ void setup()
      lcd.clear();                                          //clear the display
      lcd.setCursor(0,0);                                   //set cursor position
      lcd.print(F("Agri-Tronix Corp"));                     //print text to display
-
 
      //---- declare input buttons with pullup --------------------------
      pinMode(button_PRINT,INPUT_PULLUP);                       //print button
@@ -696,6 +668,23 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 } //end of program 'loop()'
 
 //%%%%%%%%%%%%%%%%%%%%%% functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/**
+ * Checks the status of the checkbox in the header and changes the flag and status string
+ * @param h          header string to look at
+ * @param is_checked flag that indicates if checkbox is checked
+ * @param status     string that indicates if checkbox is checked
+ * @param number     String value that indicates the checkbox number
+ */
+void checkboxStatus(String h, bool& is_checked, String& status, String number) {
+  if (h.indexOf("&checkbox" + number) >= 0) {                   //if 'checkbox1' shows in string the checkbox is checked
+   is_checked = true;
+   status = "checked";
+  } else {
+   is_checked = false;
+   status = "";                                    //set to null value if not checked
+  }
+}
+
 
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
