@@ -19,6 +19,7 @@ void printPTSLogo(WiFiClient client) {
           </svg>
       </div>
       </div>
+      </div>
   )");
 }
 
