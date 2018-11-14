@@ -61,10 +61,10 @@ void endForm(WiFiClient client) {
 void endDiv(WiFiClient client) {
     client.println("</div>");
 }
-void inputBox(WiFiClient client, String name, String nameVar, String label, bool smallLine, String smallLineText) {
+void inputBox(WiFiClient client, String name, String nameVar, String label, bool smallLine, String smallLineText, String type="text") {
     client.println(R"(<div class="form-group">)");
-    client.println(R"(    <label for=")" + name + R"(">Top Line</label>)");
-    client.println(R"(    <input type="text" class="form-control" name=")" + name + R"(" id=")" + name + R"(" value=")" + nameVar + R"(">)");
+    client.println(R"(    <label for=")" + name + R"(">)" + label + R"(</label>)");
+    client.println(R"(    <input type=")" + type + R"(" class="form-control" name=")" + name + R"(" id=")" + name + R"(" value=")" + nameVar + R"(">)");
     if(smallLine){
         client.println(R"(<small id=")" + name + R"(Help" class="form-text text-muted">)" + smallLineText + R"(</small>)");
     }

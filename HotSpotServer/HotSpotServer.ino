@@ -85,6 +85,7 @@ const int checkbox2_eeprom_addr = 201;  // checkbox2   -   201
 const int checkbox3_eeprom_addr = 202;  // checkbox3   -   202
 const int checkbox4_eeprom_addr = 203;  // checkbox4   -   203
 const int serial_number_addr = 204;     // checkbox5   -   204
+const int password_addr = 205;          // password    -   205
 
 
 //------------- an integer array to hold the version number---------------------
@@ -92,7 +93,8 @@ const int VERSION_NUMBER[3] = {0,0,4};   // [MAJOR, MINOR, PATCH]
 
 //----------------- Replace with network credentials ---------------------------
 const char* ssid     = "ProTournament";
-const char* password = "123456789";
+//char* password = "123456789";
+String passwordString = "123456789";
 WiFiServer server(80);          // Set web server port number to 80
 //------------------------------------------------------------------------------
 
@@ -128,6 +130,8 @@ bool checkbox5_is_checked;      // If checkbox should show checked or not
 bool lock_flag = false;         // flag that indicates weight is a locked value
 bool cb_print_on_lock;          // check box flag for print on lock
 bool isSDCardPresent = false;   // Flag checked on startup true if SD card is found
+String passwordMessage = "";
+bool passSuccess = false;
 volatile int ticket;            // ticket serial number
 byte Imac[6];                   // array to hold the mac address
 String checkbox1_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
@@ -149,6 +153,7 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 bool settingsPageFlag = false;  // True if on settings page
 bool printPageFlag = false;     // True if on print page
 bool updatePageFlag = false;    // True if on update page
+bool changePasswordPageFlag = false; // True if on change password page
 
 //----------funtion prototypes -------------------------------------------------
 void clear_output_buffer(void);
@@ -157,6 +162,13 @@ void print_ticket(void);                // function to print the weigh ticket
 void set_text_size(unsigned int size);  // oled set text size routine
 void set_text_reverse(bool on_off);     // oled set reverse text on/off
 void processRadioString();              // routine to process radio rx string
+
+char* string2char(String str){
+    if(str.length()!= 0){
+        char *p = const_cast<char*>(str.c_str());
+        return p;
+    }
+}
 
 //-------------Interuput routines ----------------------------------------------
 void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt(place before void setup() code)
@@ -212,6 +224,8 @@ void setup()
         Serial.println("failed to intialize EEPROM");        //display error to monitor
         }
 
+    passwordString = (EEPROM.readString(password_addr));
+    // tempPassword.toCharArray(password,30);
 
     Serial.print("Setting AP (Access Point)…\n");   // Connect to Wi-Fi network with SSID and password
     /* Remove the password parameter, if you want the AP (Access Point) to be open
@@ -220,6 +234,7 @@ void setup()
        the printer  */
     if (!digitalRead(13))       // if print button is held down during power up
         {
+        // TODO All this `if` needs to be deleted and maybe replaced with enter diagnostic mode
         Serial.println("password = 987654321");
 
         lcd.setCursor(0,0);
@@ -247,8 +262,11 @@ void setup()
 
     else                                      //if print button is not pressed
         {
-        WiFi.softAP(ssid,password);           //ssid declared in setup, pw recalled from eeprom or use default
-        Serial.println("password = 123456789");
+        WiFi.softAP(ssid,string2char(passwordString));           //ssid declared in setup, pw recalled from eeprom or use default
+        // TODO password logging should be deleted before production
+        char passStr[30];
+        Serial.println("password = " + passwordString);
+        Serial.println(passStr);
         }
 
     //.softAP(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connection)
@@ -449,6 +467,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 settingsPageFlag = true;
                                 printPageFlag = false;
                                 updatePageFlag = false;
+                                changePasswordPageFlag = false;
                             } else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
                                 {
                                 print_ticket();                         //print weigh ticket
@@ -456,12 +475,15 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 settingsPageFlag = false;
                                 printPageFlag = true;
                                 updatePageFlag = false;
+
+                                changePasswordPageFlag = false;
                                 }
                              else if (headerT.indexOf("update?") >= 0)
                                 {
                                 settingsPageFlag = false;
                                 printPageFlag = false;
                                 updatePageFlag = true;
+                                changePasswordPageFlag = false;
                                 }
                             else if (headerT.indexOf("checkForUpdate?") >= 0)
                                 {
@@ -473,11 +495,19 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 int index = strIndex.toInt();
                                 updateFirmware(updateMessage, arrayOfUpdateFiles[index]);
                             }
+                            else if (headerT.indexOf("changePassword?") >= 0)
+                               {
+                               settingsPageFlag = false;
+                               printPageFlag = false;
+                               updatePageFlag = false;
+                               changePasswordPageFlag = true;
+                               }
                             else
                                 {
                                 settingsPageFlag = false;
                                 printPageFlag = false;
                                 updatePageFlag = false;
+                                changePasswordPageFlag = false;
                                 }
                         }
                         // Looks for Line1 in header and then processes the SETTINGS results if found
@@ -537,6 +567,45 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             Serial.println("Checkbox4: " + checkbox4_status);
 
                         }
+                        // Looks for pw in header and then processes the SETTINGS results if found
+                        else if ((headerT.indexOf("pw=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
+                        {
+                            String pass1;
+                            String pass2;
+                            // TODO  Process password change logic
+                            pass1 =  header.substring(header.indexOf("pw=")+3,header.indexOf("&pw2="));//parse out the varible strings for the the 2 passwords
+                            pass2 =  header.substring(header.indexOf("pw2=")+4,header.indexOf(" HTTP"));
+
+                            // check passwords match and are long enough
+                            if (pass1 != pass2)
+                            {
+                                passwordMessage = "Passwords Don't Match";
+                                passSuccess = false;
+                                // Fail Banner Passwords don't match
+                            } else
+                            {
+                                if (pass1.length() < 8) {
+                                    passwordMessage = "Passwords needs to be 8 or more characters.";
+                                    passSuccess = false;
+                                    // Fail Banner Password too short
+                                } else if (pass1.length() > 20) {
+                                    passwordMessage = "Passwords needs to be 20 or less characters.";
+                                    passSuccess = false;
+                                    // Fail Banner Password too long
+                                } else {
+                                    passwordMessage = "Password was successfully changed.";
+                                    passSuccess = true;
+                                // success banner
+                                // Save password to password Variable
+                                //pass1.toCharArray(password,30);
+                                passwordString = pass1;
+                                // Save password to EEPROM
+                                EEPROM.writeString(password_addr, pass1.substring(0,20));
+                                EEPROM.commit();                         ////save to eeprom
+                                }
+                            }
+
+                        }
                         // ATC: This else statement is totally unnecessary and only
                         //      serves as a place holder for future expansion
                         else    //if header did not contain text "line1" then run code in else statment below
@@ -574,6 +643,10 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                               button(client, "Update Firmware", "success");
                               endForm(client);
                             }
+                            // change password button
+                            startForm(client, "/changePassword");
+                            button(client, "Change Password", "info");
+                            endForm(client);
                         }
 //--RENDER UPDATE PAGE----------------------------------------------------------
                         else if (updatePageFlag) {
@@ -601,6 +674,41 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             startForm(client, "/");
                             button(client, "Cancel", "danger");
                             endForm(client);
+                        }
+//--CHANGE PASSWORD PAGE--------------------------------------------------------
+
+                        else if (changePasswordPageFlag) {
+                            pageTitle(client, "Change Password");
+                            if (passwordMessage != "") {
+                                if (passSuccess) {
+                                    // succes banner
+                                    alert(client, "success", passwordMessage, "SUCCESS!");
+
+                                } else {
+                                    // fail banner
+                                    alert(client, "danger", passwordMessage, "TRY AGAIN!");
+                                }
+                            }
+                            if(passSuccess)
+                            {
+                                // return home
+                                startForm(client, "/");
+                                button(client, "Return to Home Page", "success");
+                                endForm(client);
+                                alert(client, "info", "The next time you login to the this WiFi Hotspot you will be required to enter your new password.", "NOTICE!");
+                            } else
+                            {
+                                startForm(client, "/changePassword");
+                                inputBox(client, "pw", "", "Enter New Password", false, "Must be at least 8 characters and no more than 20", "password");
+                                inputBox(client, "pw2", "", "Please Reenter Password", false, "Passwords must match", "password");
+                                button(client, "submit", "primary");
+                                endForm(client);
+
+                                startForm(client, "/");
+                                button(client, "Cancel", "danger");
+                                endForm(client);
+                            }
+                            passwordMessage = "";
                         }
 //--RENDER HOME SCREEN----------------------------------------------------------
                         else
