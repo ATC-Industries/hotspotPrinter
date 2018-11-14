@@ -2,6 +2,21 @@
 #define __HTML_H__
 
 #include <WiFi.h>
+void htmlHead(WiFiClient client) {
+  // HTML head
+  client.println(R"(
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <link rel="icon" href="data:,">
+          <style>.middle-form{max-width: 500px; margin:auto;padding:10px;}
+      )");
+      insertCSS(client);
+  client.println("</head>");
+  client.println("<body>");
+}
+
 void printPTSLogo(WiFiClient client) {
   client.println(R"(
       <div class="middle-form" style="margin-bottom: 10px;">

@@ -323,23 +323,23 @@ void setup()
      line3 = (EEPROM.readString(line3_eeprom_addr));
      line4 = (EEPROM.readString(line4_eeprom_addr));
      serial_number = EEPROM.readUInt(serial_number_addr);     //get ticket serial number
-  
+
      cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));  //recall checkbox status (boolean)
      cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
      cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
      cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
-  
+
      cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";    //set 'checkbox#_is_checked' to match 'checkbox#_status'
      cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
      cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
      cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
-  
+
      line1.toCharArray(temp_str1,30);                               //must convert string to a character array for drawStr() to work
      line2.toCharArray(temp_str2,30);
      line3.toCharArray(temp_str3,30);
      line4.toCharArray(temp_str4,30);
-  
-    lcd.clear(); 
+
+    lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(temp_str1);
     lcd.setCursor(0,1);
@@ -591,18 +591,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 // do some stuff
                         }
                         //--------------- Display the HTML web page---------------------------
-                        // HTML head
-                        client.println(R"(
-                            <!DOCTYPE html>
-                            <html>
-                            <head>
-                                <meta name="viewport" content="width=device-width, initial-scale=1">
-                                <link rel="icon" href="data:,">
-                                <style>.middle-form{max-width: 500px; margin:auto;padding:10px;}
-                            )");
-                            insertCSS(client);
-                        client.println("</head>");
-                        client.println("<body>");
+                        htmlHead(client);
 
                         // svg PTS logo
                         printPTSLogo(client);
