@@ -264,9 +264,7 @@ void setup()
         {
         WiFi.softAP(ssid,string2char(passwordString));           //ssid declared in setup, pw recalled from eeprom or use default
         // TODO password logging should be deleted before production
-        char passStr[30];
         Serial.println("password = " + passwordString);
-        Serial.println(passStr);
         }
 
     //.softAP(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connection)
@@ -321,7 +319,7 @@ void setup()
     Serial.print(":");
       Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
     }
-
+    Serial.print("\n");
 // Check if SD card is present
 isSDCardPresent = isSDCard();
 }//void setup() ending terminator
@@ -460,6 +458,10 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 
                         Serial.println("headerT:");            //print substring to serial monitor
                         Serial.println(headerT);
+
+                        // TODO Delete this line before production
+                        Serial.println("password = " + passwordString);
+                        
                         if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
                         {
                             if (headerT.indexOf("settings?") >= 0)      //if header contains "settings"
@@ -691,16 +693,17 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                             }
                             if(passSuccess)
                             {
+                                alert(client, "info", "The next time you login to the this WiFi Hotspot you will be required to enter your new password.", "NOTICE!");
+
                                 // return home
                                 startForm(client, "/");
                                 button(client, "Return to Home Page", "success");
                                 endForm(client);
-                                alert(client, "info", "The next time you login to the this WiFi Hotspot you will be required to enter your new password.", "NOTICE!");
                             } else
                             {
                                 startForm(client, "/changePassword");
-                                inputBox(client, "pw", "", "Enter New Password", false, "Must be at least 8 characters and no more than 20", "password");
-                                inputBox(client, "pw2", "", "Please Reenter Password", false, "Passwords must match", "password");
+                                inputBox(client, "pw", "", "Enter New Password", true, "Must be at least 8 characters and no more than 20", "password");
+                                inputBox(client, "pw2", "", "Please Reenter Password", true, "Passwords must match", "password");
                                 button(client, "submit", "primary");
                                 endForm(client);
 
@@ -709,6 +712,7 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 endForm(client);
                             }
                             passwordMessage = "";
+                            passSuccess = false;
                         }
 //--RENDER HOME SCREEN----------------------------------------------------------
                         else
