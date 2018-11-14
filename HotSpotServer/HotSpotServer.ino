@@ -50,7 +50,6 @@ pin assignment                                      5 volt----------------------
 //------------------INclude files ----------------------------------------------
 #include <WiFi.h>                                 // Load Wi-Fi library
 #include <Arduino.h>
-#include <string.h>                               //enables the string fuctions
 #include <EEPROM.h>                               //driver for eeprom
 
 //------ files for sd card -----------------------------------------------------
@@ -106,10 +105,6 @@ String line1 = "";              // String to hold value of Line 1 input box
 String line2 = "";              // String to hold value of Line 2 input box
 String line3 = "";              // String to hold value of Line 3 input box
 String line4 = "";              // String to hold value of Line 4 input box
-char temp_str1[31];             // CharArray to hold value of Line 1 input box
-char temp_str2[31];             // CharArray to hold value of Line 2 input box
-char temp_str3[31];             // CharArray to hold value of Line 3 input box
-char temp_str4[31];             // CharArray to hold value of Line 4 input box
 char radio_rx_array[31];        // array being recieved on xbee radio
 bool radio_rx_ready = false;    // whether the rec radio string is complete
 int radio_rx_pointer;           //pointer for radio rx buffer
@@ -288,20 +283,15 @@ void setup()
      cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
      cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
 
-     line1.toCharArray(temp_str1,30);                               //must convert string to a character array for drawStr() to work
-     line2.toCharArray(temp_str2,30);
-     line3.toCharArray(temp_str3,30);
-     line4.toCharArray(temp_str4,30);
-
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.print(temp_str1);
+    lcd.print(line1);
     lcd.setCursor(0,1);
-    lcd.print(temp_str2);
+    lcd.print(line2);
     lcd.setCursor(0,2);
-    lcd.print(temp_str3);
+    lcd.print(line3);
     lcd.setCursor(0,3);
-    lcd.print(temp_str4);
+    lcd.print(line4);
 
     WiFi.macAddress(Imac);
       Serial.print("MAC");
@@ -713,8 +703,8 @@ void print_ticket(void)
 
               //----------save data to database --------------------------------------------------
               // weight = "112.56";
-               //line4.toCharArray(temp_str1,30);
-              // *database [ticket][0] = temp_str1;     //save name to data base
+               //line4.toCharArray(,30);
+              // *database [ticket][0] = ;     //save name to data base
              //  *database [ticket][1] = weight;        //save the weight
 
 //                  for (i = 0; i< 30;i++)
