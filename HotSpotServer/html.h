@@ -33,11 +33,13 @@ void pageTitle(WiFiClient client, String title) {
 }
 
 void startForm(WiFiClient client, String action) {
+    client.println("<div class=\"middle-form\">");
     client.println(R"(<form action=")" + action + R"(" method="GET">)");
 }
 
 void endForm(WiFiClient client) {
     client.println("</form>");
+    client.println("</div>");
 }
 
 void endDiv(WiFiClient client) {
@@ -62,12 +64,12 @@ void button(WiFiClient client, String value, String context) {
 }
 
 void alert(WiFiClient client, String context, String contentTop, String heading = "", String contentBottom = ""){
-  client.println("<div class=\"alert alert-" + context + "\" role=\"alert\">");
-  if(!(heading = "")){
+  client.println("<div style=\"margin-top:5px;\" class=\"alert alert-" + context + "\" role=\"alert\">");
+  if(heading != ""){
     client.println("<h4 class=\"alert-heading\">" + heading + "</h4>");
   }
   client.println(contentTop);
-  if(!(contentBottom = "")){
+  if(contentBottom != ""){
     client.println("<hr>");
     client.println("<p class=\"mb-0\">" + contentBottom + "</p>");
   }

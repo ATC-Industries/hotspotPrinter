@@ -615,15 +615,14 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
 
                             button(client, "submit", "primary");
                             endForm(client);
-                            endDiv(client);
 
                             // if the startup flag that determined if an SD card is present then display the update button
                             if(isSDCardPresent)
                             {
+                              endDiv(client);
                               startForm(client, "/update");
                               button(client, "Update Firmware", "success");
                               endForm(client);
-                              endDiv(client);
                             }
                         }
                         //   Update page HTML
@@ -636,7 +635,6 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                               startForm(client, "/checkForUpdate");
                               button(client, "Check for Update", "success");
                               endForm(client);
-                              endDiv(client);
                             }
                             // Print message to user dynamically
                             if(updateMessage != ""){
@@ -649,11 +647,11 @@ if (read_keyboard_timer >= 2)                          //read keypad every 200 m
                                 printTableOfUpdateFiles(client, arrayOfUpdateFiles);
                             }
                             //------------ Cancel BUTTON ------------------------------
-                            client.println("<div class=\"middle-form\">");
-                            client.println("<form action=\"/\" method=\"GET\">");
-                            client.println("<input type=\"submit\" value=\"Cancel\" class=\"btn btn-danger btn-lg btn-block\">");
-                            client.println("</form>");
-                            client.println("</div></div>");
+                            endDiv(client);
+                            startForm(client, "/");
+                            button(client, "Cancel", "danger");
+                            endForm(client);
+                            endDiv(client);
                         }
                         //---------------------  Home screen
                         else
