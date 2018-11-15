@@ -764,7 +764,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             // Date in form Thu Nov 15 2018 15:54:19 GMT-0500 (EST)
                             //              012345678901234567890123456789012345678
                             //              Fri Aug 03 2018 02:57:46 GMT-0400 (EDT)
-                            int year = date.substring(11,5).toInt();
+                            int year = date.substring(11,15).toInt();
                             String monthStr = date.substring(4,7);
                             int month;
                             if (monthStr == "Jan") {month = 1;}
@@ -783,7 +783,6 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             int hour = date.substring(16,18).toInt();
                             int minute = date.substring(19,21).toInt();
                             int second = date.substring(22,24).toInt();
-                            Serial.println("date is: " + date);
                             Serial.println("year is: " + String(year));
                             Serial.println("month is: " + String(month));
                             Serial.println("day is: " + String(day));
