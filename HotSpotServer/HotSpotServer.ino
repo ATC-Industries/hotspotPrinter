@@ -140,6 +140,7 @@ String checkbox2_status = "";   // Holds chekbox status "checked" or "" to be in
 String checkbox3_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox4_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox5_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
+String EPOCHdate;               // Hold the date in EPOCH time
 volatile int interruptCounter;  // varible that tracks number of interupts
 int totalInterruptCounter;      // counter to track total number of interrupts
 int no_signal_timer;            // timeout counter used to display No Signal on display
@@ -553,6 +554,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
+                        Serial.println("EPOCH time = " + EPOCHdate);
 
                         if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
                         {
@@ -673,12 +675,12 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             Serial.println("Checkbox4: " + checkbox4_status);
 
                         }
-                        // Looks for pw in header and then processes the SETTINGS results if found
+                        // Looks for pw in header and then processes the password results if found
                         else if ((headerT.indexOf("pw=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
                         {
                             String pass1;
                             String pass2;
-                            // TODO  Process password change logic
+                            // Process password change logic
                             pass1 =  header.substring(header.indexOf("pw=")+3,header.indexOf("&pw2="));//parse out the varible strings for the the 2 passwords
                             pass2 =  header.substring(header.indexOf("pw2=")+4,header.indexOf(" HTTP"));
 
@@ -711,6 +713,23 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 }
                             }
 
+                        }
+                        // Looks for date in header and then processes the date results if found
+                        else if ((headerT.indexOf("date=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
+                        {
+                            // Parse EPCOH time from header
+                            EPOCHdate =  header.substring(header.indexOf("date=")+5,header.indexOf(" HTTP"));
+                        }
+                        // Looks for userDate in header and then processes the date results if found
+                        else if ((headerT.indexOf("UserDate=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
+                        {
+                            String date;
+                            String time;
+                            // Parse user date and time from header
+                            date =  header.substring(header.indexOf("UserDate=")+9,header.indexOf("&UserTime"));
+                            time =  header.substring(header.indexOf("UserTime=")+9,header.indexOf(" HTTP"));
+                            Serial.println("date is: " + char_replace_http(date));
+                            Serial.println("time is: " + char_replace_http(time));
                         }
                         // ATC: This else statement is totally unnecessary and only
                         //      serves as a place holder for future expansion
@@ -765,6 +784,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             //startForm(client, "[action]")
                             startForm(client, "/settings");
 
+                            // Pull the date from the device and send through header
                             client.println(R"###(
                             <script>
                             var d = new Date();
@@ -773,6 +793,16 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             <input type="hidden" style="visibility: hidden;" class="form-control" name="date" id="date">
                             )###");
                             endForm(client);
+
+                            // Allow user to enter date and time then send
+                            startForm(client, "/settings");
+                            //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
+                            inputBox(client, "UserDate", "", "Date", false, "", "date");
+                            inputBox(client, "UserTime", "", "Time", false, "", "time");
+                            button(client, "Update Date", "primary");
+                            endForm(client);
+
+
                             // Cancel button
                             startForm(client, "/settings");
                             button(client, "Cancel", "danger");
