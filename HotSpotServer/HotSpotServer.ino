@@ -1,16 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
 /**************************************************************
   Terry Clarkson & Adam Clarkson
   11/02/18
@@ -29,14 +18,14 @@ pass word is [987654321]
 
                                                                                                                   __________________________
 pin assignment                                      5 volt--------------------------------------------------------|                         |
-                                  |-------------|     GND  -------------------------------------------------------|                         |
-                            ______|             |_______                                                          |                         |
-            3.3 volts out---|3.3V                   gnd |                                                         |                         |
-                            |EN                    IO23 | ---- SPI MOSI to SD card--------------------------------|                         |
-                            |SVP                   IO22 | ---- SCL pin to 4x20 LCD display --------------|----|   |       SD CARD           |
-                            |SVN                   TXD0 | ---- Serial TX Monitor and programming uart0   |  L |   |                         |
-      ___________           |IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
-     /           \          |IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
+                5v   Gnd          |-------------|     GND  -------------------------------------------------------|                         |
+              ___|____|___   _____|             |_______                                                          |                         |
+              |           | |3.3V                   GND |                                                         |                         |
+              |   RTC     | |EN                    IO23 | ---- SPI MOSI to SD card--------------------------------|                         |
+              |___________| |SVP                   IO22 | ---- SCL pin to 4x20 LCD display --------------|----|   |       SD CARD           |
+                    |  |    |SVN                   TXD0 | ---- Serial TX Monitor and programming uart0   |  L |   |                         |
+      ___________   |  -----|IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
+     /           \  --------|IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
     |             |---------|IO32                   GND |                                                ------   |                         |
     |             |---------|IO33                  IO19 | ---- SPI MISO to SD card--------------------------------|                         |
     |   XBEE      |         |IO25                  IO18 | ---- clock on SD card-----------------------------------|                         |
@@ -44,12 +33,12 @@ pin assignment                                      5 volt----------------------
     |             |    F4---|IO27                  IO17 | ---- TX Uart2 Printer                                   |                         |
     |             |         |IO14                  IO16 | ---- RX Uart2 Printer                                   |_________________________|
     |             |         |IO12                  IO4  | ---- F3
-     -------------          |GND                   IO0  |
+     -------------          |GND                   IO0  | ---- on board reset button
                         F1--|IO13                  IO2  | ---- PRT button
-                            |SD2                   IO15 |
-                            |SD3                   SD1  |
-                            |CMD                   SD0  |
-           5 volts in   ----|5V                    CLK  |
+                    X-------|SD2                   IO15 |
+                    X-------|SD3                   SD1  | -----X
+                    X-------|CMD                   SD0  | -----X
+           5 volts in   ----|5V                    CLK  | -----X
                             _____________________________
 
 
@@ -67,10 +56,11 @@ pin assignment                                      5 volt----------------------
 #include <SD.h>                 //routines for SD card reader/writer
 //------ Other include files ---------------------------------------------------
 #include <SPI.h>                //SPI functions
-#include <Wire.h>
+#include <Wire.h>               //i2C function
 #include <LiquidCrystal_I2C.h>  //4x20 lcd display
 #include <NetBIOS.h>
-#include <DS3231.h>             //RTC routines
+//#include <DS3231.h>             //RTC routines ****NOTE*** down loaded zip file form github 'RTClib'
+#include <RTClib.h>             //library for  RTC routines
 #include "css.h"                // refrence to css file to bring in CSS styles
 #include "SDfunc.h"             // refrence the SD card functions
 #include "html.h"               // refrence to HTML generation functions
@@ -184,12 +174,37 @@ void set_text_size(unsigned int size);  // oled set text size routine
 void set_text_reverse(bool on_off);     // oled set reverse text on/off
 void processRadioString();              // routine to process radio rx string
 void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minute, byte Second);
-char* string2char(String str){
-    if(str.length()!= 0){
+// Checks status of checkbox and sets flags for proper HTML display
+void checkboxStatus(String h, bool& is_checked, String& status, String number);
+char* string2char(String str)
+{
+    if(str.length()!= 0)
+    {
         char *p = const_cast<char*>(str.c_str());
         return p;
     }
 }
+
+
+LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 or 3f for a 20 chars and 4 line display
+
+RTC_DS3231 rtc;                                        //start an instance of the real time clock named 'rtc'
+
+//--------not used with RTC_DS3231 routines--------------------------
+//DS3231 Clock;                                         //start an instance of clock routine named "Clock"
+//bool Century=false;
+//bool h12;
+//bool PM;
+//byte ADay, AHour, AMinute, ASecond, ABits;
+//bool ADy, A12h, Apm;
+//
+//byte Year;
+//byte Month;
+//byte Date;
+//byte DoW;
+//byte Hour;
+//byte Minute;
+//byte Second;
 
 //-------------Interuput routines ----------------------------------------------
 void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt(place before void setup() code)
@@ -199,29 +214,6 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
   read_keyboard_timer++;
   portEXIT_CRITICAL_ISR(&timerMux);
   }
-
-// Checks status of checkbox and sets flags for proper HTML display
-void checkboxStatus(String h, bool& is_checked, String& status, String number);
-
-LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 or 3f for a 20 chars and 4 line display
-
-
-
-DS3231 Clock;                                         //start an instance of clock routine named "Clock"
-bool Century=false;
-bool h12;
-bool PM;
-byte ADay, AHour, AMinute, ASecond, ABits;
-bool ADy, A12h, Apm;
-
-byte Year;
-byte Month;
-byte Date;
-byte DoW;
-byte Hour;
-byte Minute;
-byte Second;
-
 
 
 //--------------------------------------------------------------------------
@@ -427,7 +419,7 @@ void setup()
    // Check if SD card is present
    isSDCardPresent = isSDCard();
 
-     test_clock();                                                   //test clock chip and send results to serial monitor
+
 }//void setup() ending terminator
 
 
@@ -437,7 +429,7 @@ void loop(){
 
 
 
-
+   //---- 100 ms routine
    if (interruptCounter > 0)                          //every one second 100 msec int is generated
       {
       portENTER_CRITICAL(&timerMux);
@@ -446,7 +438,7 @@ void loop(){
       totalInterruptCounter++;                        //increment counter for ints generated every second
       }
 
-
+   //---- no signal timer -------
    if (totalInterruptCounter >=50)
             { totalInterruptCounter = 0;                //reset counter
               if (++ no_signal_timer >= 2)               //if no signal this timer times out
@@ -542,20 +534,29 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
               {clear_radio_rx_array();              //clear rx radio buffer
                radio_rx_pointer = 0;                //reset the rx radio buffer
               }
-            if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
+           if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
               {
              //-------------display weight on LCD-----------------------------------
                no_sig_flag = 0;                     //clear flag used in no sig message routine
                lcd.clear();
-               lcd.setCursor(4,1);
-               lcd.print(radio_rx_array);
+               lcd.setCursor(3,1);                   //3rd position 2 line
+          //     lcd.print(radio_rx_array);           //send recieved string to display
+               int inc = 0;
+               while (inc <= 15)
+                 {if (radio_rx_array[inc] >= 31)
+                        {lcd.write(radio_rx_array[inc]);  //write character to screen
+                         if (radio_rx_array[inc] == 'H' && radio_rx_array[inc+1] != 'O')  //locked value and not 'HOLD'?
+                             {lcd.setCursor(3,2);
+                              lcd.print(" *** LOCKED ***"); //Display "locked" message on lcd
 
+                             }
+                     }
+                  inc++;
+                 }
              //------------------------------------------------------------------------
              processRadioString();
                }
           }
-
-
 
 //-------------- start client routine ----------------------------------------------------------------
 
@@ -1016,64 +1017,97 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 }
 
 
-//-------------------Test clock chip and send data to Serial Monitor --------------------------------------
-void test_clock(void)
-  {Serial.print(Clock.getYear(), DEC);
-  Serial.print(' ');
-  // then the month
-  Serial.print(Clock.getMonth(Century), DEC);
-  Serial.print(' ');
-  // then the date
-  Serial.print(Clock.getDate(), DEC);
-  Serial.print(' ');
-  // and the day of the week
-  Serial.print(Clock.getDoW(), DEC);
-  Serial.print(' ');
-  // Finally the hour, minute, and second
-  Serial.print(Clock.getHour(h12, PM), DEC);
-  Serial.print(' ');
-  Serial.print(Clock.getMinute(), DEC);
-  Serial.print(' ');
-  Serial.print(Clock.getSecond(), DEC);
-  // Add AM/PM indicator
-  if (h12)
-   {
-    if (PM)
-      {Serial.print(" PM ");}
-    else
-      {Serial.print(" AM ");}
+//------------------Set time------------------------------------
+// This line sets the RTC with an explicit date & time, for example to set
+// January 21, 2014 at 3am you would call:
 
-  }
-  else
-  {Serial.print(" 24h ");}
+// rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
 
-  // Display the temperature
-  Serial.print("T=");
-  Serial.print(Clock.getTemperature(), 2);
-  // Tell whether the time is (likely to be) valid
-  if (Clock.oscillatorCheck()) {
-    Serial.print(" O+");
-  } else {
-    Serial.print(" O-");
-  }
-}
-//---------------------- end of clock  test routines -------------------------------------------
+//----------------- Read Time -----------------------------------
+//    DateTime now = rtc.now();
+//
+//    Serial.print(now.year(), DEC);
+//    Serial.print('/');
+//    Serial.print(now.month(), DEC);
+//    Serial.print('/');
+//    Serial.print(now.day(), DEC);
+
+//    Serial.print(" (");
+//    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
+//    Serial.print(") ");
+
+//    Serial.print(now.hour(), DEC);
+//    Serial.print(':');
+//    Serial.print(now.minute(), DEC);
+//    Serial.print(':');
+//    Serial.print(now.second(), DEC);
+//    Serial.println();
 
 
-//------------------------Set Clock routine-----------------------------------------------------------------
-void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minute, byte  Second)
-     {
-    Clock.setClockMode(false);  // set to 24h
-    //setClockMode(true); // set to 12h
 
-    Clock.setYear(Year);
-    Clock.setMonth(Month);
-    Clock.setDate(Date);
-    Clock.setDoW(DoW);
-    Clock.setHour(Hour);
-    Clock.setMinute(Minute);
-    Clock.setSecond(Second);
-     }
+////-------------------Test clock chip and send data to Serial Monitor -----not used (tlc)-------------------------------
+//
+//
+//void test_clock(void)
+//  {
+//  // get the year
+//  Serial.print(Clock.getYear(), DEC);                           //Read year from RTC
+//  Serial.print(' ');
+//  // then the month
+//  Serial.print(Clock.getMonth(Century), DEC);                   //Read Month
+//  Serial.print(' ');
+//  // then the date
+//  Serial.print(Clock.getDate(), DEC);                           //read date
+//  Serial.print(' ');
+//  // and the day of the week
+//  Serial.print(Clock.getDoW(), DEC);                            //read day of week
+//  Serial.print(' ');
+//  // Finally the hour, minute, and second
+//  Serial.print(Clock.getHour(h12, PM), DEC);                     //read hour
+//  Serial.print(' ');
+//  Serial.print(Clock.getMinute(), DEC);                          //read minute
+//  Serial.print(' ');
+//  Serial.print(Clock.getSecond(), DEC);                          //read second
+//  // Add AM/PM indicator
+//  if (h12)                                                       //AM/PM indicator
+//   {
+//    if (PM)
+//      {Serial.print(" PM ");}
+//    else
+//      {Serial.print(" AM ");}
+//
+//  }
+//  else
+//  {Serial.print(" 24h ");}
+//
+//  // Display the temperature                                     //read temperature
+//  Serial.print("T=");
+//  Serial.print(Clock.getTemperature(), 2);
+//  // Tell whether the time is (likely to be) valid
+//  if (Clock.oscillatorCheck())                                    //test oscilator
+//  {
+//    Serial.print(" O+");
+//  } else {
+//    Serial.print(" O-");
+//  }
+//}
+////---------------------- end of clock  test routines ------not used (tlc) -------------------------------------
+
+
+////------------------------Set Clock routine----- not used (tlc)------------------------------------------------------------
+//void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minute, byte  Second)
+//     {
+//    Clock.setClockMode(false);  // set to 24h
+//    //setClockMode(true); // set to 12h
+//
+//    Clock.setYear(Year);
+//    Clock.setMonth(Month);
+//    Clock.setDate(Date);
+//    Clock.setDoW(DoW);
+//    Clock.setHour(Hour);
+//    Clock.setMinute(Minute);
+//    Clock.setSecond(Second);
+//     }
 
 
 
@@ -1392,6 +1426,85 @@ void processRadioString()
 
   }
 }//void processRadioString()
+
+////------------------RTC routines --------------------------------------------------
+//// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
+//#include <Wire.h>
+//#include "RTClib.h"
+//
+//RTC_DS3231 rtc;
+//
+//char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+//
+//void setup () {
+//
+//#ifndef ESP8266
+//  while (!Serial); // for Leonardo/Micro/Zero
+//#endif
+//
+//  Serial.begin(9600);
+//
+//  delay(3000); // wait for console opening
+//
+//  if (! rtc.begin()) {
+//    Serial.println("Couldn't find RTC");
+//    while (1);
+//  }
+//
+//  if (rtc.lostPower()) {
+//    Serial.println("RTC lost power, lets set the time!");
+//    // following line sets the RTC to the date & time this sketch was compiled
+//    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+//    // This line sets the RTC with an explicit date & time, for example to set
+//    // January 21, 2014 at 3am you would call:
+//    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+//  }
+//}
+//
+//void loop () {
+//    DateTime now = rtc.now();
+//
+//    Serial.print(now.year(), DEC);
+//    Serial.print('/');
+//    Serial.print(now.month(), DEC);
+//    Serial.print('/');
+//    Serial.print(now.day(), DEC);
+//    Serial.print(" (");
+//    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
+//    Serial.print(") ");
+//    Serial.print(now.hour(), DEC);
+//    Serial.print(':');
+//    Serial.print(now.minute(), DEC);
+//    Serial.print(':');
+//    Serial.print(now.second(), DEC);
+//    Serial.println();
+//
+//    Serial.print(" since midnight 1/1/1970 = ");
+//    Serial.print(now.unixtime());
+//    Serial.print("s = ");
+//    Serial.print(now.unixtime() / 86400L);
+//    Serial.println("d");
+//
+//    // calculate a date which is 7 days and 30 seconds into the future
+//    DateTime future (now + TimeSpan(7,12,30,6));
+//
+//    Serial.print(" now + 7d + 30s: ");
+//    Serial.print(future.year(), DEC);
+//    Serial.print('/');
+//    Serial.print(future.month(), DEC);
+//    Serial.print('/');
+//    Serial.print(future.day(), DEC);
+//    Serial.print(' ');
+//    Serial.print(future.hour(), DEC);
+//    Serial.print(':');
+//    Serial.print(future.minute(), DEC);
+//    Serial.print(':');
+//    Serial.print(future.second(), DEC);
+//    Serial.println();
+//
+//    Serial.println();
+//    delay(3000);
+//}
 
 //void write_string(int  address,int  string[])
 //     {
