@@ -74,6 +74,12 @@ pin assignment                                      5 volt----------------------
 #define button_F4 27    //
 #define button_PRINT 2  //
 
+//////////////////////////////////////////////////////
+//DEV VARIABLES
+bool allowUserDefinedDate = true;
+//////////////////////////////////////////////////////
+
+
 //------------ Assign eeprom save addresses ------------------------------------
 const int line1_eeprom_addr = 0;        // line 1      -     0 to  49 - 50 bytes
 const int line2_eeprom_addr = 50;       // line 2      -    50 to  99 - 50 bytes
@@ -794,14 +800,15 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             )###");
                             endForm(client);
 
-                            // Allow user to enter date and time then send
-                            startForm(client, "/settings");
-                            //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
-                            inputBox(client, "UserDate", "", "Date", false, "", "date");
-                            inputBox(client, "UserTime", "", "Time", false, "", "time");
-                            button(client, "Update Date", "primary");
-                            endForm(client);
-
+                            if(allowUserDefinedDate){
+                                // Allow user to enter date and time then send
+                                startForm(client, "/settings");
+                                //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
+                                inputBox(client, "UserDate", "", "Date", false, "", "date");
+                                inputBox(client, "UserTime", "", "Time", false, "", "time");
+                                button(client, "Update Date", "primary");
+                                endForm(client);
+                            }
 
                             // Cancel button
                             startForm(client, "/settings");
