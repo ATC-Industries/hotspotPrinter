@@ -760,6 +760,36 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             date =  header.substring(header.indexOf("date=")+5,header.indexOf(" HTTP"));
                             date = char_replace_http(date);
                             Serial.println("date is: " + date);
+
+                            // Date in form Thu Nov 15 2018 15:54:19 GMT-0500 (EST)
+                            //              012345678901234567890123456789012345678
+                            //              Fri Aug 03 2018 02:57:46 GMT-0400 (EDT)
+                            int year = date.substring(11,5).toInt();
+                            String monthStr = date.substring(4,7);
+                            int month;
+                            if (monthStr == "Jan") {month = 1;}
+                            else if (monthStr == "Feb") {month = 2;}
+                            else if (monthStr == "Mar") {month = 3;}
+                            else if (monthStr == "Apr") {month = 4;}
+                            else if (monthStr == "May") {month = 5;}
+                            else if (monthStr == "Jun") {month = 6;}
+                            else if (monthStr == "Jul") {month = 7;}
+                            else if (monthStr == "Aug") {month = 8;}
+                            else if (monthStr == "Sep") {month = 9;}
+                            else if (monthStr == "Oct") {month = 10;}
+                            else if (monthStr == "Nov") {month = 11;}
+                            else {month = 12;}
+                            int day = date.substring(8,10).toInt();
+                            int hour = date.substring(16,18).toInt();
+                            int minute = date.substring(19,21).toInt();
+                            int second = date.substring(22,24).toInt();
+                            Serial.println("date is: " + date);
+                            Serial.println("year is: " + String(year));
+                            Serial.println("month is: " + String(month));
+                            Serial.println("day is: " + String(day));
+                            Serial.println("hour is: " + String(hour));
+                            Serial.println("minute is: " + String(minute));
+                            Serial.println("second is: " + String(second));
                         }
                         // Looks for userDate in header and then processes the date results if found
                         else if ((headerT.indexOf("UserDate=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
