@@ -78,7 +78,7 @@ pin assignment                                      5 volt----------------------
 
 //////////////////////////////////////////////////////
 //DEV VARIABLES
-bool allowUserDefinedDate = true;
+
 //////////////////////////////////////////////////////
 
 
@@ -148,7 +148,6 @@ String checkbox2_status = "";   // Holds chekbox status "checked" or "" to be in
 String checkbox3_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox4_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox5_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
-String EPOCHdate;               // Hold the date in EPOCH time
 volatile int interruptCounter;  // varible that tracks number of interupts
 int totalInterruptCounter;      // counter to track total number of interrupts
 int no_signal_timer;            // timeout counter used to display No Signal on display
@@ -165,6 +164,7 @@ bool printPageFlag = false;     // True if on print page
 bool updatePageFlag = false;    // True if on update page
 bool changePasswordPageFlag = false; // True if on change password page
 bool setTimePageFlag = false;   // True if on set time and date page
+bool allowUserDefinedDate = true;  // set to false to turn off date entry form
 
 //----------funtion prototypes -------------------------------------------------
 void clear_output_buffer(void);
@@ -594,7 +594,6 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
-                        Serial.println("EPOCH time = " + EPOCHdate);
 
                         if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
                         {
@@ -757,8 +756,11 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                         // Looks for date in header and then processes the date results if found
                         else if ((headerT.indexOf("date=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
                         {
+                            String date;
                             // Parse EPCOH time from header
-                            EPOCHdate =  header.substring(header.indexOf("date=")+5,header.indexOf(" HTTP"));
+                            date =  header.substring(header.indexOf("date=")+5,header.indexOf(" HTTP"));
+                            date = char_replace_http(date);
+                            Serial.println("date is: " + date);
                         }
                         // Looks for userDate in header and then processes the date results if found
                         else if ((headerT.indexOf("UserDate=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
@@ -766,10 +768,22 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             String date;
                             String time;
                             // Parse user date and time from header
-                            date =  header.substring(header.indexOf("UserDate=")+9,header.indexOf("&UserTime"));
-                            time =  header.substring(header.indexOf("UserTime=")+9,header.indexOf(" HTTP"));
-                            Serial.println("date is: " + char_replace_http(date));
-                            Serial.println("time is: " + char_replace_http(time));
+                            date = header.substring(header.indexOf("UserDate=")+9,header.indexOf("&UserTime"));
+                            time = header.substring(header.indexOf("UserTime=")+9,header.indexOf(" HTTP"));
+                            date = char_replace_http(date);
+                            time = char_replace_http(time);
+                            int year = date.substring(0,4).toInt();
+                            int month = date.substring(5,7).toInt();
+                            int day = date.substring(8).toInt();
+                            Serial.println("date is: " + date);
+                            Serial.println("time is: " + time);
+                            Serial.println("year is: " + String(year));
+                            Serial.println("month is: " + String(month));
+                            Serial.println("day is: " + String(day));
+                            int hour = time.substring(0,2).toInt();
+                            int minute = time.substring(3).toInt();
+                            Serial.println("hour is: " + String(hour));
+                            Serial.println("minute is: " + String(minute));
                         }
                         // ATC: This else statement is totally unnecessary and only
                         //      serves as a place holder for future expansion
@@ -829,7 +843,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             <script>
                             var d = new Date();
                             </script>
-                            <button style="margin-bottom:5px;" type="submit" value="Use Date/Time from this device" class="btn btn-success btn-lg btn-block" onclick="getElementById('date').value=d.getTime()">Use Date/Time from this device</button>
+                            <button style="margin-bottom:5px;" type="submit" value="Use Date/Time from this device" class="btn btn-success btn-lg btn-block" onclick="getElementById('date').value=Date()">Use Date/Time from this device</button>
                             <input type="hidden" style="visibility: hidden;" class="form-control" name="date" id="date">
                             )###");
                             endForm(client);
