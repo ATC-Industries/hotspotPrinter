@@ -70,11 +70,17 @@ pin assignment                                      5 volt----------------------
 #define RXD2 16                 //port 2 serial pins for external printer
 #define TXD2 17
 //----------- assign port pins to buttons --------------------------------------
-#define button_F1 13                    //  Function 1 button address
-#define button_F2 26                    //  Function 2 button address 
-#define button_F3 4                     //  Function 3 button address 
-#define button_F4 27                    //  Function 4 button address 
-#define button_PRINT 2                  //  Print button address 
+#define button_F1 13    //
+#define button_F2 26    //
+#define button_F3 4     //
+#define button_F4 27    //
+#define button_PRINT 2  //
+
+//////////////////////////////////////////////////////
+//DEV VARIABLES
+bool allowUserDefinedDate = true;
+//////////////////////////////////////////////////////
+
 
 //------------ Assign eeprom save addresses ------------------------------------
 const int line1_eeprom_addr = 0;        // line 1      -     0 to  49 - 50 bytes
@@ -132,7 +138,7 @@ bool checkbox5_is_checked;      // If checkbox should show checked or not
 bool lock_flag = false;         // flag that indicates weight is a locked value
 bool cb_print_on_lock;          // check box flag for print on lock
 bool isSDCardPresent = false;   // Flag checked on startup true if SD card is found
-bool diagnostic_flag = false;   // Flag to send all Serial Monitor diagnostic to printer 
+bool diagnostic_flag = false;   // Flag to send all Serial Monitor diagnostic to printer
 String passwordMessage = "";
 bool passSuccess = false;
 volatile int ticket;            // ticket serial number
@@ -142,6 +148,7 @@ String checkbox2_status = "";   // Holds chekbox status "checked" or "" to be in
 String checkbox3_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox4_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox5_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
+String EPOCHdate;               // Hold the date in EPOCH time
 volatile int interruptCounter;  // varible that tracks number of interupts
 int totalInterruptCounter;      // counter to track total number of interrupts
 int no_signal_timer;            // timeout counter used to display No Signal on display
@@ -157,7 +164,7 @@ bool settingsPageFlag = false;  // True if on settings page
 bool printPageFlag = false;     // True if on print page
 bool updatePageFlag = false;    // True if on update page
 bool changePasswordPageFlag = false; // True if on change password page
-char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+bool setTimePageFlag = false;   // True if on set time and date page
 
 //----------funtion prototypes -------------------------------------------------
 void clear_output_buffer(void);
@@ -213,9 +220,9 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
 void setup()
-    {
-     // Wire.begin(34,35);                             //start i2c for RTC on pins 34 and 35 
-        
+    {Wire.begin();                             //start i2c for RTC
+    //---------- SETUP LCD -----------------------------------------------------
+
     //---------- declare input buttons with pullup -----------------------------
     pinMode(button_PRINT,INPUT_PULLUP);    // print button
     pinMode(button_F1,INPUT_PULLUP);       // F1
@@ -256,22 +263,22 @@ void setup()
          Serial2.write(0x0A);
          set_text_size(0x00);               //set for small font
     //--------------- diagnostic mode if F1 is held on cold boot ------------------------------------------
-    
+
     if (!digitalRead(button_F1))                                     //^^^ If button 1 held on cold start, turn on diagnostic mode
         {diagnostic_flag = true;
          lcd.clear();
          lcd.setCursor(2,1);
          lcd.print("  Diagnostic  Mode");
          Serial2.println("Turn printer 'OFF' and then 'ON' to exit diagnostic mode");
-         
+
          Serial2.println("------------- Entering Diagnostic Mode ----------------");                             //^^^ send message to printer
          Serial2.write(0x0A);                                       //line feed
          while (!digitalRead(button_F1))                           //loop while F1 is held down
               {delay(50);}
-         lcd.clear();     
+         lcd.clear();
         }
 
-    
+
 
     //------------- initialize the EEPROM --------------------------------------
     if (!EEPROM.begin(EEPROM_SIZE))                                 //set aside memory for eeprom size
@@ -289,8 +296,8 @@ void setup()
        be displayed on the remote dispay and the password will be printed out on
        the printer  */
 
-    
-//-----------------Hold Print button on cold start to bring in temporary password to log on ---------------------    
+
+//-----------------Hold Print button on cold start to bring in temporary password to log on ---------------------
     if (!digitalRead(button_PRINT))                               // if print button is held down during power up
         {
         // TODO All this `if` needs to be deleted and maybe replaced with enter diagnostic mode
@@ -300,14 +307,14 @@ void setup()
         lcd.print("Temporary Password");
         lcd.setCursor(0,1);
         lcd.print("987654321");
-       
+
         while(!digitalRead(button_PRINT))                         //loop until button is released
             {delay(30);}
         WiFi.softAP(ssid,"987654321");                            //start wifi hub and require temporary password
 
         //------------ print a ticket with the temp password -------------------
         Serial2.println("______________________________________________");
-        
+
         Serial2.println(" ");
         set_text_size(0x22);
         Serial2.println("** 987654321 **");
@@ -331,7 +338,7 @@ void setup()
     IPAddress IP = WiFi.softAPIP();                               //get the ip address
     Serial.print("AP IP address: ");                              //print ip address to SM
     Serial.println(IP);
-    
+
     server.begin();                                               //start server
     lcd.clear();                                                  //clear LCD
     lcd.setCursor(0,0);
@@ -352,7 +359,7 @@ void setup()
     Serial2.println("Open your browser and enter the following IP address");
     Serial2.write(0x0A);
     Serial2.println("---------------------------------------------------------");
-    
+
     set_text_size(0X11);
     Serial2.println("WiFi network = ProTournament");
     Serial2.write(0x0A);
@@ -360,18 +367,18 @@ void setup()
     Serial2.println("Use phone or tablet to log onto the following network site");
     lcd.setCursor(0,2);
     lcd.print(ip_string);
-    
+
     Serial2.write(0x0A);
     Serial2.println("----------------------------------------------------------");
     cut_paper();
-   
-    
-    
+
+
+
     char verString[10];
     sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
     lcd.setCursor(0,3);
     lcd.print(verString);                                                 //print software version
-     
+
     delay(5000);                                                          //leave ssid and ip on oled sceen for this delay
     line1 = (EEPROM.readString(line1_eeprom_addr));                       //recall values saved in eeprom
     line2 = (EEPROM.readString(line2_eeprom_addr));
@@ -406,13 +413,13 @@ void setup()
     Serial.print(":");
       Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
     if (diagnostic_flag == true)                                   //^^^ print mac address to printer when in diagnostic mode
-       {Serial2.println(Imac[i],HEX);}  
+       {Serial2.println(Imac[i],HEX);}
     }
     Serial.print("\n");
    // Check if SD card is present
    isSDCardPresent = isSDCard();
-   
- 
+
+
 }//void setup() ending terminator
 
 
@@ -421,7 +428,7 @@ void setup()
 void loop(){
 
 
-   
+
    //---- 100 ms routine
    if (interruptCounter > 0)                          //every one second 100 msec int is generated
       {
@@ -468,7 +475,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
        lcd.setCursor(3,1);
        lcd.print("PRINTING...");                          //display 'Printing' message to lcd
        delay(2000);
-       lcd.clear();   
+       lcd.clear();
       }
      lcd.setCursor(0,3);
      if (!digitalRead(button_F1))                         //F1 button
@@ -499,7 +506,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
         if (diagnostic_flag)
            {Serial2.println("Button F3 pressed");         //^^^ send button press diag to printer
          //  Serial2.write(0x0A);
-           }       
+           }
        }
      else
         {lcd.print("   ");}
@@ -535,15 +542,15 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                lcd.setCursor(3,1);                   //3rd position 2 line
           //     lcd.print(radio_rx_array);           //send recieved string to display
                int inc = 0;
-               while (inc <= 15)                
+               while (inc <= 15)
                  {if (radio_rx_array[inc] >= 31)
                         {lcd.write(radio_rx_array[inc]);  //write character to screen
                          if (radio_rx_array[inc] == 'H' && radio_rx_array[inc+1] != 'O')  //locked value and not 'HOLD'?
                              {lcd.setCursor(3,2);
                               lcd.print(" *** LOCKED ***"); //Display "locked" message on lcd
-                              
+
                              }
-                     } 
+                     }
                   inc++;
                  }
              //------------------------------------------------------------------------
@@ -587,7 +594,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
-                        
+                        Serial.println("EPOCH time = " + EPOCHdate);
+
                         if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
                         {
                             if (headerT.indexOf("settings?") >= 0)      //if header contains "settings"
@@ -596,6 +604,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 printPageFlag = false;
                                 updatePageFlag = false;
                                 changePasswordPageFlag = false;
+                                setTimePageFlag = false;
                             } else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
                                 {
                                 print_ticket();                         //print weigh ticket
@@ -603,7 +612,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 settingsPageFlag = false;
                                 printPageFlag = true;
                                 updatePageFlag = false;
-
+                                setTimePageFlag = false;
                                 changePasswordPageFlag = false;
                                 }
                              else if (headerT.indexOf("update?") >= 0)
@@ -612,6 +621,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 printPageFlag = false;
                                 updatePageFlag = true;
                                 changePasswordPageFlag = false;
+                                setTimePageFlag = false;
                                 }
                             else if (headerT.indexOf("checkForUpdate?") >= 0)
                                 {
@@ -629,13 +639,23 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                printPageFlag = false;
                                updatePageFlag = false;
                                changePasswordPageFlag = true;
+                               setTimePageFlag = false;
                                }
+                            else if (headerT.indexOf("setDateTime?") >= 0)
+                                {
+                                settingsPageFlag = false;
+                                printPageFlag = false;
+                                updatePageFlag = false;
+                                changePasswordPageFlag = false;
+                                setTimePageFlag = true;
+                                }
                             else
                                 {
                                 settingsPageFlag = false;
                                 printPageFlag = false;
                                 updatePageFlag = false;
                                 changePasswordPageFlag = false;
+                                setTimePageFlag = false;
                                 }
                         }
                         // Looks for Line1 in header and then processes the SETTINGS results if found
@@ -695,12 +715,12 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             Serial.println("Checkbox4: " + checkbox4_status);
 
                         }
-                        // Looks for pw in header and then processes the SETTINGS results if found
+                        // Looks for pw in header and then processes the password results if found
                         else if ((headerT.indexOf("pw=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
                         {
                             String pass1;
                             String pass2;
-                            // TODO  Process password change logic
+                            // Process password change logic
                             pass1 =  header.substring(header.indexOf("pw=")+3,header.indexOf("&pw2="));//parse out the varible strings for the the 2 passwords
                             pass2 =  header.substring(header.indexOf("pw2=")+4,header.indexOf(" HTTP"));
 
@@ -734,6 +754,23 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             }
 
                         }
+                        // Looks for date in header and then processes the date results if found
+                        else if ((headerT.indexOf("date=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
+                        {
+                            // Parse EPCOH time from header
+                            EPOCHdate =  header.substring(header.indexOf("date=")+5,header.indexOf(" HTTP"));
+                        }
+                        // Looks for userDate in header and then processes the date results if found
+                        else if ((headerT.indexOf("UserDate=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
+                        {
+                            String date;
+                            String time;
+                            // Parse user date and time from header
+                            date =  header.substring(header.indexOf("UserDate=")+9,header.indexOf("&UserTime"));
+                            time =  header.substring(header.indexOf("UserTime=")+9,header.indexOf(" HTTP"));
+                            Serial.println("date is: " + char_replace_http(date));
+                            Serial.println("time is: " + char_replace_http(time));
+                        }
                         // ATC: This else statement is totally unnecessary and only
                         //      serves as a place holder for future expansion
                         else    //if header did not contain text "line1" then run code in else statment below
@@ -747,6 +784,11 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 //--RENDER SETTINGS PAGE--------------------------------------------------------
                         if (settingsPageFlag) {
                             pageTitle(client, "Settings");
+
+                            // Set date and time button
+                            startForm(client, "/setDateTime");
+                            button(client, "Set the Date and Time", "info");
+                            endForm(client);
                             //startForm(client, "[action]")
                             startForm(client, "/");
                             //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
@@ -776,6 +818,39 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             button(client, "Change Password", "info");
                             endForm(client);
                         }
+//--SET TIME PAGE---------------------------------------------------------------
+                        else if (setTimePageFlag) {
+                            pageTitle(client, "Set Time and Date");
+                            //startForm(client, "[action]")
+                            startForm(client, "/settings");
+
+                            // Pull the date from the device and send through header
+                            client.println(R"###(
+                            <script>
+                            var d = new Date();
+                            </script>
+                            <button style="margin-bottom:5px;" type="submit" value="Use Date/Time from this device" class="btn btn-success btn-lg btn-block" onclick="getElementById('date').value=d.getTime()">Use Date/Time from this device</button>
+                            <input type="hidden" style="visibility: hidden;" class="form-control" name="date" id="date">
+                            )###");
+                            endForm(client);
+
+                            if(allowUserDefinedDate){
+                                // Allow user to enter date and time then send
+                                startForm(client, "/settings");
+                                //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
+                                inputBox(client, "UserDate", "", "Date", false, "", "date");
+                                inputBox(client, "UserTime", "", "Time", false, "", "time");
+                                button(client, "Update Date", "primary");
+                                endForm(client);
+                            }
+
+                            // Cancel button
+                            startForm(client, "/settings");
+                            button(client, "Cancel", "danger");
+                            endForm(client);
+                        }
+
+
 //--RENDER UPDATE PAGE----------------------------------------------------------
                         else if (updatePageFlag) {
                             pageTitle(client, "Update Firmware");
@@ -799,7 +874,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 printTableOfUpdateFiles(client, arrayOfUpdateFiles);
                             }
                             // Cancel button
-                            startForm(client, "/");
+                            startForm(client, "/settings");
                             button(client, "Cancel", "danger");
                             endForm(client);
                         }
@@ -850,7 +925,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                         endForm(client);
                         // Settings Button
                         startForm(client, "/settings");
-                        button(client, "Settings", "warning");
+                        button(client, "Settings", "secondary");
                         endForm(client);
                         }
                         // Version number on bottom of all pages
@@ -902,12 +977,12 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 //------------------Set time------------------------------------
 // This line sets the RTC with an explicit date & time, for example to set
 // January 21, 2014 at 3am you would call:
-   
+
 // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
 
 //----------------- Read Time -----------------------------------
 //    DateTime now = rtc.now();
-//    
+//
 //    Serial.print(now.year(), DEC);
 //    Serial.print('/');
 //    Serial.print(now.month(), DEC);
@@ -930,9 +1005,9 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 ////-------------------Test clock chip and send data to Serial Monitor -----not used (tlc)-------------------------------
 //
 //
-//void test_clock(void)  
+//void test_clock(void)
 //  {
-//  // get the year  
+//  // get the year
 //  Serial.print(Clock.getYear(), DEC);                           //Read year from RTC
 //  Serial.print(' ');
 //  // then the month
@@ -949,19 +1024,19 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 //  Serial.print(' ');
 //  Serial.print(Clock.getMinute(), DEC);                          //read minute
 //  Serial.print(' ');
-//  Serial.print(Clock.getSecond(), DEC);                          //read second     
-//  // Add AM/PM indicator  
+//  Serial.print(Clock.getSecond(), DEC);                          //read second
+//  // Add AM/PM indicator
 //  if (h12)                                                       //AM/PM indicator
 //   {
 //    if (PM)
 //      {Serial.print(" PM ");}
 //    else
 //      {Serial.print(" AM ");}
-//    
-//  } 
+//
+//  }
 //  else
 //  {Serial.print(" 24h ");}
-// 
+//
 //  // Display the temperature                                     //read temperature
 //  Serial.print("T=");
 //  Serial.print(Clock.getTemperature(), 2);
@@ -971,11 +1046,11 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 //    Serial.print(" O+");
 //  } else {
 //    Serial.print(" O-");
-//  }   
-//}  
-////---------------------- end of clock  test routines ------not used (tlc) ------------------------------------- 
-   
-   
+//  }
+//}
+////---------------------- end of clock  test routines ------not used (tlc) -------------------------------------
+
+
 ////------------------------Set Clock routine----- not used (tlc)------------------------------------------------------------
 //void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minute, byte  Second)
 //     {
@@ -1206,7 +1281,7 @@ void print_ticket(void)
               // ticket = ticket + 1;                        pointer for weigh tickets
            } //end of routine
 //--------------------------------------------------------------------------------
- void cut_paper(void)    
+ void cut_paper(void)
      {Serial2.write(0x1D);                // "GS" cut paper
      Serial2.write('V');                 //"V"
      Serial2.write(0x42);                //decimal 66
@@ -1345,7 +1420,7 @@ void processRadioString()
 //
 //void loop () {
 //    DateTime now = rtc.now();
-//    
+//
 //    Serial.print(now.year(), DEC);
 //    Serial.print('/');
 //    Serial.print(now.month(), DEC);
@@ -1360,16 +1435,16 @@ void processRadioString()
 //    Serial.print(':');
 //    Serial.print(now.second(), DEC);
 //    Serial.println();
-//    
+//
 //    Serial.print(" since midnight 1/1/1970 = ");
 //    Serial.print(now.unixtime());
 //    Serial.print("s = ");
 //    Serial.print(now.unixtime() / 86400L);
 //    Serial.println("d");
-//    
+//
 //    // calculate a date which is 7 days and 30 seconds into the future
 //    DateTime future (now + TimeSpan(7,12,30,6));
-//    
+//
 //    Serial.print(" now + 7d + 30s: ");
 //    Serial.print(future.year(), DEC);
 //    Serial.print('/');
@@ -1383,7 +1458,7 @@ void processRadioString()
 //    Serial.print(':');
 //    Serial.print(future.second(), DEC);
 //    Serial.println();
-//    
+//
 //    Serial.println();
 //    delay(3000);
 //}
