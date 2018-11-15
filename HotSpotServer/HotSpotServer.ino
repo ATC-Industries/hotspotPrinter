@@ -790,6 +790,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             Serial.println("hour is: " + String(hour));
                             Serial.println("minute is: " + String(minute));
                             Serial.println("second is: " + String(second));
+
+                            rtc.adjust(DateTime(year, month, day, hour, minute, second));
                         }
                         // Looks for userDate in header and then processes the date results if found
                         else if ((headerT.indexOf("UserDate=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
@@ -813,6 +815,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             int minute = time.substring(3).toInt();
                             Serial.println("hour is: " + String(hour));
                             Serial.println("minute is: " + String(minute));
+
+                            rtc.adjust(DateTime(year, month, day, hour, minute, 0));
                         }
                         // ATC: This else statement is totally unnecessary and only
                         //      serves as a place holder for future expansion
