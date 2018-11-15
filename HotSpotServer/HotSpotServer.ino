@@ -68,11 +68,11 @@ pin assignment                                      5 volt----------------------
 #define RXD2 16                 //port 2 serial pins for external printer
 #define TXD2 17
 //----------- assign port pins to buttons --------------------------------------
-#define button_F1 13    // 
-#define button_F2 26    // 
-#define button_F3 4     // 
-#define button_F4 27    // 
-#define button_PRINT 2  // 
+#define button_F1 13    //
+#define button_F2 26    //
+#define button_F3 4     //
+#define button_F4 27    //
+#define button_PRINT 2  //
 
 //------------ Assign eeprom save addresses ------------------------------------
 const int line1_eeprom_addr = 0;        // line 1      -     0 to  49 - 50 bytes
@@ -130,7 +130,7 @@ bool checkbox5_is_checked;      // If checkbox should show checked or not
 bool lock_flag = false;         // flag that indicates weight is a locked value
 bool cb_print_on_lock;          // check box flag for print on lock
 bool isSDCardPresent = false;   // Flag checked on startup true if SD card is found
-bool diagnostic_flag = false;   // Flag to send all Serial Monitor diagnostic to printer 
+bool diagnostic_flag = false;   // Flag to send all Serial Monitor diagnostic to printer
 String passwordMessage = "";
 bool passSuccess = false;
 volatile int ticket;            // ticket serial number
@@ -155,6 +155,7 @@ bool settingsPageFlag = false;  // True if on settings page
 bool printPageFlag = false;     // True if on print page
 bool updatePageFlag = false;    // True if on update page
 bool changePasswordPageFlag = false; // True if on change password page
+bool setTimePageFlag = false;   // True if on set time and date page
 
 //----------funtion prototypes -------------------------------------------------
 void clear_output_buffer(void);
@@ -192,7 +193,7 @@ LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to
 void setup()
     {
     //---------- SETUP LCD -----------------------------------------------------
-    
+
     //---------- declare input buttons with pullup -----------------------------
     pinMode(button_PRINT,INPUT_PULLUP);    // print button
     pinMode(button_F1,INPUT_PULLUP);       // F1
@@ -233,22 +234,22 @@ void setup()
          Serial2.write(0x0A);
          set_text_size(0x00);               //set for small font
     //--------------- diagnostic mode if F1 is held on cold boot ------------------------------------------
-    
+
     if (!digitalRead(button_F1))                                     //^^^ If button 1 held on cold start, turn on diagnostic mode
         {diagnostic_flag = true;
          lcd.clear();
          lcd.setCursor(2,1);
          lcd.print("  Diagnostic  Mode");
          Serial2.println("Turn printer 'OFF' and then 'ON' to exit diagnostic mode");
-         
+
          Serial2.println("------------- Entering Diagnostic Mode ----------------");                             //^^^ send message to printer
          Serial2.write(0x0A);                                       //line feed
          while (!digitalRead(button_F1))                           //loop while F1 is held down
               {delay(50);}
-         lcd.clear();     
+         lcd.clear();
         }
 
-    
+
 
     //------------- initialize the EEPROM --------------------------------------
     if (!EEPROM.begin(EEPROM_SIZE))                                 //set aside memory for eeprom size
@@ -266,8 +267,8 @@ void setup()
        be displayed on the remote dispay and the password will be printed out on
        the printer  */
 
-    
-//-----------------Hold Print button on cold start to bring in temporary password to log on ---------------------    
+
+//-----------------Hold Print button on cold start to bring in temporary password to log on ---------------------
     if (!digitalRead(button_PRINT))                               // if print button is held down during power up
         {
         // TODO All this `if` needs to be deleted and maybe replaced with enter diagnostic mode
@@ -277,14 +278,14 @@ void setup()
         lcd.print("Temporary Password");
         lcd.setCursor(0,1);
         lcd.print("987654321");
-       
+
         while(!digitalRead(button_PRINT))                         //loop until button is released
             {delay(30);}
         WiFi.softAP(ssid,"987654321");                            //start wifi hub and require temporary password
 
         //------------ print a ticket with the temp password -------------------
         Serial2.println("______________________________________________");
-        
+
         Serial2.println(" ");
         set_text_size(0x22);
         Serial2.println("** 987654321 **");
@@ -308,7 +309,7 @@ void setup()
     IPAddress IP = WiFi.softAPIP();                               //get the ip address
     Serial.print("AP IP address: ");                              //print ip address to SM
     Serial.println(IP);
-    
+
     server.begin();                                               //start server
     lcd.clear();                                                  //clear LCD
     lcd.setCursor(0,0);
@@ -329,7 +330,7 @@ void setup()
     Serial2.println("Open your browser and enter the following IP address");
     Serial2.write(0x0A);
     Serial2.println("---------------------------------------------------------");
-    
+
     set_text_size(0X11);
     Serial2.println("WiFi network = ProTournament");
     Serial2.write(0x0A);
@@ -337,18 +338,18 @@ void setup()
     Serial2.println("Use phone or tablet to log onto the following network site");
     lcd.setCursor(0,2);
     lcd.print(ip_string);
-    
+
     Serial2.write(0x0A);
     Serial2.println("----------------------------------------------------------");
     cut_paper();
-   
-    
-    
+
+
+
     char verString[10];
     sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
     lcd.setCursor(0,3);
     lcd.print(verString);                                                 //print software version
-     
+
     delay(5000);                                                          //leave ssid and ip on oled sceen for this delay
     line1 = (EEPROM.readString(line1_eeprom_addr));                       //recall values saved in eeprom
     line2 = (EEPROM.readString(line2_eeprom_addr));
@@ -383,12 +384,12 @@ void setup()
     Serial.print(":");
       Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
     if (diagnostic_flag == true)                                   //^^^ print mac address to printer when in diagnostic mode
-       {Serial2.println(Imac[i],HEX);}  
+       {Serial2.println(Imac[i],HEX);}
     }
     Serial.print("\n");
    // Check if SD card is present
    isSDCardPresent = isSDCard();
-   
+
 
 }//void setup() ending terminator
 
@@ -442,7 +443,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
        lcd.setCursor(3,1);
        lcd.print("PRINTING...");                          //display 'Printing' message to lcd
        delay(2000);
-       lcd.clear();   
+       lcd.clear();
       }
      lcd.setCursor(0,3);
      if (!digitalRead(button_F1))                         //F1 button
@@ -473,7 +474,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
         if (diagnostic_flag)
            {Serial2.println("Button F3 pressed");         //^^^ send button press diag to printer
          //  Serial2.write(0x0A);
-           }       
+           }
        }
      else
         {lcd.print("   ");}
@@ -552,7 +553,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
-                        
+
                         if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
                         {
                             if (headerT.indexOf("settings?") >= 0)      //if header contains "settings"
@@ -561,6 +562,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 printPageFlag = false;
                                 updatePageFlag = false;
                                 changePasswordPageFlag = false;
+                                setTimePageFlag = false;
                             } else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
                                 {
                                 print_ticket();                         //print weigh ticket
@@ -568,7 +570,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 settingsPageFlag = false;
                                 printPageFlag = true;
                                 updatePageFlag = false;
-
+                                setTimePageFlag = false;
                                 changePasswordPageFlag = false;
                                 }
                              else if (headerT.indexOf("update?") >= 0)
@@ -577,6 +579,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 printPageFlag = false;
                                 updatePageFlag = true;
                                 changePasswordPageFlag = false;
+                                setTimePageFlag = false;
                                 }
                             else if (headerT.indexOf("checkForUpdate?") >= 0)
                                 {
@@ -594,13 +597,23 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                printPageFlag = false;
                                updatePageFlag = false;
                                changePasswordPageFlag = true;
+                               setTimePageFlag = false;
                                }
+                            else if (headerT.indexOf("setDateTime?") >= 0)
+                                {
+                                settingsPageFlag = false;
+                                printPageFlag = false;
+                                updatePageFlag = false;
+                                changePasswordPageFlag = false;
+                                setTimePageFlag = true;
+                                }
                             else
                                 {
                                 settingsPageFlag = false;
                                 printPageFlag = false;
                                 updatePageFlag = false;
                                 changePasswordPageFlag = false;
+                                setTimePageFlag = false;
                                 }
                         }
                         // Looks for Line1 in header and then processes the SETTINGS results if found
@@ -712,6 +725,11 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 //--RENDER SETTINGS PAGE--------------------------------------------------------
                         if (settingsPageFlag) {
                             pageTitle(client, "Settings");
+
+                            // Set date and time button
+                            startForm(client, "/setDateTime");
+                            button(client, "Set the Date and Time", "info");
+                            endForm(client);
                             //startForm(client, "[action]")
                             startForm(client, "/");
                             //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
@@ -741,6 +759,27 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             button(client, "Change Password", "info");
                             endForm(client);
                         }
+//--SET TIME PAGE---------------------------------------------------------------
+                        else if (setTimePageFlag) {
+                            pageTitle(client, "Set Time and Date");
+                            //startForm(client, "[action]")
+                            startForm(client, "/settings");
+
+                            client.println(R"###(
+                            <script>
+                            var d = new Date();
+                            </script>
+                            <button style="margin-bottom:5px;" type="submit" value="Use Date/Time from this device" class="btn btn-success btn-lg btn-block" onclick="getElementById('date').value=d.getTime()">Use Date/Time from this device</button>
+                            <input type="hidden" style="visibility: hidden;" class="form-control" name="date" id="date">
+                            )###");
+                            endForm(client);
+                            // Cancel button
+                            startForm(client, "/settings");
+                            button(client, "Cancel", "danger");
+                            endForm(client);
+                        }
+
+
 //--RENDER UPDATE PAGE----------------------------------------------------------
                         else if (updatePageFlag) {
                             pageTitle(client, "Update Firmware");
@@ -764,7 +803,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 printTableOfUpdateFiles(client, arrayOfUpdateFiles);
                             }
                             // Cancel button
-                            startForm(client, "/");
+                            startForm(client, "/settings");
                             button(client, "Cancel", "danger");
                             endForm(client);
                         }
@@ -815,7 +854,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                         endForm(client);
                         // Settings Button
                         startForm(client, "/settings");
-                        button(client, "Settings", "warning");
+                        button(client, "Settings", "secondary");
                         endForm(client);
                         }
                         // Version number on bottom of all pages
@@ -1073,7 +1112,7 @@ void print_ticket(void)
               // ticket = ticket + 1;                        pointer for weigh tickets
            } //end of routine
 //--------------------------------------------------------------------------------
- void cut_paper(void)    
+ void cut_paper(void)
      {Serial2.write(0x1D);                // "GS" cut paper
      Serial2.write('V');                 //"V"
      Serial2.write(0x42);                //decimal 66
