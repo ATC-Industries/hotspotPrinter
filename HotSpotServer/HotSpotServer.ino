@@ -593,7 +593,6 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
-                        Serial.println("EPOCH time = " + EPOCHdate);
 
                         if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
                         {
@@ -759,6 +758,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             String date;
                             // Parse EPCOH time from header
                             date =  header.substring(header.indexOf("date=")+5,header.indexOf(" HTTP"));
+                            date = char_replace_http(date);
+                            Serial.println("date is: " + date);
                         }
                         // Looks for userDate in header and then processes the date results if found
                         else if ((headerT.indexOf("UserDate=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
@@ -782,9 +783,6 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             int minute = time.substring(3).toInt();
                             Serial.println("hour is: " + String(hour));
                             Serial.println("minute is: " + String(minute));
-
-
-
                         }
                         // ATC: This else statement is totally unnecessary and only
                         //      serves as a place holder for future expansion
