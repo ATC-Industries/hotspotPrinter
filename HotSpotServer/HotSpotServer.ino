@@ -1,5 +1,16 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
 /**************************************************************
   Terry Clarkson & Adam Clarkson
   11/02/18
@@ -58,7 +69,8 @@ pin assignment                                      5 volt----------------------
 #include <SPI.h>                //SPI functions
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>  //4x20 lcd display
-
+#include <NetBIOS.h>
+#include <DS3231.h>             //RTC routines
 #include "css.h"                // refrence to css file to bring in CSS styles
 #include "SDfunc.h"             // refrence the SD card functions
 #include "html.h"               // refrence to HTML generation functions
@@ -171,7 +183,7 @@ void print_ticket(void);                // function to print the weigh ticket
 void set_text_size(unsigned int size);  // oled set text size routine
 void set_text_reverse(bool on_off);     // oled set reverse text on/off
 void processRadioString();              // routine to process radio rx string
-
+void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minute, byte Second);
 char* string2char(String str){
     if(str.length()!= 0){
         char *p = const_cast<char*>(str.c_str());
@@ -194,11 +206,29 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number);
 LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 or 3f for a 20 chars and 4 line display
 
 
+
+DS3231 Clock;                                         //start an instance of clock routine named "Clock"
+bool Century=false;
+bool h12;
+bool PM;
+byte ADay, AHour, AMinute, ASecond, ABits;
+bool ADy, A12h, Apm;
+
+byte Year;
+byte Month;
+byte Date;
+byte DoW;
+byte Hour;
+byte Minute;
+byte Second;
+
+
+
 //--------------------------------------------------------------------------
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
 void setup()
-    {
+    {Wire.begin();                             //start i2c for RTC
     //---------- SETUP LCD -----------------------------------------------------
 
     //---------- declare input buttons with pullup -----------------------------
@@ -397,13 +427,16 @@ void setup()
    // Check if SD card is present
    isSDCardPresent = isSDCard();
 
-
+     test_clock();                                                   //test clock chip and send results to serial monitor
 }//void setup() ending terminator
 
 
 
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
+
+
+
 
    if (interruptCounter > 0)                          //every one second 100 msec int is generated
       {
@@ -938,6 +971,71 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
    status = "";                                    //set to null value if not checked
   }
 }
+
+
+//-------------------Test clock chip and send data to Serial Monitor --------------------------------------
+void test_clock(void)
+  {Serial.print(Clock.getYear(), DEC);
+  Serial.print(' ');
+  // then the month
+  Serial.print(Clock.getMonth(Century), DEC);
+  Serial.print(' ');
+  // then the date
+  Serial.print(Clock.getDate(), DEC);
+  Serial.print(' ');
+  // and the day of the week
+  Serial.print(Clock.getDoW(), DEC);
+  Serial.print(' ');
+  // Finally the hour, minute, and second
+  Serial.print(Clock.getHour(h12, PM), DEC);
+  Serial.print(' ');
+  Serial.print(Clock.getMinute(), DEC);
+  Serial.print(' ');
+  Serial.print(Clock.getSecond(), DEC);
+  // Add AM/PM indicator
+  if (h12)
+   {
+    if (PM)
+      {Serial.print(" PM ");}
+    else
+      {Serial.print(" AM ");}
+
+  }
+  else
+  {Serial.print(" 24h ");}
+
+  // Display the temperature
+  Serial.print("T=");
+  Serial.print(Clock.getTemperature(), 2);
+  // Tell whether the time is (likely to be) valid
+  if (Clock.oscillatorCheck()) {
+    Serial.print(" O+");
+  } else {
+    Serial.print(" O-");
+  }
+}
+//---------------------- end of clock  test routines -------------------------------------------
+
+
+//------------------------Set Clock routine-----------------------------------------------------------------
+void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minute, byte  Second)
+     {
+    Clock.setClockMode(false);  // set to 24h
+    //setClockMode(true); // set to 12h
+
+    Clock.setYear(Year);
+    Clock.setMonth(Month);
+    Clock.setDate(Date);
+    Clock.setDoW(DoW);
+    Clock.setHour(Hour);
+    Clock.setMinute(Minute);
+    Clock.setSecond(Second);
+     }
+
+
+
+
+
 
 
 //-------------------------- Print Ticket ----------------------------------------------
