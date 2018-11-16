@@ -525,7 +525,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
   if (!digitalRead(button_F1) &&  !digitalRead(button_F4))  // If button 1 and 4 are pressed at same time reboot
        {ESP.restart();}
-       
+
   }
 
 
@@ -579,6 +579,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                 Serial.write(c);            // print it out the serial monitor
                 header += c;                //add character to the header string
                 if (c == '\n')
+                //if (header.length() > 500)
                 {                // if the byte is a newline character
                     // if the current line is blank, you got two newline characters in a row.
                     // that's the end of the client HTTP request, so send a response:
@@ -992,12 +993,11 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                         currentLine = "";
                 }
             }
-            else if (c != '\r') {               // if you got anything else but a carriage return character,
-                currentLine += c;               // add it to the end of the currentLine
-            }
-
-        } // END if (client.available())
-    } // END while (client.connected())
+                else if (c != '\r') {               // if you got anything else but a carriage return character,
+                    currentLine += c;               // add it to the end of the currentLine
+                }
+            } // END if (client.available())
+        } // END while (client.connected())
 
         header = "";                            // Clear the header variable
         save_header = "";
@@ -1254,9 +1254,9 @@ void print_ticket(void)
                if (checkbox3_status == "checked")          //is serialized ticket check box checked
                    {Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
                    Serial2.write(0x0A);
-                    if (checkbox3_status == "checked") 
+                    if (checkbox3_status == "checked")
                     lcd.setCursor(0,0);
-                    lcd.print("Ticket# "+ String(serial_number));  
+                    lcd.print("Ticket# "+ String(serial_number));
                    }
 
 
