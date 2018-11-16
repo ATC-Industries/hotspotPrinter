@@ -24,7 +24,7 @@ pin assignment                                      5 volt----------------------
               |   RTC     | |EN                    IO23 | ---- SPI MOSI to SD card--------------------------------|                         |
               |___________| |SVP                   IO22 | ---- SCL pin to 4x20 LCD display --------------|----|   |       SD CARD           |
                     |  |    |SVN                   TXD0 | ---- Serial TX Monitor and programming uart0   |  L |   |                         |
-      ___________   |  -----|IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
+      ___________   22 21   |IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
      /           \  --------|IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
     |             |---------|IO32                   GND |                                                ------   |                         |
     |             |---------|IO33                  IO19 | ---- SPI MISO to SD card--------------------------------|                         |
@@ -165,6 +165,8 @@ bool updatePageFlag = false;    // True if on update page
 bool changePasswordPageFlag = false; // True if on change password page
 bool setTimePageFlag = false;   // True if on set time and date page
 bool allowUserDefinedDate = true;  // set to false to turn off date entry form
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
 
 //----------funtion prototypes -------------------------------------------------
 void clear_output_buffer(void);
@@ -440,7 +442,8 @@ void loop(){
 
    //---- no signal timer -------
    if (totalInterruptCounter >=50)
-      { totalInterruptCounter = 0;                //reset counter
+      { ReadTime();
+        totalInterruptCounter = 0;                //reset counter
         if (++ no_signal_timer >= 2)               //if no signal this timer times out
            { statt = 0;                            //set display mode to 0 so "No Signal" will be displayed
              if (!no_sig_flag)                    //if flag is not set
@@ -1036,24 +1039,28 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
 
 //----------------- Read Time -----------------------------------
-//    DateTime now = rtc.now();
-//
-//    Serial.print(now.year(), DEC);
-//    Serial.print('/');
-//    Serial.print(now.month(), DEC);
-//    Serial.print('/');
-//    Serial.print(now.day(), DEC);
+    
+void ReadTime(void)    
+    {
+    DateTime now = rtc.now();
 
-//    Serial.print(" (");
-//    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
-//    Serial.print(") ");
+    Serial.print(now.year(), DEC);
+    Serial.print('/');
+    Serial.print(now.month(), DEC);
+    Serial.print('/');
+    Serial.print(now.day(), DEC);
 
-//    Serial.print(now.hour(), DEC);
-//    Serial.print(':');
-//    Serial.print(now.minute(), DEC);
-//    Serial.print(':');
-//    Serial.print(now.second(), DEC);
-//    Serial.println();
+    Serial.print(" (");
+    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
+    Serial.print(") ");
+
+    Serial.print(now.hour(), DEC);
+    Serial.print(':');
+    Serial.print(now.minute(), DEC);
+    Serial.print(':');
+    Serial.print(now.second(), DEC);
+    Serial.println();
+    }
 
 
 
