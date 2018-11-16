@@ -594,7 +594,10 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
-
+                        // Don't display date forms if not on HTML5
+                        if(!(header.indexOf("Mozilla/5.0") >= 0)) {
+                          bool allowUserDefinedDate = false;
+                        }
                         if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
                         {
                             if (headerT.indexOf("settings?") >= 0)      //if header contains "settings"
