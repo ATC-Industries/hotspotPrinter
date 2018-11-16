@@ -129,6 +129,7 @@ int touch_value_3 = 100;        //
 int touch_value_4 = 100;        //
 int touch_value_5 = 100;        //
 int read_keyboard_timer;        //
+int ClockTimer = 0;
 bool no_sig_flag = 0;           // flag to prevent display from updating on no change of No Signal message
 bool cb_print_2_copies;         // If checkbox should show checked or not
 bool cb_print_signature_line;   // If checkbox should show checked or not
@@ -192,21 +193,7 @@ LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to
 
 RTC_DS3231 rtc;                                        //start an instance of the real time clock named 'rtc'
 
-//--------not used with RTC_DS3231 routines--------------------------
-//DS3231 Clock;                                         //start an instance of clock routine named "Clock"
-//bool Century=false;
-//bool h12;
-//bool PM;
-//byte ADay, AHour, AMinute, ASecond, ABits;
-//bool ADy, A12h, Apm;
-//
-//byte Year;
-//byte Month;
-//byte Date;
-//byte DoW;
-//byte Hour;
-//byte Minute;
-//byte Second;
+
 
 //-------------Interuput routines ----------------------------------------------
 void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt(place before void setup() code)
@@ -214,6 +201,7 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
   portENTER_CRITICAL_ISR(&timerMux);
   interruptCounter++;                   //put code to perform during interrupt here
   read_keyboard_timer++;
+  ClockTimer++;                          //timer used to read clock every second
   portEXIT_CRITICAL_ISR(&timerMux);
   }
 
@@ -405,6 +393,8 @@ void setup()
     lcd.print(line2);
     lcd.setCursor(0,2);
     lcd.print(line3);
+    delay(3000);
+    lcd.clear();
    // lcd.setCursor(0,3);
    // lcd.print(line4);
 
@@ -440,15 +430,22 @@ void loop(){
       totalInterruptCounter++;                        //increment counter for ints generated every second
       }
 
+  if (ClockTimer >=10)                                //update clock every one second
+      {lcd_display_time();                            //display time upper left corner of lcd
+       lcd_display_date();                            //display date upper right corner of lcd
+       ClockTimer = 0;                                //reset one second timer
+      }
+
+   
    //---- no signal timer -------
    if (totalInterruptCounter >=50)
-      { ReadTime();
+      { lcd_display_time();
         totalInterruptCounter = 0;                //reset counter
         if (++ no_signal_timer >= 2)               //if no signal this timer times out
            { statt = 0;                            //set display mode to 0 so "No Signal" will be displayed
              if (!no_sig_flag)                    //if flag is not set
                {
-               lcd.clear();
+               //lcd.clear();
                lcd.setCursor(2,1);
                lcd.print("** No  Signal **");
                }
@@ -543,26 +540,30 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                radio_rx_pointer = 0;                //reset the rx radio buffer
               }
            if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
-              {
-             //-------------display weight on LCD-----------------------------------
+              {c = 0x00;
+               //-------------display weight on LCD-----------------------------------
                no_sig_flag = 0;                     //clear flag used in no sig message routine
-               lcd.clear();
+               //lcd.clear();
                lcd.setCursor(3,1);                   //3rd position 2 line
           //     lcd.print(radio_rx_array);           //send recieved string to display
                int inc = 0;
                while (inc <= 15)
-                 {if (radio_rx_array[inc] >= 31)
+                 {if (radio_rx_array[inc] >= 31)         //do not display characters with ascaii value of 30 or less
                         {lcd.write(radio_rx_array[inc]);  //write character to screen
                          if (radio_rx_array[inc] == 'H' && radio_rx_array[inc+1] != 'O')  //locked value and not 'HOLD'?
                              {lcd.setCursor(3,2);
                               lcd.print(" *** LOCKED ***"); //Display "locked" message on lcd
 
                              }
+                         if (radio_rx_array[inc] == 'M') 
+                             {lcd.setCursor(0,2);
+                              lcd.print("                  ");     //erase 'LOCKED" message if not locked 
+                             }
                      }
                   inc++;
                  }
-             //------------------------------------------------------------------------
-             processRadioString();
+             
+               processRadioString();
                }
           }
 
@@ -802,7 +803,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             Serial.println("minute is: " + String(minute));
                             Serial.println("second is: " + String(second));
 
-                            //rtc.adjust(DateTime(year, month, day, hour, minute, second));
+                            rtc.adjust(DateTime(year, month, day, hour, minute, second));
                         }
                         // Looks for userDate in header and then processes the date results if found
                         else if ((headerT.indexOf("UserDate=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
@@ -827,7 +828,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             Serial.println("hour is: " + String(hour));
                             Serial.println("minute is: " + String(minute));
 
-                            //rtc.adjust(DateTime(year, month, day, hour, minute, 0));
+                            rtc.adjust(DateTime(year, month, day, hour, minute, 0));
                         }
                         // ATC: This else statement is totally unnecessary and only
                         //      serves as a place holder for future expansion
@@ -1032,11 +1033,7 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 }
 
 
-//------------------Set time------------------------------------
-// This line sets the RTC with an explicit date & time, for example to set
-// January 21, 2014 at 3am you would call:
 
-// rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
 
 //----------------- Read Time -----------------------------------
     
@@ -1062,74 +1059,34 @@ void ReadTime(void)
     Serial.println();
     }
 
-
-
-////-------------------Test clock chip and send data to Serial Monitor -----not used (tlc)-------------------------------
-//
-//
-//void test_clock(void)
-//  {
-//  // get the year
-//  Serial.print(Clock.getYear(), DEC);                           //Read year from RTC
-//  Serial.print(' ');
-//  // then the month
-//  Serial.print(Clock.getMonth(Century), DEC);                   //Read Month
-//  Serial.print(' ');
-//  // then the date
-//  Serial.print(Clock.getDate(), DEC);                           //read date
-//  Serial.print(' ');
-//  // and the day of the week
-//  Serial.print(Clock.getDoW(), DEC);                            //read day of week
-//  Serial.print(' ');
-//  // Finally the hour, minute, and second
-//  Serial.print(Clock.getHour(h12, PM), DEC);                     //read hour
-//  Serial.print(' ');
-//  Serial.print(Clock.getMinute(), DEC);                          //read minute
-//  Serial.print(' ');
-//  Serial.print(Clock.getSecond(), DEC);                          //read second
-//  // Add AM/PM indicator
-//  if (h12)                                                       //AM/PM indicator
-//   {
-//    if (PM)
-//      {Serial.print(" PM ");}
-//    else
-//      {Serial.print(" AM ");}
-//
-//  }
-//  else
-//  {Serial.print(" 24h ");}
-//
-//  // Display the temperature                                     //read temperature
-//  Serial.print("T=");
-//  Serial.print(Clock.getTemperature(), 2);
-//  // Tell whether the time is (likely to be) valid
-//  if (Clock.oscillatorCheck())                                    //test oscilator
-//  {
-//    Serial.print(" O+");
-//  } else {
-//    Serial.print(" O-");
-//  }
-//}
-////---------------------- end of clock  test routines ------not used (tlc) -------------------------------------
-
-
-////------------------------Set Clock routine----- not used (tlc)------------------------------------------------------------
-//void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minute, byte  Second)
-//     {
-//    Clock.setClockMode(false);  // set to 24h
-//    //setClockMode(true); // set to 12h
-//
-//    Clock.setYear(Year);
-//    Clock.setMonth(Month);
-//    Clock.setDate(Date);
-//    Clock.setDoW(DoW);
-//    Clock.setHour(Hour);
-//    Clock.setMinute(Minute);
-//    Clock.setSecond(Second);
-//     }
-
-
-
+//--------------------------------    
+void lcd_display_time(void)
+    {
+     DateTime now = rtc.now();
+    lcd.setCursor(0,0);
+     if (now.hour()<10)                               //add leading zero 
+      {lcd.print("0");}
+    lcd.print(now.hour(), DEC);
+    lcd.print(':');
+    if (now.minute()<10)                               //add leading zero 
+      {lcd.print("0");}
+    lcd.print(now.minute(), DEC);
+    lcd.print(':');
+    if (now.second()<10)                               //add leading zero 
+      {lcd.print("0");}
+    lcd.print(now.second(), DEC);
+   }
+//------------------------------
+void lcd_display_date(void)
+{
+     DateTime now = rtc.now();
+    lcd.setCursor(10,0);
+    lcd.print(now.month(), DEC);
+    lcd.print('/');
+    lcd.print(now.day(), DEC);
+    lcd.print('/');
+    lcd.print(now.year(), DEC);
+}
 
 
 
@@ -1297,12 +1254,44 @@ void print_ticket(void)
                Serial2.write(0xBB);
                Serial2.write(0x1D);
                Serial2.write(0x00);
+               Serial2.write(0x0A);            //line feeds
+               //--------------print time date stamp on ticket -------------
+                set_text_size(0x00);            //normal text size
+                DateTime now = rtc.now();
+                
+                 if (now.hour()<10)                               //add leading zero 
+                  {Serial2.print("0");}
+                Serial2.print(now.hour(), DEC);
+                Serial2.print(':');
+                if (now.minute()<10)                               //add leading zero 
+                  {Serial2.print("0");}
+                Serial2.print(now.minute(), DEC);
+                Serial2.print(':');
+                if (now.second()<10)                               //add leading zero 
+                  {Serial2.print("0");}
+                Serial2.print(now.second(), DEC);
+                Serial2.print("       ");
+                Serial2.print(now.month(), DEC);
+                Serial2.print('/');
+                Serial2.print(now.day(), DEC);
+                Serial2.print('/');
+                Serial2.print(now.year(), DEC);
+                     
+               
+               
+               
+               
+               
+               
 
                //--------------area to insert tournament name and address and date--------------
                if (line1!= "")                         //if line 1 is not blank
                      {
                      set_text_size(0x00);            //normal text size
                      Serial2.write(0x0A);            //line feeds
+                     
+                     
+                     
                      Serial2.write(0x0A);
                      Serial2.write(0x0A);
 
@@ -1352,7 +1341,7 @@ void print_ticket(void)
      }
 
 
-
+//------------------------------------------------------------------------------------
 
 void clear_output_buffer(void)
     {int i=0;
@@ -1361,18 +1350,16 @@ void clear_output_buffer(void)
           i=i+1;
          }
     }
+//------------------------------------------
 
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//=======================================================Sub Routines===============================================================
 void set_text_size(unsigned int size)               //set font size on printer
       {
       Serial2.write(0x1D);                 // set text size to small size
       Serial2.write(0x21);
       Serial2.write(size);                 // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
       }
-
-void set_text_reverse(bool on_off)                  //set or clear reverse text
+//-----------------------------------------
+void set_text_reverse(bool on_off)                  //set or clear reverse text for printer epson command
       {
       Serial2.write(0x1D);
       Serial2.write('B');
@@ -1381,7 +1368,7 @@ void set_text_reverse(bool on_off)                  //set or clear reverse text
       else
           Serial2.write('0');
       }
-
+//--------------------------------------------
 void clear_radio_rx_array(void)                          //routine to clear radio rx buffer
      {int i=0;
      while(i <= 30)
@@ -1399,7 +1386,7 @@ void processRadioString()
   lock_flag = false;                                  //preset lock flag to false
   while(i >= 3)                                       //search from  the 7 to the 15th character in array
       { if (radio_rx_array[i] == 'H')                 //check for locked value in string
-           {Serial.println("**Locked**");
+           {Serial.println("**Locked**");             //send locked value to serial monitor
             lock_flag = true;                         //an 'H' was found so set lock flag
             break;                                    //exit the while loop
            }
@@ -1447,111 +1434,9 @@ void processRadioString()
   }
 }//void processRadioString()
 
-////------------------RTC routines --------------------------------------------------
-//// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
-//#include <Wire.h>
-//#include "RTClib.h"
-//
-//RTC_DS3231 rtc;
-//
-//char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-//
-//void setup () {
-//
-//#ifndef ESP8266
-//  while (!Serial); // for Leonardo/Micro/Zero
-//#endif
-//
-//  Serial.begin(9600);
-//
-//  delay(3000); // wait for console opening
-//
-//  if (! rtc.begin()) {
-//    Serial.println("Couldn't find RTC");
-//    while (1);
-//  }
-//
-//  if (rtc.lostPower()) {
-//    Serial.println("RTC lost power, lets set the time!");
-//    // following line sets the RTC to the date & time this sketch was compiled
-//    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-//    // This line sets the RTC with an explicit date & time, for example to set
-//    // January 21, 2014 at 3am you would call:
-//    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-//  }
-//}
-//
-//void loop () {
-//    DateTime now = rtc.now();
-//
-//    Serial.print(now.year(), DEC);
-//    Serial.print('/');
-//    Serial.print(now.month(), DEC);
-//    Serial.print('/');
-//    Serial.print(now.day(), DEC);
-//    Serial.print(" (");
-//    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
-//    Serial.print(") ");
-//    Serial.print(now.hour(), DEC);
-//    Serial.print(':');
-//    Serial.print(now.minute(), DEC);
-//    Serial.print(':');
-//    Serial.print(now.second(), DEC);
-//    Serial.println();
-//
-//    Serial.print(" since midnight 1/1/1970 = ");
-//    Serial.print(now.unixtime());
-//    Serial.print("s = ");
-//    Serial.print(now.unixtime() / 86400L);
-//    Serial.println("d");
-//
-//    // calculate a date which is 7 days and 30 seconds into the future
-//    DateTime future (now + TimeSpan(7,12,30,6));
-//
-//    Serial.print(" now + 7d + 30s: ");
-//    Serial.print(future.year(), DEC);
-//    Serial.print('/');
-//    Serial.print(future.month(), DEC);
-//    Serial.print('/');
-//    Serial.print(future.day(), DEC);
-//    Serial.print(' ');
-//    Serial.print(future.hour(), DEC);
-//    Serial.print(':');
-//    Serial.print(future.minute(), DEC);
-//    Serial.print(':');
-//    Serial.print(future.second(), DEC);
-//    Serial.println();
-//
-//    Serial.println();
-//    delay(3000);
-//}
 
-//void write_string(int  address,int  string[])
-//     {
-//     int ctr = 0;                                    //set counter to zero
-//     while(string[ctr] !=0)
-//        {write_eeprom (address++, string[ctr])       //write string to eeprom
-//        ctr++;
-//        }
-//     }
-//
-//void read_string(int  address, char data)
-//     {
-//      int i = 0;
-//      char string[120];
-//      for(i=0;i<= strlen(data)-1; i++)
-//         {string[i] = read_eeprom(address++);}
-//    }
-//
-//void clear_232_buffer(void)
-//    {int i=0;
-//     while (i <= 30)
-//         {
-//          buffer[i] = 0;                                    //set to zero
-//          i=i+1;                                            //increment pointer
-//         }
-//     next_in = 0;
-//    }
+
+
 
 
 //-------------------------------------------
