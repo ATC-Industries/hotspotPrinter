@@ -187,8 +187,6 @@ LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to
 
 RTC_DS3231 rtc;                                        //start an instance of the real time clock named 'rtc'
 
-
-
 //-------------Interuput routines ----------------------------------------------
 void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt(place before void setup() code)
   {
@@ -204,9 +202,9 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
 void setup(){
+    
     Wire.begin();                             //start i2c for RTC
-    //---------- SETUP LCD -----------------------------------------------------
-
+    
     //---------- declare input buttons with pullup -----------------------------
     pinMode(button_PRINT,INPUT_PULLUP);    // print button
     pinMode(button_F1,INPUT_PULLUP);       // F1
@@ -221,7 +219,7 @@ void setup(){
     timerAlarmEnable(timer);                    // this line enables the timer declared 3 lines up and starts it
     ticket = 0;
 
-    //-------------  declare serial ports --------------------------------------
+    //-------------  declare serial ports and start up--------------------------------------
     /*   Note the format for setting a serial port is as follows:
         Serial2.begin(baud-rate, protocol, RX pin, TX pin);  */
     Serial1.begin(9600, SERIAL_8N1,33,32);     // RADIO, tx =32 rx = 33
@@ -229,8 +227,8 @@ void setup(){
     Serial.begin(115200);                      // start serial port 0 (debug monitor and programming port)
     delay(1000);                               //time for the serial ports to setup
 
-    lcd.init();
-    lcd.backlight();
+    lcd.init();                               //initialize the LCD display
+    lcd.backlight();                          //turn on backlight
 
 
 //--------------Initialize printer for upside down print -----------------------------
@@ -246,7 +244,9 @@ void setup(){
      Serial2.write('1');
      Serial2.write(0x0A);
      set_text_size(0x00);               //set for small font
-    //--------------- diagnostic mode if F1 is held on cold boot ------------------------------------------
+
+     
+//--------------- diagnostic mode if F1 is held on cold boot ------------------------------------------
 
     if (!digitalRead(button_F1))                                     //^^^ If button 1 held on cold start, turn on diagnostic mode
         {diagnostic_flag = true;
@@ -264,16 +264,15 @@ void setup(){
 
 
 
-    //------------- initialize the EEPROM --------------------------------------
+//------------- initialize the EEPROM --------------------------------------
     if (!EEPROM.begin(EEPROM_SIZE))                                 //set aside memory for eeprom size
         {
+        time_stamp_serial_monitor();
         Serial.println("failed to intialize EEPROM");               //display error to monitor
+        
         Serial2.println("Error - failed to intialize EEPROM");      //send error code to printer
         }
-
     passwordString = (EEPROM.readInt(password_addr));
-    // tempPassword.toCharArray(password,30);
-
     Serial.print("Setting AP (Access Point)…\n");                 // Connect to Wi-Fi network with SSID and password
 
     
@@ -294,7 +293,6 @@ void setup(){
         lcd.print("Temporary Password");
         lcd.setCursor(0,1);
         lcd.print("987654321");
-
         while(!digitalRead(button_PRINT))                         //loop until button is released
             {delay(30);}
         WiFi.softAP(ssid,"987654321");                            //start wifi hub and require temporary password
@@ -332,12 +330,11 @@ void setup(){
     lcd.print("WiFi network:");
     lcd.setCursor(0,1);
     lcd.print("ProTournament");
-
-     char ip_string[30];                                          //declare a character array
+    char ip_string[30];                                          //declare a character array
     sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
-    set_text_size(0X00);
+    set_text_size(0X00);                                         //set printer font size to small
     Serial2.println("----------------------------------------------------------");
-    set_text_size(0x11);
+    set_text_size(0x11);                                         //set printer font size to 2X
     Serial2.write(0x0A);
     Serial2.println(ip_string);
     Serial2.write(0x0A);
@@ -359,21 +356,19 @@ void setup(){
     Serial2.println("----------------------------------------------------------");
     cut_paper();
 
-
-
     char verString[10];
     sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
     lcd.setCursor(0,3);
     lcd.print(verString);                                                 //print software version
 
-    delay(5000);                                                          //leave ssid and ip on oled sceen for this delay
+    delay(3000);                                                          //leave ssid and ip on oled sceen for this delay
     line1 = (EEPROM.readString(line1_eeprom_addr));                       //recall values saved in eeprom
     line2 = (EEPROM.readString(line2_eeprom_addr));
     line3 = (EEPROM.readString(line3_eeprom_addr));
     line4 = (EEPROM.readString(line4_eeprom_addr));
     serial_number = EEPROM.readInt(serial_number_addr);                  //get ticket serial number
-    Serial.println("Load S/N "+ String(serial_number));
-    cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));         //recall checkbox status (boolean)
+    Serial.println("Load S/N "+ String(serial_number));                  //print serial number to serial monitor
+    cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));        //recall checkbox status (boolean)
     cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
     cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
     cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
@@ -383,7 +378,7 @@ void setup(){
     cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
     cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
 
-    lcd.clear();                                                          //clear lcd display
+    lcd.clear();                                           //clear lcd display
     lcd.setCursor(0,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
@@ -393,7 +388,7 @@ void setup(){
     delay(3000);
     lcd.clear();
    // lcd.setCursor(0,3);
-   // lcd.print(line4);                       //line 4 on lcd used to display button functions
+   // lcd.print(line4);                                   //line 4 on lcd used to display button functions
 
 //-------- get the MAC address of the WiFi module ----------  
     WiFi.macAddress(Imac);
@@ -401,15 +396,16 @@ void setup(){
       for(int i=5;i>=0;i--)
         {
         Serial.print(":");
-        Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
-        if (diagnostic_flag == true)                                   //^^^ print mac address to printer when in diagnostic mode
-           {Serial2.println(Imac[i],HEX);}                          //send mac adreesss to printer
+        Serial.print(Imac[i],HEX);                        //print the mac address to serial monitor
+        if (diagnostic_flag == true)                      //^^^ print mac address to printer when in diagnostic mode
+           {Serial2.println(Imac[i],HEX);}                //send mac adreesss to printer
         }
     Serial.print("\n");
    // Check if SD card is present
-   isSDCardPresent = isSDCard();                                  //set flag if sd card is present
+   isSDCardPresent = isSDCard();                          //set flag if sd card is present
    if (!isSDCardPresent)
-      { Serial.print("SD card not present");
+      { time_stamp_serial_monitor();
+        Serial.print("SD card not present");
         if (diagnostic_flag)                              //^^^ diagnostic message
           {Serial2.println("SD card not present");}
       }
@@ -424,35 +420,35 @@ void loop(){
 
 
 //---- 100 ms timer---------
-   if (interruptCounter > 0)                          //every one second 100 msec int is generated
+   if (interruptCounter > 0)                            //every one second 100 msec int is generated
       {
       portENTER_CRITICAL(&timerMux);
-      interruptCounter--;                             //reset counter to zero
+      interruptCounter--;                               //reset counter to zero
       portEXIT_CRITICAL(&timerMux);
-      totalInterruptCounter++;                        //increment counter for ints generated every second
+      totalInterruptCounter++;                          //increment counter for ints generated every second
       }
       
 //---- 1 second timer------
-  if (ClockTimer >=10)                                //update clock every one second
-      {lcd_display_time();                            //display time upper left corner of lcd
-       lcd_display_date();                            //display date upper right corner of lcd
-       ClockTimer = 0;                                //reset one second timer
+  if (ClockTimer >=10)                                  //update clock every one second
+      {lcd_display_time();                              //display time upper left corner of lcd
+       lcd_display_date();                              //display date upper right corner of lcd
+       ClockTimer = 0;                                  //reset one second timer
       }
 
    
 //---- no signal timer -------
    if (totalInterruptCounter >=50)
       { lcd_display_time();
-        totalInterruptCounter = 0;                //reset counter
-        if (++ no_signal_timer >= 2)               //if no signal this timer times out
-           { statt = 0;                            //set display mode to 0 so "No Signal" will be displayed
-             if (!no_sig_flag)                    //if flag is not set
+        totalInterruptCounter = 0;                        //reset counter
+        if (++ no_signal_timer >= 2)                      //if no signal this timer times out
+           { statt = 0;                                   //set display mode to 0 so "No Signal" will be displayed
+             if (!no_sig_flag)                            //if flag is not set
                {
                //lcd.clear();
                lcd.setCursor(2,1);
                lcd.print("** No  Signal **");
                }
-             no_sig_flag = 1;                       //set flag so display will not update every loop
+             no_sig_flag = 1;                             //set flag so display will not update every loop
            }
       }
    //--------------- read  button routines -------------------------------------------------------
@@ -520,12 +516,14 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
        }
      else
        {lcd.print("   ");}
-//-------------- F1 + F4 key press will reboot computer
+
+       
+//-------------- F1 + F4 key press will reboot computer ---------------------------
   if (!digitalRead(button_F1) &&  !digitalRead(button_F4))  // If button 1 and 4 are pressed at same time reboot
        {
         lcd.clear();
         lcd.setCursor(0,1);
-        lcd.print("Rebooting");
+        lcd.print("Rebooting");                                 //display 'rebooting'  on Lcd
         delay(100);
         lcd.print(".");
         delay(100);
@@ -553,37 +551,36 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
 
 //--------------- radio uart recieve ---------------------------------------------------------------
-      if (Serial1.available() > 0)                  //if data in recieve buffer, send to serial monitor
+      if (Serial1.available() > 0)                                  //if data in recieve buffer, send to serial monitor
           {char c;
-           c = (char)Serial1.read();                //get byte from uart buffer
-           radio_rx_array[radio_rx_pointer] += c;   //add character to radio rx buffer
-           radio_rx_pointer ++;                     //increment pointer
-           if (radio_rx_pointer >=30)               //buffer overflow
-              {clear_radio_rx_array();              //clear rx radio buffer
-               radio_rx_pointer = 0;                //reset the rx radio buffer
+           c = (char)Serial1.read();                                //get byte from uart buffer
+           radio_rx_array[radio_rx_pointer] += c;                   //add character to radio rx buffer
+           radio_rx_pointer ++;                                     //increment pointer
+           if (radio_rx_pointer >=30)                               //buffer overflow
+              {clear_radio_rx_array();                              //clear rx radio buffer
+               radio_rx_pointer = 0;                                //reset the rx radio buffer
               }
-           if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
+           if (c == 0x0D || c == 0x0A)                              //if character is CR or LF then process buffer
               {c = 0x00;
                //-------------display weight on LCD-----------------------------------
-               no_sig_flag = 0;                     //clear flag used in no sig message routine
+               no_sig_flag = 0;                                     //clear flag used in no sig message routine
                //lcd.clear();
-               lcd.setCursor(3,1);                   //3rd position 2 line
-          //     lcd.print(radio_rx_array);           //send recieved string to display
+               lcd.setCursor(3,1);                                  //3rd position 2 line
+          //     lcd.print(radio_rx_array);                         //send recieved string to display
                int inc = 0;
                while (inc <= 15)
-                 {if (radio_rx_array[inc] >= 31)         //do not display characters with ascaii value of 30 or less
-                        {lcd.write(radio_rx_array[inc]);  //write character to screen
+                 {if (radio_rx_array[inc] >= 31)                    //do not display characters with ascaii value of 30 or less
+                        {lcd.write(radio_rx_array[inc]);            //write character to screen
                          if (radio_rx_array[inc] == 'H' && radio_rx_array[inc+1] != 'O')  //locked value and not 'HOLD'?
                              {lcd.setCursor(3,2);
-                              lcd.print(" *** LOCKED ***"); //Display "locked" message on lcd
-
+                              lcd.print(" *** LOCKED ***");         //Display "locked" message on lcd
                              }
                          if (radio_rx_array[inc] == 'M') 
                              {lcd.setCursor(0,2);
                               lcd.print("                  ");     //erase 'LOCKED" message if not locked 
                              }
                      }
-                  inc++;
+                  inc++;                                            //increment pointer
                  }
              
                processRadioString();
@@ -1111,7 +1108,30 @@ void lcd_display_date(void)
     lcd.print(now.year(), DEC);
 }
 
+void time_stamp_serial_monitor(void)
+{
+ DateTime now = rtc.now();
+   
+     if (now.hour()<10)                               //add leading zero 
+      {Serial.print("0");}
+    Serial.print(now.hour(), DEC);
+    Serial.print(':');
+    if (now.minute()<10)                               //add leading zero 
+      {Serial.print("0");}
+    Serial.print(now.minute(), DEC);
+    Serial.print(':');
+    if (now.second()<10)                               //add leading zero 
+      {Serial.print("0");}
+    Serial.print(now.second(), DEC);
 
+     
+    Serial.print(now.month(), DEC);
+    Serial.print('/');
+    Serial.print(now.day(), DEC);
+    Serial.print('/');
+    Serial.print(now.year(), DEC);
+
+}
 
 
 //-------------------------- Print Ticket ----------------------------------------------
