@@ -118,17 +118,11 @@ bool radio_rx_ready = false;    // whether the rec radio string is complete
 int radio_rx_pointer;           //pointer for radio rx buffer
 int statt;                      // 1 = h2 lb   2= h2 lb/oz     3 = 357 lb     4 = 357 lb/oz
 int serial_number;              // Stores device serial number
+int read_keyboard_timer;         // timer that reads the keyboard every 200ms
 char output_string[31];         // converted data to send out
 char temp_str[31];              //
 String temp_val = "";           //
 char weight[15];                //
-int touch_value_0;              //
-int touch_value_1 = 100;        //
-int touch_value_2 = 100;        //
-int touch_value_3 = 100;        //
-int touch_value_4 = 100;        //
-int touch_value_5 = 100;        //
-int read_keyboard_timer;        //
 int ClockTimer = 0;
 bool no_sig_flag = 0;           // flag to prevent display from updating on no change of No Signal message
 bool cb_print_2_copies;         // If checkbox should show checked or not
@@ -209,8 +203,8 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
 //--------------------------------------------------------------------------
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
-void setup()
-    {Wire.begin();                             //start i2c for RTC
+void setup(){
+    Wire.begin();                             //start i2c for RTC
     //---------- SETUP LCD -----------------------------------------------------
 
     //---------- declare input buttons with pullup -----------------------------
@@ -240,18 +234,18 @@ void setup()
 
 
 //--------------Initialize printer for upside down print -----------------------------
-         Serial2.write(0x1B);                //initialize printer
-         Serial2.write('@');
+     Serial2.write(0x1B);                //initialize printer
+     Serial2.write('@');
 
-         Serial2.write(0x1B);                //upside down printing
-         Serial2.write('{');
-         Serial2.write('1');
+     Serial2.write(0x1B);                //upside down printing
+     Serial2.write('{');
+     Serial2.write('1');
 
-         Serial2.write(0x1B);                //B Font 12x24
-         Serial2.write('M');
-         Serial2.write('1');
-         Serial2.write(0x0A);
-         set_text_size(0x00);               //set for small font
+     Serial2.write(0x1B);                //B Font 12x24
+     Serial2.write('M');
+     Serial2.write('1');
+     Serial2.write(0x0A);
+     set_text_size(0x00);               //set for small font
     //--------------- diagnostic mode if F1 is held on cold boot ------------------------------------------
 
     if (!digitalRead(button_F1))                                     //^^^ If button 1 held on cold start, turn on diagnostic mode
@@ -277,17 +271,20 @@ void setup()
         Serial2.println("Error - failed to intialize EEPROM");      //send error code to printer
         }
 
-    passwordString = (EEPROM.readString(password_addr));
+    passwordString = (EEPROM.readInt(password_addr));
     // tempPassword.toCharArray(password,30);
 
     Serial.print("Setting AP (Access Point)…\n");                 // Connect to Wi-Fi network with SSID and password
-    /* Remove the password parameter, if you want the AP (Access Point) to be open
+
+    
+   
+
+//-----------------Hold Print button on cold start to bring in temporary password to log on ---------------------
+ /* Remove the password parameter, if you want the AP (Access Point) to be open
        if 'button_PRINT' is pulled low,(print button pressed) a temporary password will
        be displayed on the remote dispay and the password will be printed out on
        the printer  */
 
-
-//-----------------Hold Print button on cold start to bring in temporary password to log on ---------------------
     if (!digitalRead(button_PRINT))                               // if print button is held down during power up
         {
         // TODO All this `if` needs to be deleted and maybe replaced with enter diagnostic mode
@@ -375,7 +372,7 @@ void setup()
     line3 = (EEPROM.readString(line3_eeprom_addr));
     line4 = (EEPROM.readString(line4_eeprom_addr));
     serial_number = EEPROM.readInt(serial_number_addr);                  //get ticket serial number
-    Serial.println("S/N "+ String(serial_number));
+    Serial.println("Load S/N "+ String(serial_number));
     cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));         //recall checkbox status (boolean)
     cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
     cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
@@ -386,7 +383,7 @@ void setup()
     cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
     cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
 
-    lcd.clear();
+    lcd.clear();                                                          //clear lcd display
     lcd.setCursor(0,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
@@ -396,21 +393,26 @@ void setup()
     delay(3000);
     lcd.clear();
    // lcd.setCursor(0,3);
-   // lcd.print(line4);
+   // lcd.print(line4);                       //line 4 on lcd used to display button functions
 
+//-------- get the MAC address of the WiFi module ----------  
     WiFi.macAddress(Imac);
       Serial.print("MAC");
       for(int i=5;i>=0;i--)
-    {
-    Serial.print(":");
-      Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
-    if (diagnostic_flag == true)                                   //^^^ print mac address to printer when in diagnostic mode
-       {Serial2.println(Imac[i],HEX);}
-    }
+        {
+        Serial.print(":");
+        Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
+        if (diagnostic_flag == true)                                   //^^^ print mac address to printer when in diagnostic mode
+           {Serial2.println(Imac[i],HEX);}                          //send mac adreesss to printer
+        }
     Serial.print("\n");
    // Check if SD card is present
-   isSDCardPresent = isSDCard();
-
+   isSDCardPresent = isSDCard();                                  //set flag if sd card is present
+   if (!isSDCardPresent)
+      { Serial.print("SD card not present");
+        if (diagnostic_flag)                              //^^^ diagnostic message
+          {Serial2.println("SD card not present");}
+      }
 
 }//void setup() ending terminator
 
@@ -421,7 +423,7 @@ void loop(){
 
 
 
-   //---- 100 ms routine
+//---- 100 ms timer---------
    if (interruptCounter > 0)                          //every one second 100 msec int is generated
       {
       portENTER_CRITICAL(&timerMux);
@@ -429,7 +431,8 @@ void loop(){
       portEXIT_CRITICAL(&timerMux);
       totalInterruptCounter++;                        //increment counter for ints generated every second
       }
-
+      
+//---- 1 second timer------
   if (ClockTimer >=10)                                //update clock every one second
       {lcd_display_time();                            //display time upper left corner of lcd
        lcd_display_date();                            //display date upper right corner of lcd
@@ -437,7 +440,7 @@ void loop(){
       }
 
    
-   //---- no signal timer -------
+//---- no signal timer -------
    if (totalInterruptCounter >=50)
       { lcd_display_time();
         totalInterruptCounter = 0;                //reset counter
@@ -470,8 +473,9 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
        if (checkbox3_status == "checked")                 //if check box 'print serial number' is checked
           {serial_number++;                               //increment serial number
-            EEPROM.writeInt(serial_number_addr,serial_number);} //save serial number to eeprom
-
+            EEPROM.writeInt(serial_number_addr,serial_number); //save serial number to eeprom
+            Serial.println(EEPROM.readInt(serial_number_addr));  //*** diagnostic
+          }
        lcd.clear();
        lcd.setCursor(3,1);
        lcd.print("PRINTING...");                          //display 'Printing' message to lcd
@@ -493,9 +497,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F2))                         //F2 button
        {lcd.print("F2");
        if (diagnostic_flag)
-          { Serial2.println("Button F2 pressed");         //^^^ send button press diag to printer
-          // Serial2.write(0x0A);
-          }
+          { Serial2.println("Button F2 pressed");}         //^^^ send button press diag to printer
        }
      else
        {lcd.print("   ");}
@@ -505,9 +507,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F3))                         //F3 button
        {lcd.print("F3");
         if (diagnostic_flag)
-           {Serial2.println("Button F3 pressed");         //^^^ send button press diag to printer
-         //  Serial2.write(0x0A);
-           }
+           {Serial2.println("Button F3 pressed");}         //^^^ send button press diag to printer
        }
      else
         {lcd.print("   ");}
@@ -516,17 +516,40 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F4))                         //F4 button
        {lcd.print("F4");
        if (diagnostic_flag)
-          { Serial2.println("Button F2 pressed");         //^^^ send button press diag to printer
-          // Serial2.write(0x0A);
-          }
+          { Serial2.println("Button F2 pressed");}         //^^^ send button press diag to printer
        }
      else
        {lcd.print("   ");}
-
+//-------------- F1 + F4 key press will reboot computer
   if (!digitalRead(button_F1) &&  !digitalRead(button_F4))  // If button 1 and 4 are pressed at same time reboot
-       {ESP.restart();}
-       
-  }
+       {
+        lcd.clear();
+        lcd.setCursor(0,1);
+        lcd.print("Rebooting");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        ESP.restart();}
+    }//end if read_keyboard_timer
 
 
 //--------------- radio uart recieve ---------------------------------------------------------------
@@ -1140,7 +1163,7 @@ void print_ticket(void)
               // *database [ticket][0] = ;     //save name to data base
              //  *database [ticket][1] = weight;        //save the weight
 
-                   Serial.println("line 654- statt =" + String(statt));       //***diag print the statt value
+              //     Serial.println("line 654- statt =" + String(statt));       //***diag print the statt value
 
                if(statt == 1 )                                //h2 lb mode
                   {
@@ -1220,7 +1243,9 @@ void print_ticket(void)
                    Serial2.write(0x0A);
                     if (checkbox3_status == "checked") 
                     lcd.setCursor(0,0);
-                    lcd.print("Ticket# "+ String(serial_number));  
+                   // lcd.print("Ticket# "+ String(serial_number));
+                    lcd.printf("S/N # %08d       ",serial_number); 
+                    Serial.printf("S/N # %08d       ",serial_number); 
                    }
 
 
