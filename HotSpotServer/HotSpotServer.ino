@@ -67,14 +67,12 @@ pin assignment                                      5 volt----------------------
 
 #define EEPROM_SIZE 1024        //rom reserved for eeprom storage
 
-#define RXD2 16                 //port 2 serial pins for external printer
-#define TXD2 17
-//----------- assign port pins to buttons --------------------------------------
-#define button_F1 13    //
-#define button_F2 26    //
-#define button_F3 4     //
-#define button_F4 27    //
-#define button_PRINT 2  //
+//----------- assign processor port pins to buttons --------------------------------------
+#define button_F1 13            //
+#define button_F2 26            //
+#define button_F3 4             //
+#define button_F4 27            //
+#define button_PRINT 2          //
 
 //////////////////////////////////////////////////////
 //DEV VARIABLES
@@ -184,7 +182,6 @@ char* string2char(String str)
 
 
 LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 or 3f for a 20 chars and 4 line display
-
 RTC_DS3231 rtc;                                        //start an instance of the real time clock named 'rtc'
 
 //-------------Interuput routines ----------------------------------------------
@@ -222,8 +219,8 @@ void setup(){
     //-------------  declare serial ports and start up--------------------------------------
     /*   Note the format for setting a serial port is as follows:
         Serial2.begin(baud-rate, protocol, RX pin, TX pin);  */
-    Serial1.begin(9600, SERIAL_8N1,33,32);     // RADIO, tx =32 rx = 33
-    Serial2.begin(9600, SERIAL_8N1,16,17);     // THERMAL PRINTER,  RX = pin 16  TX = pin 17
+    Serial1.begin(9600, SERIAL_8N1,33,32);     // XB RADIO,  RX = 33, TX = 32,
+    Serial2.begin(9600, SERIAL_8N1,16,17);     // THERMAL PRINTER, RX = 16,  TX = 17
     Serial.begin(115200);                      // start serial port 0 (debug monitor and programming port)
     delay(1000);                               //time for the serial ports to setup
 
@@ -232,7 +229,7 @@ void setup(){
 
 
 //--------------Initialize printer for upside down print -----------------------------
-     Serial2.write(0x1B);                //initialize printer
+     Serial2.write(0x1B);                //initialize pos2 printer
      Serial2.write('@');
 
      Serial2.write(0x1B);                //upside down printing
@@ -252,7 +249,7 @@ void setup(){
         {diagnostic_flag = true;
          lcd.clear();
          lcd.setCursor(2,1);
-         lcd.print("  Diagnostic  Mode");
+         lcd.print("  Diagnostic  Mode");                           //display message on LCD screen
          Serial2.println("Turn printer 'OFF' and then 'ON' to exit diagnostic mode");
 
          Serial2.println("------------- Entering Diagnostic Mode ----------------");                             //^^^ send message to printer
@@ -269,10 +266,9 @@ void setup(){
         {
         time_stamp_serial_monitor();
         Serial.println("failed to intialize EEPROM");               //display error to monitor
-        
         Serial2.println("Error - failed to intialize EEPROM");      //send error code to printer
         }
-    passwordString = (EEPROM.readInt(password_addr));
+    passwordString = (EEPROM.readString(password_addr));
     Serial.print("Setting AP (Access Point)…\n");                 // Connect to Wi-Fi network with SSID and password
 
     
@@ -432,7 +428,7 @@ void loop(){
   if (ClockTimer >=10)                                  //update clock every one second
       {lcd_display_time();                              //display time upper left corner of lcd
        lcd_display_date();                              //display date upper right corner of lcd
-       ClockTimer = 0;                                  //reset one second timer
+       ClockTimer = 0;                                  //reset one second timer used for clock updates
       }
 
    
@@ -1095,14 +1091,19 @@ void lcd_display_time(void)
     if (now.second()<10)                               //add leading zero 
       {lcd.print("0");}
     lcd.print(now.second(), DEC);
+    lcd.print("  ");
    }
 //------------------------------
 void lcd_display_date(void)
 {
      DateTime now = rtc.now();
     lcd.setCursor(10,0);
+    if (now.month() <10)                                  //leading zero for months
+       {lcd.print("0");}
     lcd.print(now.month(), DEC);
     lcd.print('/');
+    if (now.day() <10)                                    //leading zero for days
+       {lcd.print("0");}
     lcd.print(now.day(), DEC);
     lcd.print('/');
     lcd.print(now.year(), DEC);
