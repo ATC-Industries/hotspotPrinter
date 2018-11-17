@@ -75,8 +75,7 @@ pin assignment                                      5 volt----------------------
 #define button_PRINT 2          //
 
 //////////////////////////////////////////////////////
-//DEV VARIABLES
-
+//DEFINE VARIABLES
 //////////////////////////////////////////////////////
 
 
@@ -111,6 +110,7 @@ String line1 = "";              // String to hold value of Line 1 input box
 String line2 = "";              // String to hold value of Line 2 input box
 String line3 = "";              // String to hold value of Line 3 input box
 String line4 = "";              // String to hold value of Line 4 input box
+String last_weight = "";        //
 char radio_rx_array[31];        // array being recieved on xbee radio
 bool radio_rx_ready = false;    // whether the rec radio string is complete
 int radio_rx_pointer;           //pointer for radio rx buffer
@@ -121,7 +121,7 @@ char output_string[31];         // converted data to send out
 char temp_str[31];              //
 String temp_val = "";           //
 char weight[15];                //
-int ClockTimer = 0;
+int ClockTimer = 0;             //
 bool no_sig_flag = 0;           // flag to prevent display from updating on no change of No Signal message
 bool cb_print_2_copies;         // If checkbox should show checked or not
 bool cb_print_signature_line;   // If checkbox should show checked or not
@@ -132,8 +132,8 @@ bool lock_flag = false;         // flag that indicates weight is a locked value
 bool cb_print_on_lock;          // check box flag for print on lock
 bool isSDCardPresent = false;   // Flag checked on startup true if SD card is found
 bool diagnostic_flag = false;   // Flag to send all Serial Monitor diagnostic to printer
-String passwordMessage = "";
-bool passSuccess = false;
+String passwordMessage = "";    //
+bool passSuccess = false;       //
 volatile int ticket;            // ticket serial number
 byte Imac[6];                   // array to hold the mac address
 String checkbox1_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
@@ -216,14 +216,13 @@ void setup(){
     timerAlarmEnable(timer);                    // this line enables the timer declared 3 lines up and starts it
     ticket = 0;
 
-    //-------------  declare serial ports and start up--------------------------------------
+    //-------------  declare serial ports and start up LCD module --------------------------------------
     /*   Note the format for setting a serial port is as follows:
         Serial2.begin(baud-rate, protocol, RX pin, TX pin);  */
     Serial1.begin(9600, SERIAL_8N1,33,32);     // XB RADIO,  RX = 33, TX = 32,
     Serial2.begin(9600, SERIAL_8N1,16,17);     // THERMAL PRINTER, RX = 16,  TX = 17
     Serial.begin(115200);                      // start serial port 0 (debug monitor and programming port)
     delay(1000);                               //time for the serial ports to setup
-
     lcd.init();                               //initialize the LCD display
     lcd.backlight();                          //turn on backlight
 
@@ -268,7 +267,7 @@ void setup(){
         Serial.println("failed to intialize EEPROM");               //display error to monitor
         Serial2.println("Error - failed to intialize EEPROM");      //send error code to printer
         }
-    passwordString = (EEPROM.readString(password_addr));
+    passwordString = (EEPROM.readString(password_addr));           //retriev password stored in eeprom
     Serial.print("Setting AP (Access Point)…\n");                 // Connect to Wi-Fi network with SSID and password
 
     
@@ -326,18 +325,18 @@ void setup(){
     lcd.print("WiFi network:");
     lcd.setCursor(0,1);
     lcd.print("ProTournament");
-    char ip_string[30];                                          //declare a character array
+    char ip_string[30];                                          //declare a character array to hold ip address
     sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
     set_text_size(0X00);                                         //set printer font size to small
     Serial2.println("----------------------------------------------------------");
     set_text_size(0x11);                                         //set printer font size to 2X
-    Serial2.write(0x0A);
-    Serial2.println(ip_string);
-    Serial2.write(0x0A);
-    set_text_size(0x00);
+    Serial2.write(0x0A);                                          //line feed
+    Serial2.println(ip_string);                                  //display ip value
+    Serial2.write(0x0A);                                          //line feed
+    set_text_size(0x00);                                         //set text to small
     Serial2.println("in the address bar at top of the browser screen.");
     Serial2.println("Open your browser and enter the following IP address");
-    Serial2.write(0x0A);
+    Serial2.write(0x0A);                                          //line feed
     Serial2.println("---------------------------------------------------------");
 
     set_text_size(0X11);
@@ -388,18 +387,18 @@ void setup(){
 
 //-------- get the MAC address of the WiFi module ----------  
     WiFi.macAddress(Imac);
-      Serial.print("MAC");
-      for(int i=5;i>=0;i--)
-        {
-        Serial.print(":");
-        Serial.print(Imac[i],HEX);                        //print the mac address to serial monitor
-        if (diagnostic_flag == true)                      //^^^ print mac address to printer when in diagnostic mode
-           {Serial2.println(Imac[i],HEX);}                //send mac adreesss to printer
-        }
+    Serial.print("MAC");
+    for(int i=5;i>=0;i--)
+      {
+      Serial.print(":");
+      Serial.print(Imac[i],HEX);                        //print the mac address to serial monitor
+      if (diagnostic_flag == true)                      //^^^ print mac address to printer when in diagnostic mode
+         {Serial2.println(Imac[i],HEX);}                //send mac adreesss to printer
+      }
     Serial.print("\n");
-   // Check if SD card is present
-   isSDCardPresent = isSDCard();                          //set flag if sd card is present
-   if (!isSDCardPresent)
+    // Check if SD card is present
+    isSDCardPresent = isSDCard();                          //set flag if sd card is present
+    if (!isSDCardPresent)
       { time_stamp_serial_monitor();
         Serial.print("SD card not present");
         if (diagnostic_flag)                              //^^^ diagnostic message
@@ -412,8 +411,6 @@ void setup(){
 
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
-
-
 
 //---- 100 ms timer---------
    if (interruptCounter > 0)                            //every one second 100 msec int is generated
@@ -469,9 +466,20 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
             Serial.println(EEPROM.readInt(serial_number_addr));  //*** diagnostic
           }
        lcd.clear();
-       lcd.setCursor(3,1);
-       lcd.print("PRINTING...");                          //display 'Printing' message to lcd
-       delay(2000);
+//       lcd.setCursor(3,1);
+//       lcd.print("PRINTING...");                          //display 'Printing' message to lcd
+//       delay(2000);
+//-------- print ticket to screen --------------------------------       
+       lcd.setCursor((20-(line1.length()))/2,0);                //print line 1 and center
+       lcd.print(line1);
+       lcd.setCursor((20-(line2.length()))/2,1);                //print line 1 and center
+       lcd.print(line2);
+       lcd.setCursor((20-(line3.length()))/2,2);                //print line 1 and center
+       lcd.print(line3);
+       lcd.setCursor((20-(String(weight).length()))/2,3);
+       //delay(4000);
+       
+       
        lcd.clear();
       }
      lcd.setCursor(0,3);
@@ -1139,42 +1147,42 @@ void time_stamp_serial_monitor(void)
 void print_ticket(void)
               {
                int i=0;
-               String temp_string = "";            //create a temp string
-               Serial2.write(0x1B);                //initialize printer
+               String temp_string = "";                     //create a temp string
+               Serial2.write(0x1B);                         //initialize printer
                Serial2.write('@');
 
-               Serial2.write(0x1B);                //upside down printing
+               Serial2.write(0x1B);                         //upside down printing
                Serial2.write('{');
                Serial2.write('1');
 
-               Serial2.write(0x1B);                //B Font 12x24
+               Serial2.write(0x1B);                          //B Font 12x24
                Serial2.write('M');
                Serial2.write('1');
 
-               Serial2.write(0x1B);                //justification: center text
+               Serial2.write(0x1B);                         //justification: center text
                Serial2.write('a');
                Serial2.write('1');
 
-               Serial2.write(0x1B);                 //bold mode on
+               Serial2.write(0x1B);                         //bold mode on
                Serial2.write(0x21);
                Serial2.write(0x38);
 
 
-               Serial2.write(0x1D);                 //turn smoothing on
+               Serial2.write(0x1D);                         //turn smoothing on
                Serial2.write(0x62);
                Serial2.write('1');
-               set_text_size(0x00);               //1x text size
+               set_text_size(0x00);                         //1x text size
                if (line4 != "")
-                      {Serial2.println(line4);}      //print sponsor line if anything is in it
+                      {Serial2.println(line4);}             //print sponsor line if anything is in it
 
 
                if (checkbox2_status == "checked")
                       { Serial2.println("Sign________________________________________");}  //print signature line
 
-               set_text_size(0x44);               //5x text size
+               set_text_size(0x44);                       //5x text size
                i=0;
                while (i++ <= 8)
-                  {Serial2.write(0xC4);}              //horizontal line
+                  {Serial2.write(0xC4);}                  //horizontal line
                Serial2.write(0x0A);
 
 
@@ -1192,6 +1200,7 @@ void print_ticket(void)
                     set_text_size(0x11);                      //2x text size
                     Serial2.println("Lbs");                   //print "Lbs"
                     clear_output_buffer();;                   //clear the output string
+                    last_weight = output_string;              //save value to recall
                   }
 
 
@@ -1210,6 +1219,7 @@ void print_ticket(void)
                      set_text_size(0x00);                     //normal text size
                      Serial2.print("oz\n");                   //print the oz label with return
                      clear_output_buffer();;                  //clear the output string
+                    last_weight = output_string[1]+output_string[2]+output_string[3]+"Lb"+output_string[5]+output_string[6];
                   }
 
                else if ( statt == 3)                          //357 lb mode
@@ -1231,7 +1241,6 @@ void print_ticket(void)
                      Serial2.write(output_string[0]);
                      Serial2.write(output_string[1]);      //send lbs
                      Serial2.write(output_string[2]);
-
                      set_text_size(0x11);                   //2x text size
                      Serial2.printf("Lb");                  //print "lb" label
                      set_text_size(0x44);                   //5x text size
@@ -1335,9 +1344,7 @@ void print_ticket(void)
                      {
                      set_text_size(0x00);            //normal text size
                      Serial2.write(0x0A);            //line feeds
-                     
-                     
-                     
+                    
                      Serial2.write(0x0A);
                      Serial2.write(0x0A);
 
@@ -1361,13 +1368,7 @@ void print_ticket(void)
                    }
                //-------------- cut paper-----------------------------
                 if (!diagnostic_flag)                                                 //do not cut paper in diagnostic mode
-                 {
-                 Serial2.write(0x1D);                // "GS" cut paper
-                 Serial2.write('V');                 //"V"
-                 Serial2.write(0x42);                //decimal 66
-                 Serial2.write(0xB0);                //length to feed before cut (mm)
-                 }
-
+                 {cut_paper();}
 
                Serial2.write(0x1B);                //justification: left border
                Serial2.write('a');
@@ -1378,7 +1379,7 @@ void print_ticket(void)
               //     {delay_ms(5);}
               // ticket = ticket + 1;                        pointer for weigh tickets
            } //end of routine
-//--------------------------------------------------------------------------------
+//--------- cut paper on printer-----------------------------------------------------------------------
  void cut_paper(void)
      {Serial2.write(0x1D);                // "GS" cut paper
      Serial2.write('V');                 //"V"
@@ -1387,8 +1388,7 @@ void print_ticket(void)
      }
 
 
-//------------------------------------------------------------------------------------
-
+//--------- clear ooutput buffer ---------------------------------------------------------------------------
 void clear_output_buffer(void)
     {int i=0;
      while(i <= 30)
@@ -1396,15 +1396,17 @@ void clear_output_buffer(void)
           i=i+1;
          }
     }
-//------------------------------------------
-
+    
+//--------- set printer text size ---------------------------------
 void set_text_size(unsigned int size)               //set font size on printer
       {
       Serial2.write(0x1D);                 // set text size to small size
       Serial2.write(0x21);
       Serial2.write(size);                 // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
       }
-//-----------------------------------------
+
+      
+//----- set printer for reverse text ------------------------------------
 void set_text_reverse(bool on_off)                  //set or clear reverse text for printer epson command
       {
       Serial2.write(0x1D);
@@ -1414,7 +1416,7 @@ void set_text_reverse(bool on_off)                  //set or clear reverse text 
       else
           Serial2.write('0');
       }
-//--------------------------------------------
+//-----------------------------------------------------------------------------
 void clear_radio_rx_array(void)                          //routine to clear radio rx buffer
      {int i=0;
      while(i <= 30)
