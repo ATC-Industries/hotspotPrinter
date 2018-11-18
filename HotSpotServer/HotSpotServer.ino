@@ -51,7 +51,7 @@ pin assignment                                      5 volt----------------------
 #include <WiFi.h>               // Load Wi-Fi library
 #include <EEPROM.h>             //driver for eeprom
 //------ files for sd card -----------------------------------------------------
-#include <Update.h>
+#include <Update.h>             //firmware uploader
 #include <FS.h>
 #include <SD.h>                 //routines for SD card reader/writer
 //------ Other include files ---------------------------------------------------
@@ -59,7 +59,6 @@ pin assignment                                      5 volt----------------------
 #include <Wire.h>               //i2C function
 #include <LiquidCrystal_I2C.h>  //4x20 lcd display
 #include <NetBIOS.h>
-//#include <DS3231.h>             //RTC routines ****NOTE*** down loaded zip file form github 'RTClib'
 #include <RTClib.h>             //library for  RTC routines
 #include "css.h"                // refrence to css file to bring in CSS styles
 #include "SDfunc.h"             // refrence the SD card functions
@@ -114,7 +113,7 @@ String last_weight = "";        //
 char radio_rx_array[31];        // array being recieved on xbee radio
 bool radio_rx_ready = false;    // whether the rec radio string is complete
 int radio_rx_pointer;           //pointer for radio rx buffer
-int statt;                      // 1 = h2 lb   2= h2 lb/oz     3 = 357 lb     4 = 357 lb/oz
+int statt;                      // 1 = h2 lb,   2= h2 lb/oz,     3 = 357 lb,     4 = 357 lb/oz
 int serial_number;              // Stores device serial number
 int read_keyboard_timer;         // timer that reads the keyboard every 200ms
 char output_string[31];         // converted data to send out
@@ -180,7 +179,7 @@ char* string2char(String str)
     }
 }
 
-
+//--------- start lcd and rtc ----------------------------------------------------
 LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 or 3f for a 20 chars and 4 line display
 RTC_DS3231 rtc;                                        //start an instance of the real time clock named 'rtc'
 
@@ -437,7 +436,6 @@ void loop(){
            { statt = 0;                                   //set display mode to 0 so "No Signal" will be displayed
              if (!no_sig_flag)                            //if flag is not set
                {
-               //lcd.clear();
                lcd.setCursor(2,1);
                lcd.print("** No  Signal **");
                }
@@ -1049,10 +1047,8 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 }
 
 //----------------- Read Time date and send to serial monitor -----------------------------------
-void ReadTime(void)    
-    {
+void ReadTime(void){    
     DateTime now = rtc.now();
-
     Serial.print(now.year(), DEC);
     Serial.print('/');
     Serial.print(now.month(), DEC);
@@ -1072,11 +1068,10 @@ void ReadTime(void)
     }
 
 //------------- display time on LCD ---------------------------------------------    
-void lcd_display_time(void)
-    {
-     DateTime now = rtc.now();
+void lcd_display_time(void){
+    DateTime now = rtc.now();
     lcd.setCursor(0,0);
-     if (now.hour()<10)                               //add leading zero 
+    if (now.hour()<10)                               //add leading zero 
       {lcd.print("0");}
     lcd.print(now.hour(), DEC);
     lcd.print(':');
@@ -1090,9 +1085,8 @@ void lcd_display_time(void)
     lcd.print("  ");
    }
 //-------------display date on LCD  ----------------------------------------------
-void lcd_display_date(void)
-{
-     DateTime now = rtc.now();
+void lcd_display_date(void){
+    DateTime now = rtc.now();
     lcd.setCursor(10,0);
     if (now.month() <10)                                  //leading zero for months
        {lcd.print("0");}
@@ -1129,7 +1123,6 @@ void time_stamp_serial_monitor(void)
     Serial.print(now.year(), DEC);
 
 }
-
 
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
@@ -1190,8 +1183,8 @@ void print_ticket(void)
                   }
 
 //------------print weight H2 & CS-19 lb/oz mode ----------------------------------------------
-               else if (statt == 2)                           //H2 lb/oz mode
-                    {
+               else if (statt == 2){                           //H2 lb/oz mode
+                    
                      Serial2.write(output_string[1]);         //send out string one byte at a time.
                      Serial2.write(output_string[2]);         //print lb value
                      Serial2.write(output_string[3]);
@@ -1207,8 +1200,8 @@ void print_ticket(void)
                      last_weight = output_string[1]+output_string[2]+output_string[3]+"Lb"+output_string[5]+output_string[6]+output_string[7]+output_string[8]+ 0x00;
                   }
 //------------ print weight 357 lb mode -----------------------------------------------
-               else if ( statt == 3)                          //357 lb mode
-                  {
+               else if ( statt == 3){                          //357 lb mode
+                  
                      Serial2.write(output_string[0]);         //send weight
                      Serial2.write(output_string[1]);
                      Serial2.write(output_string[2]);
@@ -1220,8 +1213,8 @@ void print_ticket(void)
                   }
                   
 //------------print weight 357 lb/oz mode ---------------------------------------------------
-               else if (statt == 4)                         //357 lb/oz mode
-                  {
+               else if (statt == 4){                         //357 lb/oz mode
+                  
                      Serial2.write(output_string[0]);
                      Serial2.write(output_string[1]);      //send lbs
                      Serial2.write(output_string[2]);
@@ -1253,8 +1246,8 @@ void print_ticket(void)
                set_text_size(0x00);                        //set text to 1x
                
 //------------ print serial number --------------------------------------------------
-               if (checkbox3_status == "checked")          //is serialized ticket check box checked
-                   {Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
+               if (checkbox3_status == "checked"){          //is serialized ticket check box checked
+                   Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
                    Serial2.write(0x0A);
                     if (checkbox3_status == "checked") 
                     lcd.setCursor(0,0);
@@ -1324,7 +1317,7 @@ void print_ticket(void)
                      set_text_size(0x00);            //normal text size
                      Serial2.write(0x0A);            //line feeds
                     
-                     Serial2.write(0x0A);
+                     Serial2.write(0x0A);            //line feed
                      Serial2.write(0x0A);
 
                      Serial2.print(line3);           //print 3rd line of text
@@ -1339,7 +1332,6 @@ void print_ticket(void)
 //--------  print pts name in reverse text --------------------------------------                    
                else              
                    {
-
                     set_text_size(0x00);
                     set_text_reverse(true);
                     Serial2.printf("\n\n\n        Pro Tournament Scales         \n");
@@ -1347,14 +1339,14 @@ void print_ticket(void)
                     Serial2.printf("stat = %d\n",stat); //diagnostic
                    }
 //-------------- cut paper-----------------------------------------
-                if (!diagnostic_flag)                                                 //do not cut paper in diagnostic mode
+               if (!diagnostic_flag)                                                 //do not cut paper in diagnostic mode
                  {cut_paper();}
 
                Serial2.write(0x1B);                //justification: left border
                Serial2.write('a');
                Serial2.write('0');
 
-//-------- print ticket to screen --------------------------------       
+//-------- print ticket to LCD screen --------------------------------       
            lcd.clear();
            lcd.setCursor((20-(line1.length()))/2,0);                //print line 1 and center
            lcd.print(line1);
@@ -1365,64 +1357,78 @@ void print_ticket(void)
            lcd.setCursor((20-(String(weight).length()))/2,3);
            
            lcd.setCursor(0,3);
-             if (now.hour()<10)                               //add leading zero 
+             if (now.hour()<10)                                     //add leading zero 
               {lcd.print("0");}
            lcd.print(now.hour(), DEC);
            lcd.print(':');
-           if (now.minute()<10)                               //add leading zero 
+           if (now.minute()<10)                                     //add leading zero 
               {lcd.print("0");}
            lcd.print(now.minute(), DEC);
            lcd.print(':');
-           if (now.second()<10)                               //add leading zero 
+           if (now.second()<10)                                     //add leading zero 
               {lcd.print("0");}
            lcd.print(now.second(), DEC);
            lcd.print("  ");
            
            lcd.setCursor(10,3);
-           if (now.month() <10)                                  //leading zero for months
+           if (now.month() <10)                                     //leading zero for months
                {lcd.print("0");}
            lcd.print(now.month(), DEC);
            lcd.print('/');
-           if (now.day() <10)                                    //leading zero for days
+           if (now.day() <10)                                       //leading zero for days
                {lcd.print("0");}
            lcd.print(now.day(), DEC);
            lcd.print('/');
            lcd.print(now.year(), DEC);
            delay(2000);
- //--------- 2nd lcd screen off weigh ticket info ----------------------------------          
+ //--------- 2nd lcd screen of weigh ticket info ----------------------------------          
            lcd.clear();
            lcd.setCursor((20-(line4.length()))/2,0);                //print line 4 and center
            lcd.print(line4);     
-           if (statt == 0)                        //no signal
+           if (statt == 0)                                          //no signal
                   {
                   lcd.setCursor(0,2);
                   lcd.print("     No Signal");
                   }
-           if (statt = 1)                                                //if H2 mode
+           else if (statt == 1)                                     //if H2 mode
               {
-                lcd.setCursor(0,2);      //center text on 3rd line
+                lcd.setCursor(0,2);                                 //center text on 3rd line
                 lcd.print(output_string); 
               }
-   
-
-
-
-
-
-       
+          else if (statt ==2)
+              {
+               lcd.write(output_string[1]);                       //send out string one byte at a time.
+               lcd.write(output_string[2]);                       //print lb value
+               lcd.write(output_string[3]);
+               lcd.printf("Lb");
+               lcd.write(output_string[5]);                       //print oz value
+               lcd.write(output_string[6]);
+               lcd.write(output_string[7]);
+               lcd.write(output_string[8]);
+               lcd.print("oz");                                   //print the oz label with return     
+              }
+         else if (statt == 3)
+              {
+               lcd.write(output_string[0]);                       //send weight
+               lcd.write(output_string[1]);
+               lcd.write(output_string[2]);
+               lcd.write(output_string[3]);                       //decimal point
+               lcd.write(output_string[4]);
+               lcd.write(output_string[5]);
+               lcd.print("Lbs");      
+              }
+      
              delay(2000);
-              // while (input(Pin_B1 == 0))                   //wait for switch to be released if pressed
-              //     {delay_ms(5);}
-              // ticket = ticket + 1;                        //pointer for weigh tickets
-       clear_output_buffer();                               //clear the output string
+             // ticket = ticket + 1;                              //pointer for weigh tickets
+          clear_output_buffer();                                  //clear the output string
               
            } //end of routine
 //--------- cut paper on printer-----------------------------------------------------------------------
  void cut_paper(void)
-     {Serial2.write(0x1D);                // "GS" cut paper
-     Serial2.write('V');                 //"V"
-     Serial2.write(0x42);                //decimal 66
-     Serial2.write(0xB0);                //length to feed before cut (mm)
+     {Serial2.write(0x1D);                                        // "GS" cut paper
+     Serial2.write('V');                                          //"V"
+     Serial2.write(0x42);                                         //decimal 66
+     Serial2.write(0xB0);                                         //length to feed before cut (mm)
      }
 
 
@@ -1436,32 +1442,32 @@ void clear_output_buffer(void)
     }
     
 //--------- set printer text size ---------------------------------
-void set_text_size(unsigned int size)               //set font size on printer
+void set_text_size(unsigned int size)                           //set font size on printer
       {
-      Serial2.write(0x1D);                 // set text size to small size
+      Serial2.write(0x1D);                                      // set text size to small size
       Serial2.write(0x21);
-      Serial2.write(size);                 // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
+      Serial2.write(size);                                      // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
       }
 
       
 //----- set printer for reverse text ------------------------------------
-void set_text_reverse(bool on_off)                  //set or clear reverse text for printer epson command
+void set_text_reverse(bool on_off)                            //set or clear reverse text for printer epson command
       {
       Serial2.write(0x1D);
       Serial2.write('B');
       if (on_off)
-          Serial2.write('1');                 //1= on 0= off
+          Serial2.write('1');                                 //1= on 0= off
       else
           Serial2.write('0');
       }
 //-----------------------------------------------------------------------------
-void clear_radio_rx_array(void)                          //routine to clear radio rx buffer
+void clear_radio_rx_array(void)                               //routine to clear radio rx buffer
      {int i=0;
      while(i <= 30)
       {radio_rx_array[i] = 0x00;                            //set all 30 locations to 0x00
       i=i+1;
       }
-     radio_rx_pointer= 0;                             //reset  pointer
+     radio_rx_pointer= 0;                                   //reset  pointer
     }
 
 
@@ -1519,10 +1525,6 @@ void processRadioString()
 
   }
 }//void processRadioString()
-
-
-
-
 
 
 //-------------------------------------------
