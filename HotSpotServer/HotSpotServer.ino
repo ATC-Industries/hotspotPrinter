@@ -469,15 +469,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 //       lcd.setCursor(3,1);
 //       lcd.print("PRINTING...");                          //display 'Printing' message to lcd
 //       delay(2000);
-//-------- print ticket to screen --------------------------------       
-       lcd.setCursor((20-(line1.length()))/2,0);                //print line 1 and center
-       lcd.print(line1);
-       lcd.setCursor((20-(line2.length()))/2,1);                //print line 1 and center
-       lcd.print(line2);
-       lcd.setCursor((20-(line3.length()))/2,2);                //print line 1 and center
-       lcd.print(line3);
-       lcd.setCursor((20-(String(weight).length()))/2,3);
-       //delay(4000);
+
        
        
        lcd.clear();
@@ -1056,11 +1048,7 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
   }
 }
 
-
-
-
-//----------------- Read Time -----------------------------------
-    
+//----------------- Read Time date and send to serial monitor -----------------------------------
 void ReadTime(void)    
     {
     DateTime now = rtc.now();
@@ -1083,7 +1071,7 @@ void ReadTime(void)
     Serial.println();
     }
 
-//--------------------------------    
+//------------- display time on LCD ---------------------------------------------    
 void lcd_display_time(void)
     {
      DateTime now = rtc.now();
@@ -1101,7 +1089,7 @@ void lcd_display_time(void)
     lcd.print(now.second(), DEC);
     lcd.print("  ");
    }
-//------------------------------
+//-------------display date on LCD  ----------------------------------------------
 void lcd_display_date(void)
 {
      DateTime now = rtc.now();
@@ -1116,7 +1104,7 @@ void lcd_display_date(void)
     lcd.print('/');
     lcd.print(now.year(), DEC);
 }
-
+//-------------- send time stamp to Serial Monitor --------------------------------
 void time_stamp_serial_monitor(void)
 {
  DateTime now = rtc.now();
@@ -1175,7 +1163,7 @@ void print_ticket(void)
                if (line4 != "")
                       {Serial2.println(line4);}             //print sponsor line if anything is in it
 
-
+//----------- signature line ------------------------------------
                if (checkbox2_status == "checked")
                       { Serial2.println("Sign________________________________________");}  //print signature line
 
@@ -1186,24 +1174,22 @@ void print_ticket(void)
                Serial2.write(0x0A);
 
 
-              //----------save data to database --------------------------------------------------
+//----------save data to database -------------------------------------------------------------
               // weight = "112.56";
                //line4.toCharArray(,30);
               // *database [ticket][0] = ;     //save name to data base
              //  *database [ticket][1] = weight;        //save the weight
 
-              //     Serial.println("line 654- statt =" + String(statt));       //***diag print the statt value
-
+//--------- print weight H2 & CS-19 lb mode ---------------------------------------------------              
                if(statt == 1 )                                //h2 lb mode
                   {
                     Serial2.print(output_string);             //send weight value
                     set_text_size(0x11);                      //2x text size
                     Serial2.println("Lbs");                   //print "Lbs"
-                    clear_output_buffer();;                   //clear the output string
                     last_weight = output_string;              //save value to recall
                   }
 
-
+//------------print weight H2 & CS-19 lb/oz mode ----------------------------------------------
                else if (statt == 2)                           //H2 lb/oz mode
                     {
                      Serial2.write(output_string[1]);         //send out string one byte at a time.
@@ -1218,10 +1204,9 @@ void print_ticket(void)
                      Serial2.write(output_string[8]);
                      set_text_size(0x00);                     //normal text size
                      Serial2.print("oz\n");                   //print the oz label with return
-                     clear_output_buffer();;                  //clear the output string
-                    last_weight = output_string[1]+output_string[2]+output_string[3]+"Lb"+output_string[5]+output_string[6];
+                     last_weight = output_string[1]+output_string[2]+output_string[3]+"Lb"+output_string[5]+output_string[6]+output_string[7]+output_string[8]+ 0x00;
                   }
-
+//------------ print weight 357 lb mode -----------------------------------------------
                else if ( statt == 3)                          //357 lb mode
                   {
                      Serial2.write(output_string[0]);         //send weight
@@ -1232,10 +1217,9 @@ void print_ticket(void)
                      Serial2.write(output_string[5]);
                      set_text_size(0x11);
                      Serial2.print("Lbs\n");
-                     clear_output_buffer();;                 //clear the output string
-         // weight = "";
                   }
-
+                  
+//------------print weight 357 lb/oz mode ---------------------------------------------------
                else if (statt == 4)                         //357 lb/oz mode
                   {
                      Serial2.write(output_string[0]);
@@ -1251,8 +1235,9 @@ void print_ticket(void)
                      Serial2.write(output_string[10]);
                      set_text_size(0x11);
                      Serial2.print("oz\n");
-                    clear_output_buffer();                  //clear the output string
+               ///      clear_output_buffer();                  //clear the output string
                    }
+//-------------- print No Signal -------------------------------------------------                
                 else if (statt == 0)                        //no signal
                   {
                   Serial2.printf("No Signal");
@@ -1265,9 +1250,9 @@ void print_ticket(void)
                   {Serial2.write(0xC4);}                   //horizontal line character
                Serial2.write(0x0A);                        //line feed
 
-
                set_text_size(0x00);                        //set text to 1x
-
+               
+//------------ print serial number --------------------------------------------------
                if (checkbox3_status == "checked")          //is serialized ticket check box checked
                    {Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
                    Serial2.write(0x0A);
@@ -1278,18 +1263,17 @@ void print_ticket(void)
                     Serial.printf("S/N # %08d       ",serial_number); 
                    }
 
-
                set_text_size(0x11);                       //character size(horiz x2   vertical x2)
 
-
-              //------bottom of box-------------------------------
+//------bottom of box---------------------------------------------------------------
                Serial2.write(0xC8);                       //bottom of double line square box
                 i=0;
                while (i++ <= 14)
                   {Serial2.write(0xCD);}
                Serial2.write(0xBC);                     //right bottom corner character
                Serial2.write(0x0A);
-               //---------------Box with 'Official Weight' printed in it ----------------------
+               
+//---------------Box with 'Official Weight' printed in it ----------------------
                Serial2.write(0xBA);                     //left side line
                Serial2.printf("     ");
                Serial2.printf("WEIGHT");
@@ -1310,11 +1294,12 @@ void print_ticket(void)
                Serial2.write(0x1D);
                Serial2.write(0x00);
                Serial2.write(0x0A);            //line feeds
-               //--------------print time date stamp on ticket -------------
+               
+//--------------print time date stamp on ticket -------------
                 set_text_size(0x00);            //normal text size
                 DateTime now = rtc.now();
                 
-                 if (now.hour()<10)                               //add leading zero 
+                if (now.hour()<10)                               //add leading zero 
                   {Serial2.print("0");}
                 Serial2.print(now.hour(), DEC);
                 Serial2.print(':');
@@ -1331,15 +1316,9 @@ void print_ticket(void)
                 Serial2.print(now.day(), DEC);
                 Serial2.print('/');
                 Serial2.print(now.year(), DEC);
-                     
-               
-               
-               
-               
-               
-               
+                
 
-               //--------------area to insert tournament name and address and date--------------
+//--------------area to insert tournament name and address and date--------------
                if (line1!= "")                         //if line 1 is not blank
                      {
                      set_text_size(0x00);            //normal text size
@@ -1357,7 +1336,8 @@ void print_ticket(void)
                      Serial2.print(line1);           //print first line of text
                      Serial2.write(0x0A);
                     }
-               else              //--------print pts name in reverse text---------------
+//--------  print pts name in reverse text --------------------------------------                    
+               else              
                    {
 
                     set_text_size(0x00);
@@ -1366,18 +1346,76 @@ void print_ticket(void)
                     set_text_reverse(false);
                     Serial2.printf("stat = %d\n",stat); //diagnostic
                    }
-               //-------------- cut paper-----------------------------
+//-------------- cut paper-----------------------------------------
                 if (!diagnostic_flag)                                                 //do not cut paper in diagnostic mode
                  {cut_paper();}
 
                Serial2.write(0x1B);                //justification: left border
                Serial2.write('a');
                Serial2.write('0');
-               set_text_size(0x00);                //normal size text
-              // delay_ms(200);
-              // while (input(Pin_B1 == 0))          //wait for switch to be released if pressed
+
+//-------- print ticket to screen --------------------------------       
+           lcd.clear();
+           lcd.setCursor((20-(line1.length()))/2,0);                //print line 1 and center
+           lcd.print(line1);
+           lcd.setCursor((20-(line2.length()))/2,1);                //print line 1 and center
+           lcd.print(line2);
+           lcd.setCursor((20-(line3.length()))/2,2);                //print line 1 and center
+           lcd.print(line3);
+           lcd.setCursor((20-(String(weight).length()))/2,3);
+           
+           lcd.setCursor(0,3);
+             if (now.hour()<10)                               //add leading zero 
+              {lcd.print("0");}
+           lcd.print(now.hour(), DEC);
+           lcd.print(':');
+           if (now.minute()<10)                               //add leading zero 
+              {lcd.print("0");}
+           lcd.print(now.minute(), DEC);
+           lcd.print(':');
+           if (now.second()<10)                               //add leading zero 
+              {lcd.print("0");}
+           lcd.print(now.second(), DEC);
+           lcd.print("  ");
+           
+           lcd.setCursor(10,3);
+           if (now.month() <10)                                  //leading zero for months
+               {lcd.print("0");}
+           lcd.print(now.month(), DEC);
+           lcd.print('/');
+           if (now.day() <10)                                    //leading zero for days
+               {lcd.print("0");}
+           lcd.print(now.day(), DEC);
+           lcd.print('/');
+           lcd.print(now.year(), DEC);
+           delay(2000);
+ //--------- 2nd lcd screen off weigh ticket info ----------------------------------          
+           lcd.clear();
+           lcd.setCursor((20-(line4.length()))/2,0);                //print line 4 and center
+           lcd.print(line4);     
+           if (statt == 0)                        //no signal
+                  {
+                  lcd.setCursor(0,2);
+                  lcd.print("     No Signal");
+                  }
+           if (statt = 1)                                                //if H2 mode
+              {
+                lcd.setCursor(0,2);      //center text on 3rd line
+                lcd.print(output_string); 
+              }
+   
+
+
+
+
+
+       
+             delay(2000);
+              // while (input(Pin_B1 == 0))                   //wait for switch to be released if pressed
               //     {delay_ms(5);}
-              // ticket = ticket + 1;                        pointer for weigh tickets
+              // ticket = ticket + 1;                        //pointer for weigh tickets
+       clear_output_buffer();                               //clear the output string
+              
            } //end of routine
 //--------- cut paper on printer-----------------------------------------------------------------------
  void cut_paper(void)
