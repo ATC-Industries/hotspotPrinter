@@ -921,9 +921,6 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
                             // Pull the date from the device and send through header
                             client.println(R"###(
-                            <script>
-                            var d = new Date();
-                            </script>
                             <button style="margin-bottom:5px;" type="submit" value="Use Date/Time from this device" class="btn btn-success btn-lg btn-block" onclick="getElementById('date').value=Date()">Use Date/Time from this device</button>
                             <input type="hidden" style="visibility: hidden;" class="form-control" name="date" id="date">
                             )###");
