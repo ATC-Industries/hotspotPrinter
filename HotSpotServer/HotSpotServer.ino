@@ -556,28 +556,11 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
         lcd.clear();
         lcd.setCursor(0,1);
         lcd.print("Rebooting");                                 //display 'rebooting'  on Lcd
-        delay(100);
-        lcd.print(".");
-        delay(100);
-        lcd.print(".");
-        delay(100);
-        lcd.print(".");
-        delay(100);
-        lcd.print(".");
-        delay(100);
-        lcd.print(".");
-        delay(100);
-        lcd.print(".");
-        delay(100);
-        lcd.print(".");
-        delay(100);
-        lcd.print(".");
-        delay(100);
-        lcd.print(".");
-        delay(100);
-        lcd.print(".");
-        delay(100);
-        lcd.print(".");
+        // delay and print dots 11 times.
+        for (int i = 0; i < 11; i++){
+            delay(100);
+            lcd.print(".");
+        }
         ESP.restart();}
     }//end if read_keyboard_timer
 
