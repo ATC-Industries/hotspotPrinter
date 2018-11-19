@@ -1,5 +1,7 @@
 
 
+
+
 /**************************************************************
   Terry Clarkson & Adam Clarkson
   11/02/18
@@ -24,7 +26,7 @@ pin assignment                                      5 volt----------------------
               |   RTC     | |EN                    IO23 | ---- SPI MOSI to SD card--------------------------------|                         |
               |___________| |SVP                   IO22 | ---- SCL pin to 4x20 LCD display --------------|----|   |       SD CARD           |
                     |  |    |SVN                   TXD0 | ---- Serial TX Monitor and programming uart0   |  L |   |                         |
-      ___________   |  -----|IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
+      ___________   22 21   |IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
      /           \  --------|IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
     |             |---------|IO32                   GND |                                                ------   |                         |
     |             |---------|IO33                  IO19 | ---- SPI MISO to SD card--------------------------------|                         |
@@ -44,14 +46,46 @@ pin assignment                                      5 volt----------------------
 
 
 */
-
+////------ Files for SQL database
+//#include "Arduino.h"
+//#include <EDB.h>
+//#define TABLE_SIZE 8192         //allocate sd card space for table
+//#define RECORDS_TO_CREATE 10
+//
+//char* db_name = "/db/edb_test.db";  //declare database name
+//File dbFile;
+//
+////// Arbitrary record definition for this table.
+////// This should be modified to reflect your record needs.
+//struct LogEvent {
+//    int id;
+//    int temperature;
+//}
+//logEvent;
+////
+////// The read and write handlers for using the SD Library
+//inline void writer (unsigned long address, const byte* data, unsigned int recsize) {
+//    dbFile.seek(address);
+//    dbFile.write(data,recsize);
+//    dbFile.flush();
+//}
+//
+//inline void reader (unsigned long address, byte* data, unsigned int recsize) {
+//    digitalWrite(13, HIGH);
+//    dbFile.seek(address);
+//    dbFile.read(data,recsize);
+//    digitalWrite(13, LOW);
+//}
+//
+//// Create an EDB object with the appropriate write and read handlers
+//EDB db(&writer, &reader);
 
 
 //------ Include files ---------------------------------------------------------
 #include <WiFi.h>               // Load Wi-Fi library
 #include <EEPROM.h>             //driver for eeprom
 //------ files for sd card -----------------------------------------------------
-#include <Update.h>
+#include <Update.h>             //firmware uploader
 #include <FS.h>
 #include <SD.h>                 //routines for SD card reader/writer
 //------ Other include files ---------------------------------------------------
@@ -59,7 +93,6 @@ pin assignment                                      5 volt----------------------
 #include <Wire.h>               //i2C function
 #include <LiquidCrystal_I2C.h>  //4x20 lcd display
 #include <NetBIOS.h>
-//#include <DS3231.h>             //RTC routines ****NOTE*** down loaded zip file form github 'RTClib'
 #include <RTClib.h>             //library for  RTC routines
 #include "css.h"                // refrence to css file to bring in CSS styles
 #include "SDfunc.h"             // refrence the SD card functions
@@ -67,18 +100,15 @@ pin assignment                                      5 volt----------------------
 
 #define EEPROM_SIZE 1024        //rom reserved for eeprom storage
 
-#define RXD2 16                 //port 2 serial pins for external printer
-#define TXD2 17
-//----------- assign port pins to buttons --------------------------------------
-#define button_F1 13    //
-#define button_F2 26    //
-#define button_F3 4     //
-#define button_F4 27    //
-#define button_PRINT 2  //
+//----------- assign processor port pins to buttons --------------------------------------
+#define button_F1 13            //
+#define button_F2 26            //
+#define button_F3 4             //
+#define button_F4 27            //
+#define button_PRINT 2          //
 
 //////////////////////////////////////////////////////
-//DEV VARIABLES
-
+//DEFINE VARIABLES
 //////////////////////////////////////////////////////
 
 
@@ -113,22 +143,18 @@ String line1 = "";              // String to hold value of Line 1 input box
 String line2 = "";              // String to hold value of Line 2 input box
 String line3 = "";              // String to hold value of Line 3 input box
 String line4 = "";              // String to hold value of Line 4 input box
+String last_weight = "";        //
 char radio_rx_array[31];        // array being recieved on xbee radio
 bool radio_rx_ready = false;    // whether the rec radio string is complete
 int radio_rx_pointer;           //pointer for radio rx buffer
-int statt;                      // 1 = h2 lb   2= h2 lb/oz     3 = 357 lb     4 = 357 lb/oz
+int statt;                      // 1 = h2 lb,   2= h2 lb/oz,     3 = 357 lb,     4 = 357 lb/oz
 int serial_number;              // Stores device serial number
+int read_keyboard_timer;         // timer that reads the keyboard every 200ms
 char output_string[31];         // converted data to send out
 char temp_str[31];              //
 String temp_val = "";           //
 char weight[15];                //
-int touch_value_0;              //
-int touch_value_1 = 100;        //
-int touch_value_2 = 100;        //
-int touch_value_3 = 100;        //
-int touch_value_4 = 100;        //
-int touch_value_5 = 100;        //
-int read_keyboard_timer;        //
+int ClockTimer = 0;             //
 bool no_sig_flag = 0;           // flag to prevent display from updating on no change of No Signal message
 bool cb_print_2_copies;         // If checkbox should show checked or not
 bool cb_print_signature_line;   // If checkbox should show checked or not
@@ -139,8 +165,8 @@ bool lock_flag = false;         // flag that indicates weight is a locked value
 bool cb_print_on_lock;          // check box flag for print on lock
 bool isSDCardPresent = false;   // Flag checked on startup true if SD card is found
 bool diagnostic_flag = false;   // Flag to send all Serial Monitor diagnostic to printer
-String passwordMessage = "";
-bool passSuccess = false;
+String passwordMessage = "";    //
+bool passSuccess = false;       //
 volatile int ticket;            // ticket serial number
 byte Imac[6];                   // array to hold the mac address
 String checkbox1_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
@@ -165,6 +191,8 @@ bool updatePageFlag = false;    // True if on update page
 bool changePasswordPageFlag = false; // True if on change password page
 bool setTimePageFlag = false;   // True if on set time and date page
 bool allowUserDefinedDate = true;  // set to false to turn off date entry form
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
 
 //----------funtion prototypes -------------------------------------------------
 void clear_output_buffer(void);
@@ -185,26 +213,9 @@ char* string2char(String str)
     }
 }
 
-
+//--------- start lcd and rtc ----------------------------------------------------
 LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 or 3f for a 20 chars and 4 line display
-
 RTC_DS3231 rtc;                                        //start an instance of the real time clock named 'rtc'
-
-//--------not used with RTC_DS3231 routines--------------------------
-//DS3231 Clock;                                         //start an instance of clock routine named "Clock"
-//bool Century=false;
-//bool h12;
-//bool PM;
-//byte ADay, AHour, AMinute, ASecond, ABits;
-//bool ADy, A12h, Apm;
-//
-//byte Year;
-//byte Month;
-//byte Date;
-//byte DoW;
-//byte Hour;
-//byte Minute;
-//byte Second;
 
 //-------------Interuput routines ----------------------------------------------
 void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt(place before void setup() code)
@@ -212,6 +223,7 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
   portENTER_CRITICAL_ISR(&timerMux);
   interruptCounter++;                   //put code to perform during interrupt here
   read_keyboard_timer++;
+  ClockTimer++;                          //timer used to read clock every second
   portEXIT_CRITICAL_ISR(&timerMux);
   }
 
@@ -219,9 +231,9 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
 //--------------------------------------------------------------------------
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
-void setup()
-    {Wire.begin();                             //start i2c for RTC
-    //---------- SETUP LCD -----------------------------------------------------
+void setup(){
+
+    Wire.begin();                             //start i2c for RTC
 
     //---------- declare input buttons with pullup -----------------------------
     pinMode(button_PRINT,INPUT_PULLUP);    // print button
@@ -237,38 +249,39 @@ void setup()
     timerAlarmEnable(timer);                    // this line enables the timer declared 3 lines up and starts it
     ticket = 0;
 
-    //-------------  declare serial ports --------------------------------------
+    //-------------  declare serial ports and start up LCD module --------------------------------------
     /*   Note the format for setting a serial port is as follows:
         Serial2.begin(baud-rate, protocol, RX pin, TX pin);  */
-    Serial1.begin(9600, SERIAL_8N1,33,32);     // RADIO, tx =32 rx = 33
-    Serial2.begin(9600, SERIAL_8N1,16,17);     // THERMAL PRINTER,  RX = pin 16  TX = pin 17
+    Serial1.begin(9600, SERIAL_8N1,33,32);     // XB RADIO,  RX = 33, TX = 32,
+    Serial2.begin(9600, SERIAL_8N1,16,17);     // THERMAL PRINTER, RX = 16,  TX = 17
     Serial.begin(115200);                      // start serial port 0 (debug monitor and programming port)
     delay(1000);                               //time for the serial ports to setup
-
-    lcd.init();
-    lcd.backlight();
+    lcd.init();                               //initialize the LCD display
+    lcd.backlight();                          //turn on backlight
 
 
 //--------------Initialize printer for upside down print -----------------------------
-         Serial2.write(0x1B);                //initialize printer
-         Serial2.write('@');
+     Serial2.write(0x1B);                //initialize pos2 printer
+     Serial2.write('@');
 
-         Serial2.write(0x1B);                //upside down printing
-         Serial2.write('{');
-         Serial2.write('1');
+     Serial2.write(0x1B);                //upside down printing
+     Serial2.write('{');
+     Serial2.write('1');
 
-         Serial2.write(0x1B);                //B Font 12x24
-         Serial2.write('M');
-         Serial2.write('1');
-         Serial2.write(0x0A);
-         set_text_size(0x00);               //set for small font
-    //--------------- diagnostic mode if F1 is held on cold boot ------------------------------------------
+     Serial2.write(0x1B);                //B Font 12x24
+     Serial2.write('M');
+     Serial2.write('1');
+     Serial2.write(0x0A);
+     set_text_size(0x00);               //set for small font
+
+
+//--------------- diagnostic mode if F1 is held on cold boot ------------------------------------------
 
     if (!digitalRead(button_F1))                                     //^^^ If button 1 held on cold start, turn on diagnostic mode
         {diagnostic_flag = true;
          lcd.clear();
          lcd.setCursor(2,1);
-         lcd.print("  Diagnostic  Mode");
+         lcd.print("  Diagnostic  Mode");                           //display message on LCD screen
          Serial2.println("Turn printer 'OFF' and then 'ON' to exit diagnostic mode");
 
          Serial2.println("------------- Entering Diagnostic Mode ----------------");                             //^^^ send message to printer
@@ -280,24 +293,25 @@ void setup()
 
 
 
-    //------------- initialize the EEPROM --------------------------------------
+//------------- initialize the EEPROM --------------------------------------
     if (!EEPROM.begin(EEPROM_SIZE))                                 //set aside memory for eeprom size
         {
+        time_stamp_serial_monitor();
         Serial.println("failed to intialize EEPROM");               //display error to monitor
         Serial2.println("Error - failed to intialize EEPROM");      //send error code to printer
         }
-
-    passwordString = (EEPROM.readString(password_addr));
-    // tempPassword.toCharArray(password,30);
-
+    passwordString = (EEPROM.readString(password_addr));           //retriev password stored in eeprom
     Serial.print("Setting AP (Access Point)…\n");                 // Connect to Wi-Fi network with SSID and password
-    /* Remove the password parameter, if you want the AP (Access Point) to be open
+
+
+
+
+//-----------------Hold Print button on cold start to bring in temporary password to log on ---------------------
+ /* Remove the password parameter, if you want the AP (Access Point) to be open
        if 'button_PRINT' is pulled low,(print button pressed) a temporary password will
        be displayed on the remote dispay and the password will be printed out on
        the printer  */
 
-
-//-----------------Hold Print button on cold start to bring in temporary password to log on ---------------------
     if (!digitalRead(button_PRINT))                               // if print button is held down during power up
         {
         // TODO All this `if` needs to be deleted and maybe replaced with enter diagnostic mode
@@ -307,7 +321,6 @@ void setup()
         lcd.print("Temporary Password");
         lcd.setCursor(0,1);
         lcd.print("987654321");
-
         while(!digitalRead(button_PRINT))                         //loop until button is released
             {delay(30);}
         WiFi.softAP(ssid,"987654321");                            //start wifi hub and require temporary password
@@ -345,19 +358,18 @@ void setup()
     lcd.print("WiFi network:");
     lcd.setCursor(0,1);
     lcd.print("ProTournament");
-
-     char ip_string[30];                                          //declare a character array
+    char ip_string[30];                                          //declare a character array to hold ip address
     sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
-    set_text_size(0X00);
+    set_text_size(0X00);                                         //set printer font size to small
     Serial2.println("----------------------------------------------------------");
-    set_text_size(0x11);
-    Serial2.write(0x0A);
-    Serial2.println(ip_string);
-    Serial2.write(0x0A);
-    set_text_size(0x00);
+    set_text_size(0x11);                                         //set printer font size to 2X
+    Serial2.write(0x0A);                                          //line feed
+    Serial2.println(ip_string);                                  //display ip value
+    Serial2.write(0x0A);                                          //line feed
+    set_text_size(0x00);                                         //set text to small
     Serial2.println("in the address bar at top of the browser screen.");
     Serial2.println("Open your browser and enter the following IP address");
-    Serial2.write(0x0A);
+    Serial2.write(0x0A);                                          //line feed
     Serial2.println("---------------------------------------------------------");
 
     set_text_size(0X11);
@@ -372,21 +384,19 @@ void setup()
     Serial2.println("----------------------------------------------------------");
     cut_paper();
 
-
-
     char verString[10];
     sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
     lcd.setCursor(0,3);
     lcd.print(verString);                                                 //print software version
 
-    delay(5000);                                                          //leave ssid and ip on oled sceen for this delay
+    delay(3000);                                                          //leave ssid and ip on oled sceen for this delay
     line1 = (EEPROM.readString(line1_eeprom_addr));                       //recall values saved in eeprom
     line2 = (EEPROM.readString(line2_eeprom_addr));
     line3 = (EEPROM.readString(line3_eeprom_addr));
     line4 = (EEPROM.readString(line4_eeprom_addr));
     serial_number = EEPROM.readInt(serial_number_addr);                  //get ticket serial number
-    Serial.println("S/N "+ String(serial_number));
-    cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));         //recall checkbox status (boolean)
+    Serial.println("Load S/N "+ String(serial_number));                  //print serial number to serial monitor
+    cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));        //recall checkbox status (boolean)
     cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
     cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
     cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
@@ -396,30 +406,38 @@ void setup()
     cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
     cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
 
-    lcd.clear();
+    lcd.clear();                                           //clear lcd display
     lcd.setCursor(0,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
     lcd.print(line2);
     lcd.setCursor(0,2);
     lcd.print(line3);
+    delay(3000);
+    lcd.clear();
    // lcd.setCursor(0,3);
-   // lcd.print(line4);
+   // lcd.print(line4);                                   //line 4 on lcd used to display button functions
 
+//-------- get the MAC address of the WiFi module ----------
     WiFi.macAddress(Imac);
-      Serial.print("MAC");
-      for(int i=5;i>=0;i--)
-    {
-    Serial.print(":");
-      Serial.print(Imac[i],HEX);                                   //print the mac address to serial monitor
-    if (diagnostic_flag == true)                                   //^^^ print mac address to printer when in diagnostic mode
-       {Serial2.println(Imac[i],HEX);}
-    }
+    Serial.print("MAC");
+    for(int i=5;i>=0;i--)
+      {
+      Serial.print(":");
+      Serial.print(Imac[i],HEX);                        //print the mac address to serial monitor
+      if (diagnostic_flag == true)                      //^^^ print mac address to printer when in diagnostic mode
+         {Serial2.println(Imac[i],HEX);}                //send mac adreesss to printer
+      }
     Serial.print("\n");
-   // Check if SD card is present
-   isSDCardPresent = isSDCard();
-
-
+    // Check if SD card is present
+    isSDCardPresent = isSDCard();                          //set flag if sd card is present
+    if (!isSDCardPresent)
+      { time_stamp_serial_monitor();
+        Serial.print("SD card not present");
+        if (diagnostic_flag)                              //^^^ diagnostic message
+          {Serial2.println("SD card not present");}
+      }
+   // Serial.println(freeRam());                            //routine to disply free ram to SM
 }//void setup() ending terminator
 
 
@@ -427,29 +445,35 @@ void setup()
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
 
-
-
-   //---- 100 ms routine
-   if (interruptCounter > 0)                          //every one second 100 msec int is generated
+//---- 100 ms timer---------
+   if (interruptCounter > 0)                            //every one second 100 msec int is generated
       {
       portENTER_CRITICAL(&timerMux);
-      interruptCounter--;                             //reset counter to zero
+      interruptCounter--;                               //reset counter to zero
       portEXIT_CRITICAL(&timerMux);
-      totalInterruptCounter++;                        //increment counter for ints generated every second
+      totalInterruptCounter++;                          //increment counter for ints generated every second
       }
 
-   //---- no signal timer -------
+//---- 1 second timer------
+  if (ClockTimer >=10)                                  //update clock every one second
+      {lcd_display_time();                              //display time upper left corner of lcd
+       lcd_display_date();                              //display date upper right corner of lcd
+       ClockTimer = 0;                                  //reset one second timer used for clock updates
+      }
+
+
+//---- no signal timer -------
    if (totalInterruptCounter >=50)
-      { totalInterruptCounter = 0;                //reset counter
-        if (++ no_signal_timer >= 2)               //if no signal this timer times out
-           { statt = 0;                            //set display mode to 0 so "No Signal" will be displayed
-             if (!no_sig_flag)                    //if flag is not set
+      { lcd_display_time();
+        totalInterruptCounter = 0;                        //reset counter
+        if (++ no_signal_timer >= 2)                      //if no signal this timer times out
+           { statt = 0;                                   //set display mode to 0 so "No Signal" will be displayed
+             if (!no_sig_flag)                            //if flag is not set
                {
-               lcd.clear();
                lcd.setCursor(2,1);
                lcd.print("** No  Signal **");
                }
-             no_sig_flag = 1;                       //set flag so display will not update every loop
+             no_sig_flag = 1;                             //set flag so display will not update every loop
            }
       }
    //--------------- read  button routines -------------------------------------------------------
@@ -460,7 +484,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_PRINT))                      //if pushbutton is pressed (low condition), print the ticket
       { no_sig_flag = 0 ;                                 //clear flag so that 'no signal' message can appear if needed
         if (diagnostic_flag)                              //^^^ diagnostic message
-          {Serial2.println("Print button pressed");}
+          {Serial.println("Print button pressed");
+            Serial2.println("Print button pressed");}
         print_ticket();                                   //print the weight ticket
         delay(300);
         if (checkbox1_status == "checked")                //if checkbox "print 2 tickets" is checked
@@ -470,12 +495,16 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
        if (checkbox3_status == "checked")                 //if check box 'print serial number' is checked
           {serial_number++;                               //increment serial number
-            EEPROM.writeInt(serial_number_addr,serial_number);} //save serial number to eeprom
-
+            EEPROM.writeInt(serial_number_addr,serial_number); //save serial number to eeprom
+            Serial.println(EEPROM.readInt(serial_number_addr));  //*** diagnostic
+          }
        lcd.clear();
-       lcd.setCursor(3,1);
-       lcd.print("PRINTING...");                          //display 'Printing' message to lcd
-       delay(2000);
+//       lcd.setCursor(3,1);
+//       lcd.print("PRINTING...");                          //display 'Printing' message to lcd
+//       delay(2000);
+
+
+
        lcd.clear();
       }
      lcd.setCursor(0,3);
@@ -483,7 +512,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
        {lcd.print("F1");
        if (diagnostic_flag)
           {Serial2.println("Button F1 pressed");          //^^^ send button press diag to printer
-          // Serial2.write(0x0A);
+           Serial.println("Button F1 pressed");
           }
        }
      else
@@ -493,9 +522,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F2))                         //F2 button
        {lcd.print("F2");
        if (diagnostic_flag)
-          { Serial2.println("Button F2 pressed");         //^^^ send button press diag to printer
-          // Serial2.write(0x0A);
-          }
+          {Serial.println("Button F2 pressed");
+            Serial2.println("Button F2 pressed");}         //^^^ send button press diag to printer
        }
      else
        {lcd.print("   ");}
@@ -505,9 +533,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F3))                         //F3 button
        {lcd.print("F3");
         if (diagnostic_flag)
-           {Serial2.println("Button F3 pressed");         //^^^ send button press diag to printer
-         //  Serial2.write(0x0A);
-           }
+           {Serial.println("Button F3 pressed");
+            Serial2.println("Button F3 pressed");}         //^^^ send button press diag to printer
        }
      else
         {lcd.print("   ");}
@@ -516,50 +543,79 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F4))                         //F4 button
        {lcd.print("F4");
        if (diagnostic_flag)
-          { Serial2.println("Button F2 pressed");         //^^^ send button press diag to printer
-          // Serial2.write(0x0A);
-          }
+          {Serial.println("Button F4 pressed");
+            Serial2.println("Button F4 pressed");}         //^^^ send button press diag to printer
        }
      else
        {lcd.print("   ");}
 
-  if (!digitalRead(button_F1) &&  !digitalRead(button_F4))  // If button 1 and 4 are pressed at same time reboot
-       {ESP.restart();}
 
-  }
+//-------------- F1 + F4 key press will reboot computer ---------------------------
+  if (!digitalRead(button_F1) &&  !digitalRead(button_F4))  // If button 1 and 4 are pressed at same time reboot
+       {
+        lcd.clear();
+        lcd.setCursor(0,1);
+        lcd.print("Rebooting");                                 //display 'rebooting'  on Lcd
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        delay(100);
+        lcd.print(".");
+        ESP.restart();}
+    }//end if read_keyboard_timer
 
 
 //--------------- radio uart recieve ---------------------------------------------------------------
-      if (Serial1.available() > 0)                  //if data in recieve buffer, send to serial monitor
+      if (Serial1.available() > 0)                                  //if data in recieve buffer, send to serial monitor
           {char c;
-           c = (char)Serial1.read();                //get byte from uart buffer
-           radio_rx_array[radio_rx_pointer] += c;   //add character to radio rx buffer
-           radio_rx_pointer ++;                     //increment pointer
-           if (radio_rx_pointer >=30)               //buffer overflow
-              {clear_radio_rx_array();              //clear rx radio buffer
-               radio_rx_pointer = 0;                //reset the rx radio buffer
+           c = (char)Serial1.read();                                //get byte from uart buffer
+           radio_rx_array[radio_rx_pointer] += c;                   //add character to radio rx buffer
+           radio_rx_pointer ++;                                     //increment pointer
+           if (radio_rx_pointer >=30)                               //buffer overflow
+              {clear_radio_rx_array();                              //clear rx radio buffer
+               radio_rx_pointer = 0;                                //reset the rx radio buffer
               }
-           if (c == 0x0D || c == 0x0A)             //if character is CR or LF then process buffer
-              {
-             //-------------display weight on LCD-----------------------------------
-               no_sig_flag = 0;                     //clear flag used in no sig message routine
-               lcd.clear();
-               lcd.setCursor(3,1);                   //3rd position 2 line
-          //     lcd.print(radio_rx_array);           //send recieved string to display
+           if (c == 0x0D || c == 0x0A)                              //if character is CR or LF then process buffer
+              {c = 0x00;
+               //-------------display weight on LCD-----------------------------------
+               no_sig_flag = 0;                                     //clear flag used in no sig message routine
+               //lcd.clear();
+               lcd.setCursor(3,1);                                  //3rd position 2 line
+          //     lcd.print(radio_rx_array);                         //send recieved string to display
                int inc = 0;
                while (inc <= 15)
-                 {if (radio_rx_array[inc] >= 31)
-                        {lcd.write(radio_rx_array[inc]);  //write character to screen
+                 {if (radio_rx_array[inc] >= 31)                    //do not display characters with ascaii value of 30 or less
+                        {lcd.write(radio_rx_array[inc]);            //write character to screen
                          if (radio_rx_array[inc] == 'H' && radio_rx_array[inc+1] != 'O')  //locked value and not 'HOLD'?
                              {lcd.setCursor(3,2);
-                              lcd.print(" *** LOCKED ***"); //Display "locked" message on lcd
-
+                              lcd.print(" *** LOCKED ***");         //Display "locked" message on lcd
+                             }
+                         if (radio_rx_array[inc] == 'M')
+                             {lcd.setCursor(0,2);
+                              lcd.print("                  ");     //erase 'LOCKED" message if not locked
                              }
                      }
-                  inc++;
+                  inc++;                                            //increment pointer
                  }
-             //------------------------------------------------------------------------
-             processRadioString();
+
+               processRadioString();
                }
           }
 
@@ -800,7 +856,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             Serial.println("minute is: " + String(minute));
                             Serial.println("second is: " + String(second));
 
-                            //rtc.adjust(DateTime(year, month, day, hour, minute, second));
+                            rtc.adjust(DateTime(year, month, day, hour, minute, second));
                         }
                         // Looks for userDate in header and then processes the date results if found
                         else if ((headerT.indexOf("UserDate=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
@@ -825,7 +881,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                             Serial.println("hour is: " + String(hour));
                             Serial.println("minute is: " + String(minute));
 
-                            //rtc.adjust(DateTime(year, month, day, hour, minute, 0));
+                            rtc.adjust(DateTime(year, month, day, hour, minute, 0));
                         }
                         // ATC: This else statement is totally unnecessary and only
                         //      serves as a place holder for future expansion
@@ -1028,167 +1084,150 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
   }
 }
 
+//----------------- Read Time date and send to serial monitor -----------------------------------
+void ReadTime(void){
+    DateTime now = rtc.now();
+    Serial.print(now.year(), DEC);
+    Serial.print('/');
+    Serial.print(now.month(), DEC);
+    Serial.print('/');
+    Serial.print(now.day(), DEC);
 
-//------------------Set time------------------------------------
-// This line sets the RTC with an explicit date & time, for example to set
-// January 21, 2014 at 3am you would call:
+    Serial.print(" (");
+    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
+    Serial.print(") ");
 
-// rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+    Serial.print(now.hour(), DEC);
+    Serial.print(':');
+    Serial.print(now.minute(), DEC);
+    Serial.print(':');
+    Serial.print(now.second(), DEC);
+    Serial.println();
+    }
 
-//----------------- Read Time -----------------------------------
-//    DateTime now = rtc.now();
-//
-//    Serial.print(now.year(), DEC);
-//    Serial.print('/');
-//    Serial.print(now.month(), DEC);
-//    Serial.print('/');
-//    Serial.print(now.day(), DEC);
+//------------- display time on LCD ---------------------------------------------
+void lcd_display_time(void){
+    DateTime now = rtc.now();
+    lcd.setCursor(0,0);
+    if (now.hour()<10)                               //add leading zero
+      {lcd.print("0");}
+    lcd.print(now.hour(), DEC);
+    lcd.print(':');
+    if (now.minute()<10)                               //add leading zero
+      {lcd.print("0");}
+    lcd.print(now.minute(), DEC);
+    lcd.print(':');
+    if (now.second()<10)                               //add leading zero
+      {lcd.print("0");}
+    lcd.print(now.second(), DEC);
+    lcd.print("  ");
+   }
+//-------------display date on LCD  ----------------------------------------------
+void lcd_display_date(void){
+    DateTime now = rtc.now();
+    lcd.setCursor(10,0);
+    if (now.month() <10)                                  //leading zero for months
+       {lcd.print("0");}
+    lcd.print(now.month(), DEC);
+    lcd.print('/');
+    if (now.day() <10)                                    //leading zero for days
+       {lcd.print("0");}
+    lcd.print(now.day(), DEC);
+    lcd.print('/');
+    lcd.print(now.year(), DEC);
+}
+//-------------- send time stamp to Serial Monitor --------------------------------
+void time_stamp_serial_monitor(void)
+{
+ DateTime now = rtc.now();
 
-//    Serial.print(" (");
-//    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
-//    Serial.print(") ");
+     if (now.hour()<10)                               //add leading zero
+      {Serial.print("0");}
+    Serial.print(now.hour(), DEC);
+    Serial.print(':');
+    if (now.minute()<10)                               //add leading zero
+      {Serial.print("0");}
+    Serial.print(now.minute(), DEC);
+    Serial.print(':');
+    if (now.second()<10)                               //add leading zero
+      {Serial.print("0");}
+    Serial.print(now.second(), DEC);
 
-//    Serial.print(now.hour(), DEC);
-//    Serial.print(':');
-//    Serial.print(now.minute(), DEC);
-//    Serial.print(':');
-//    Serial.print(now.second(), DEC);
-//    Serial.println();
 
+    Serial.print(now.month(), DEC);
+    Serial.print('/');
+    Serial.print(now.day(), DEC);
+    Serial.print('/');
+    Serial.print(now.year(), DEC);
 
-
-////-------------------Test clock chip and send data to Serial Monitor -----not used (tlc)-------------------------------
-//
-//
-//void test_clock(void)
-//  {
-//  // get the year
-//  Serial.print(Clock.getYear(), DEC);                           //Read year from RTC
-//  Serial.print(' ');
-//  // then the month
-//  Serial.print(Clock.getMonth(Century), DEC);                   //Read Month
-//  Serial.print(' ');
-//  // then the date
-//  Serial.print(Clock.getDate(), DEC);                           //read date
-//  Serial.print(' ');
-//  // and the day of the week
-//  Serial.print(Clock.getDoW(), DEC);                            //read day of week
-//  Serial.print(' ');
-//  // Finally the hour, minute, and second
-//  Serial.print(Clock.getHour(h12, PM), DEC);                     //read hour
-//  Serial.print(' ');
-//  Serial.print(Clock.getMinute(), DEC);                          //read minute
-//  Serial.print(' ');
-//  Serial.print(Clock.getSecond(), DEC);                          //read second
-//  // Add AM/PM indicator
-//  if (h12)                                                       //AM/PM indicator
-//   {
-//    if (PM)
-//      {Serial.print(" PM ");}
-//    else
-//      {Serial.print(" AM ");}
-//
-//  }
-//  else
-//  {Serial.print(" 24h ");}
-//
-//  // Display the temperature                                     //read temperature
-//  Serial.print("T=");
-//  Serial.print(Clock.getTemperature(), 2);
-//  // Tell whether the time is (likely to be) valid
-//  if (Clock.oscillatorCheck())                                    //test oscilator
-//  {
-//    Serial.print(" O+");
-//  } else {
-//    Serial.print(" O-");
-//  }
+}
+//------------- Free Ram routine ------------------------------------------------------
+//int freeRam () {
+//  extern int __heap_start, *__brkval;
+//  int v;
+//  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 //}
-////---------------------- end of clock  test routines ------not used (tlc) -------------------------------------
-
-
-////------------------------Set Clock routine----- not used (tlc)------------------------------------------------------------
-//void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minute, byte  Second)
-//     {
-//    Clock.setClockMode(false);  // set to 24h
-//    //setClockMode(true); // set to 12h
-//
-//    Clock.setYear(Year);
-//    Clock.setMonth(Month);
-//    Clock.setDate(Date);
-//    Clock.setDoW(DoW);
-//    Clock.setHour(Hour);
-//    Clock.setMinute(Minute);
-//    Clock.setSecond(Second);
-//     }
-
-
-
-
-
-
-
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
               {
                int i=0;
-               String temp_string = "";            //create a temp string
-               Serial2.write(0x1B);                //initialize printer
+               String temp_string = "";                     //create a temp string
+               Serial2.write(0x1B);                         //initialize printer
                Serial2.write('@');
 
-               Serial2.write(0x1B);                //upside down printing
+               Serial2.write(0x1B);                         //upside down printing
                Serial2.write('{');
                Serial2.write('1');
 
-               Serial2.write(0x1B);                //B Font 12x24
+               Serial2.write(0x1B);                          //B Font 12x24
                Serial2.write('M');
                Serial2.write('1');
 
-               Serial2.write(0x1B);                //justification: center text
+               Serial2.write(0x1B);                         //justification: center text
                Serial2.write('a');
                Serial2.write('1');
 
-               Serial2.write(0x1B);                 //bold mode on
+               Serial2.write(0x1B);                         //bold mode on
                Serial2.write(0x21);
                Serial2.write(0x38);
 
 
-               Serial2.write(0x1D);                 //turn smoothing on
+               Serial2.write(0x1D);                         //turn smoothing on
                Serial2.write(0x62);
                Serial2.write('1');
-               set_text_size(0x00);               //1x text size
+               set_text_size(0x00);                         //1x text size
                if (line4 != "")
-                      {Serial2.println(line4);}      //print sponsor line if anything is in it
+                      {Serial2.println(line4);}             //print sponsor line if anything is in it
 
-
+//----------- signature line ------------------------------------
                if (checkbox2_status == "checked")
                       { Serial2.println("Sign________________________________________");}  //print signature line
 
-               set_text_size(0x44);               //5x text size
+               set_text_size(0x44);                       //5x text size
                i=0;
                while (i++ <= 8)
-                  {Serial2.write(0xC4);}              //horizontal line
+                  {Serial2.write(0xC4);}                  //horizontal line
                Serial2.write(0x0A);
 
 
-              //----------save data to database --------------------------------------------------
+//----------save data to database -------------------------------------------------------------
               // weight = "112.56";
                //line4.toCharArray(,30);
               // *database [ticket][0] = ;     //save name to data base
              //  *database [ticket][1] = weight;        //save the weight
 
-                   Serial.println("line 654- statt =" + String(statt));       //***diag print the statt value
-
+//--------- print weight H2 & CS-19 lb mode ---------------------------------------------------
                if(statt == 1 )                                //h2 lb mode
                   {
                     Serial2.print(output_string);             //send weight value
                     set_text_size(0x11);                      //2x text size
                     Serial2.println("Lbs");                   //print "Lbs"
-                    clear_output_buffer();;                   //clear the output string
+                    last_weight = output_string;              //save value to recall
                   }
 
+//------------print weight H2 & CS-19 lb/oz mode ----------------------------------------------
+               else if (statt == 2){                           //H2 lb/oz mode
 
-               else if (statt == 2)                           //H2 lb/oz mode
-                    {
                      Serial2.write(output_string[1]);         //send out string one byte at a time.
                      Serial2.write(output_string[2]);         //print lb value
                      Serial2.write(output_string[3]);
@@ -1201,11 +1240,11 @@ void print_ticket(void)
                      Serial2.write(output_string[8]);
                      set_text_size(0x00);                     //normal text size
                      Serial2.print("oz\n");                   //print the oz label with return
-                     clear_output_buffer();;                  //clear the output string
+                     last_weight = output_string[1]+output_string[2]+output_string[3]+"Lb"+output_string[5]+output_string[6]+output_string[7]+output_string[8]+ 0x00;
                   }
+//------------ print weight 357 lb mode -----------------------------------------------
+               else if ( statt == 3){                          //357 lb mode
 
-               else if ( statt == 3)                          //357 lb mode
-                  {
                      Serial2.write(output_string[0]);         //send weight
                      Serial2.write(output_string[1]);
                      Serial2.write(output_string[2]);
@@ -1214,16 +1253,14 @@ void print_ticket(void)
                      Serial2.write(output_string[5]);
                      set_text_size(0x11);
                      Serial2.print("Lbs\n");
-                     clear_output_buffer();;                 //clear the output string
-         // weight = "";
                   }
 
-               else if (statt == 4)                         //357 lb/oz mode
-                  {
+//------------print weight 357 lb/oz mode ---------------------------------------------------
+               else if (statt == 4){                         //357 lb/oz mode
+
                      Serial2.write(output_string[0]);
                      Serial2.write(output_string[1]);      //send lbs
                      Serial2.write(output_string[2]);
-
                      set_text_size(0x11);                   //2x text size
                      Serial2.printf("Lb");                  //print "lb" label
                      set_text_size(0x44);                   //5x text size
@@ -1234,8 +1271,9 @@ void print_ticket(void)
                      Serial2.write(output_string[10]);
                      set_text_size(0x11);
                      Serial2.print("oz\n");
-                    clear_output_buffer();                  //clear the output string
+               ///      clear_output_buffer();                  //clear the output string
                    }
+//-------------- print No Signal -------------------------------------------------
                 else if (statt == 0)                        //no signal
                   {
                   Serial2.printf("No Signal");
@@ -1248,29 +1286,30 @@ void print_ticket(void)
                   {Serial2.write(0xC4);}                   //horizontal line character
                Serial2.write(0x0A);                        //line feed
 
-
                set_text_size(0x00);                        //set text to 1x
 
-               if (checkbox3_status == "checked")          //is serialized ticket check box checked
-                   {Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
+//------------ print serial number --------------------------------------------------
+               if (checkbox3_status == "checked"){          //is serialized ticket check box checked
+                   Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
                    Serial2.write(0x0A);
                     if (checkbox3_status == "checked")
                     lcd.setCursor(0,0);
-                    lcd.print("Ticket# "+ String(serial_number));
+                   // lcd.print("Ticket# "+ String(serial_number));
+                    lcd.printf("S/N # %08d       ",serial_number);
+                    Serial.printf("S/N # %08d       ",serial_number);
                    }
-
 
                set_text_size(0x11);                       //character size(horiz x2   vertical x2)
 
-
-              //------bottom of box-------------------------------
+//------bottom of box---------------------------------------------------------------
                Serial2.write(0xC8);                       //bottom of double line square box
                 i=0;
                while (i++ <= 14)
                   {Serial2.write(0xCD);}
                Serial2.write(0xBC);                     //right bottom corner character
                Serial2.write(0x0A);
-               //---------------Box with 'Official Weight' printed in it ----------------------
+
+//---------------Box with 'Official Weight' printed in it ----------------------
                Serial2.write(0xBA);                     //left side line
                Serial2.printf("     ");
                Serial2.printf("WEIGHT");
@@ -1290,13 +1329,38 @@ void print_ticket(void)
                Serial2.write(0xBB);
                Serial2.write(0x1D);
                Serial2.write(0x00);
+               Serial2.write(0x0A);            //line feeds
 
-               //--------------area to insert tournament name and address and date--------------
+//--------------print time date stamp on ticket -------------
+                set_text_size(0x00);            //normal text size
+                DateTime now = rtc.now();
+
+                if (now.hour()<10)                               //add leading zero
+                  {Serial2.print("0");}
+                Serial2.print(now.hour(), DEC);
+                Serial2.print(':');
+                if (now.minute()<10)                               //add leading zero
+                  {Serial2.print("0");}
+                Serial2.print(now.minute(), DEC);
+                Serial2.print(':');
+                if (now.second()<10)                               //add leading zero
+                  {Serial2.print("0");}
+                Serial2.print(now.second(), DEC);
+                Serial2.print("       ");
+                Serial2.print(now.month(), DEC);
+                Serial2.print('/');
+                Serial2.print(now.day(), DEC);
+                Serial2.print('/');
+                Serial2.print(now.year(), DEC);
+
+
+//--------------area to insert tournament name and address and date--------------
                if (line1!= "")                         //if line 1 is not blank
                      {
                      set_text_size(0x00);            //normal text size
                      Serial2.write(0x0A);            //line feeds
-                     Serial2.write(0x0A);
+
+                     Serial2.write(0x0A);            //line feed
                      Serial2.write(0x0A);
 
                      Serial2.print(line3);           //print 3rd line of text
@@ -1308,45 +1372,110 @@ void print_ticket(void)
                      Serial2.print(line1);           //print first line of text
                      Serial2.write(0x0A);
                     }
-               else              //--------print pts name in reverse text---------------
+//--------  print pts name in reverse text --------------------------------------
+               else
                    {
-
                     set_text_size(0x00);
                     set_text_reverse(true);
                     Serial2.printf("\n\n\n        Pro Tournament Scales         \n");
                     set_text_reverse(false);
                     Serial2.printf("stat = %d\n",stat); //diagnostic
                    }
-               //-------------- cut paper-----------------------------
-                if (!diagnostic_flag)                                                 //do not cut paper in diagnostic mode
-                 {
-                 Serial2.write(0x1D);                // "GS" cut paper
-                 Serial2.write('V');                 //"V"
-                 Serial2.write(0x42);                //decimal 66
-                 Serial2.write(0xB0);                //length to feed before cut (mm)
-                 }
-
+//-------------- cut paper-----------------------------------------
+               if (!diagnostic_flag)                                                 //do not cut paper in diagnostic mode
+                 {cut_paper();}
 
                Serial2.write(0x1B);                //justification: left border
                Serial2.write('a');
                Serial2.write('0');
-               set_text_size(0x00);                //normal size text
-              // delay_ms(200);
-              // while (input(Pin_B1 == 0))          //wait for switch to be released if pressed
-              //     {delay_ms(5);}
-              // ticket = ticket + 1;                        pointer for weigh tickets
+
+//-------- print ticket to LCD screen --------------------------------
+           lcd.clear();
+           lcd.setCursor((20-(line1.length()))/2,0);                //print line 1 and center
+           lcd.print(line1);
+           lcd.setCursor((20-(line2.length()))/2,1);                //print line 1 and center
+           lcd.print(line2);
+           lcd.setCursor((20-(line3.length()))/2,2);                //print line 1 and center
+           lcd.print(line3);
+           lcd.setCursor((20-(String(weight).length()))/2,3);
+
+           lcd.setCursor(0,3);
+             if (now.hour()<10)                                     //add leading zero
+              {lcd.print("0");}
+           lcd.print(now.hour(), DEC);
+           lcd.print(':');
+           if (now.minute()<10)                                     //add leading zero
+              {lcd.print("0");}
+           lcd.print(now.minute(), DEC);
+           lcd.print(':');
+           if (now.second()<10)                                     //add leading zero
+              {lcd.print("0");}
+           lcd.print(now.second(), DEC);
+           lcd.print("  ");
+
+           lcd.setCursor(10,3);
+           if (now.month() <10)                                     //leading zero for months
+               {lcd.print("0");}
+           lcd.print(now.month(), DEC);
+           lcd.print('/');
+           if (now.day() <10)                                       //leading zero for days
+               {lcd.print("0");}
+           lcd.print(now.day(), DEC);
+           lcd.print('/');
+           lcd.print(now.year(), DEC);
+           delay(2000);
+ //--------- 2nd lcd screen of weigh ticket info ----------------------------------
+           lcd.clear();
+           lcd.setCursor((20-(line4.length()))/2,0);                //print line 4 and center
+           lcd.print(line4);
+           if (statt == 0)                                          //no signal
+                  {
+                  lcd.setCursor(0,2);
+                  lcd.print("     No Signal");
+                  }
+           else if (statt == 1)                                     //if H2 mode
+              {
+                lcd.setCursor(0,2);                                 //center text on 3rd line
+                lcd.print(output_string);
+              }
+          else if (statt ==2)
+              {
+               lcd.write(output_string[1]);                       //send out string one byte at a time.
+               lcd.write(output_string[2]);                       //print lb value
+               lcd.write(output_string[3]);
+               lcd.printf("Lb");
+               lcd.write(output_string[5]);                       //print oz value
+               lcd.write(output_string[6]);
+               lcd.write(output_string[7]);
+               lcd.write(output_string[8]);
+               lcd.print("oz");                                   //print the oz label with return
+              }
+         else if (statt == 3)
+              {
+               lcd.write(output_string[0]);                       //send weight
+               lcd.write(output_string[1]);
+               lcd.write(output_string[2]);
+               lcd.write(output_string[3]);                       //decimal point
+               lcd.write(output_string[4]);
+               lcd.write(output_string[5]);
+               lcd.print("Lbs");
+              }
+
+             delay(2000);
+             // ticket = ticket + 1;                              //pointer for weigh tickets
+          clear_output_buffer();                                  //clear the output string
+
            } //end of routine
-//--------------------------------------------------------------------------------
+//--------- cut paper on printer-----------------------------------------------------------------------
  void cut_paper(void)
-     {Serial2.write(0x1D);                // "GS" cut paper
-     Serial2.write('V');                 //"V"
-     Serial2.write(0x42);                //decimal 66
-     Serial2.write(0xB0);                //length to feed before cut (mm)
+     {Serial2.write(0x1D);                                        // "GS" cut paper
+     Serial2.write('V');                                          //"V"
+     Serial2.write(0x42);                                         //decimal 66
+     Serial2.write(0xB0);                                         //length to feed before cut (mm)
      }
 
 
-
-
+//--------- clear ooutput buffer ---------------------------------------------------------------------------
 void clear_output_buffer(void)
     {int i=0;
      while(i <= 30)
@@ -1355,33 +1484,33 @@ void clear_output_buffer(void)
          }
     }
 
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//=======================================================Sub Routines===============================================================
-void set_text_size(unsigned int size)               //set font size on printer
+//--------- set printer text size ---------------------------------
+void set_text_size(unsigned int size)                           //set font size on printer
       {
-      Serial2.write(0x1D);                 // set text size to small size
+      Serial2.write(0x1D);                                      // set text size to small size
       Serial2.write(0x21);
-      Serial2.write(size);                 // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
+      Serial2.write(size);                                      // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
       }
 
-void set_text_reverse(bool on_off)                  //set or clear reverse text
+
+//----- set printer for reverse text ------------------------------------
+void set_text_reverse(bool on_off)                            //set or clear reverse text for printer epson command
       {
       Serial2.write(0x1D);
       Serial2.write('B');
       if (on_off)
-          Serial2.write('1');                 //1= on 0= off
+          Serial2.write('1');                                 //1= on 0= off
       else
           Serial2.write('0');
       }
-
-void clear_radio_rx_array(void)                          //routine to clear radio rx buffer
+//-----------------------------------------------------------------------------
+void clear_radio_rx_array(void)                               //routine to clear radio rx buffer
      {int i=0;
      while(i <= 30)
       {radio_rx_array[i] = 0x00;                            //set all 30 locations to 0x00
       i=i+1;
       }
-     radio_rx_pointer= 0;                             //reset  pointer
+     radio_rx_pointer= 0;                                   //reset  pointer
     }
 
 
@@ -1392,7 +1521,7 @@ void processRadioString()
   lock_flag = false;                                  //preset lock flag to false
   while(i >= 3)                                       //search from  the 7 to the 15th character in array
       { if (radio_rx_array[i] == 'H')                 //check for locked value in string
-           {Serial.println("**Locked**");
+           {Serial.println("**Locked**");             //send locked value to serial monitor
             lock_flag = true;                         //an 'H' was found so set lock flag
             break;                                    //exit the while loop
            }
@@ -1439,112 +1568,6 @@ void processRadioString()
 
   }
 }//void processRadioString()
-
-////------------------RTC routines --------------------------------------------------
-//// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
-//#include <Wire.h>
-//#include "RTClib.h"
-//
-//RTC_DS3231 rtc;
-//
-//char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-//
-//void setup () {
-//
-//#ifndef ESP8266
-//  while (!Serial); // for Leonardo/Micro/Zero
-//#endif
-//
-//  Serial.begin(9600);
-//
-//  delay(3000); // wait for console opening
-//
-//  if (! rtc.begin()) {
-//    Serial.println("Couldn't find RTC");
-//    while (1);
-//  }
-//
-//  if (rtc.lostPower()) {
-//    Serial.println("RTC lost power, lets set the time!");
-//    // following line sets the RTC to the date & time this sketch was compiled
-//    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-//    // This line sets the RTC with an explicit date & time, for example to set
-//    // January 21, 2014 at 3am you would call:
-//    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-//  }
-//}
-//
-//void loop () {
-//    DateTime now = rtc.now();
-//
-//    Serial.print(now.year(), DEC);
-//    Serial.print('/');
-//    Serial.print(now.month(), DEC);
-//    Serial.print('/');
-//    Serial.print(now.day(), DEC);
-//    Serial.print(" (");
-//    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
-//    Serial.print(") ");
-//    Serial.print(now.hour(), DEC);
-//    Serial.print(':');
-//    Serial.print(now.minute(), DEC);
-//    Serial.print(':');
-//    Serial.print(now.second(), DEC);
-//    Serial.println();
-//
-//    Serial.print(" since midnight 1/1/1970 = ");
-//    Serial.print(now.unixtime());
-//    Serial.print("s = ");
-//    Serial.print(now.unixtime() / 86400L);
-//    Serial.println("d");
-//
-//    // calculate a date which is 7 days and 30 seconds into the future
-//    DateTime future (now + TimeSpan(7,12,30,6));
-//
-//    Serial.print(" now + 7d + 30s: ");
-//    Serial.print(future.year(), DEC);
-//    Serial.print('/');
-//    Serial.print(future.month(), DEC);
-//    Serial.print('/');
-//    Serial.print(future.day(), DEC);
-//    Serial.print(' ');
-//    Serial.print(future.hour(), DEC);
-//    Serial.print(':');
-//    Serial.print(future.minute(), DEC);
-//    Serial.print(':');
-//    Serial.print(future.second(), DEC);
-//    Serial.println();
-//
-//    Serial.println();
-//    delay(3000);
-//}
-
-//void write_string(int  address,int  string[])
-//     {
-//     int ctr = 0;                                    //set counter to zero
-//     while(string[ctr] !=0)
-//        {write_eeprom (address++, string[ctr])       //write string to eeprom
-//        ctr++;
-//        }
-//     }
-//
-//void read_string(int  address, char data)
-//     {
-//      int i = 0;
-//      char string[120];
-//      for(i=0;i<= strlen(data)-1; i++)
-//         {string[i] = read_eeprom(address++);}
-//    }
-//
-//void clear_232_buffer(void)
-//    {int i=0;
-//     while (i <= 30)
-//         {
-//          buffer[i] = 0;                                    //set to zero
-//          i=i+1;                                            //increment pointer
-//         }
-//     next_in = 0;
-//    }
 
 
 //-------------------------------------------
