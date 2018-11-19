@@ -1,5 +1,7 @@
 
 
+
+
 /**************************************************************
   Terry Clarkson & Adam Clarkson
   11/02/18
@@ -44,7 +46,39 @@ pin assignment                                      5 volt----------------------
 
 
 */
-
+////------ Files for SQL database
+//#include "Arduino.h"
+//#include <EDB.h>
+//#define TABLE_SIZE 8192         //allocate sd card space for table
+//#define RECORDS_TO_CREATE 10
+//
+//char* db_name = "/db/edb_test.db";  //declare database name
+//File dbFile;
+//
+////// Arbitrary record definition for this table.
+////// This should be modified to reflect your record needs.
+//struct LogEvent {
+//    int id;
+//    int temperature;
+//}
+//logEvent;
+////
+////// The read and write handlers for using the SD Library
+//inline void writer (unsigned long address, const byte* data, unsigned int recsize) {
+//    dbFile.seek(address);
+//    dbFile.write(data,recsize);
+//    dbFile.flush();
+//}
+//
+//inline void reader (unsigned long address, byte* data, unsigned int recsize) {
+//    digitalWrite(13, HIGH);
+//    dbFile.seek(address);
+//    dbFile.read(data,recsize);
+//    digitalWrite(13, LOW);
+//}
+//
+//// Create an EDB object with the appropriate write and read handlers
+//EDB db(&writer, &reader);
 
 
 //------ Include files ---------------------------------------------------------
@@ -403,7 +437,7 @@ void setup(){
         if (diagnostic_flag)                              //^^^ diagnostic message
           {Serial2.println("SD card not present");}
       }
-
+   // Serial.println(freeRam());                            //routine to disply free ram to SM
 }//void setup() ending terminator
 
 
@@ -450,7 +484,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_PRINT))                      //if pushbutton is pressed (low condition), print the ticket
       { no_sig_flag = 0 ;                                 //clear flag so that 'no signal' message can appear if needed
         if (diagnostic_flag)                              //^^^ diagnostic message
-          {Serial2.println("Print button pressed");}
+          {Serial.println("Print button pressed");
+            Serial2.println("Print button pressed");}
         print_ticket();                                   //print the weight ticket
         delay(300);
         if (checkbox1_status == "checked")                //if checkbox "print 2 tickets" is checked
@@ -477,7 +512,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
        {lcd.print("F1");
        if (diagnostic_flag)
           {Serial2.println("Button F1 pressed");          //^^^ send button press diag to printer
-          // Serial2.write(0x0A);
+           Serial.println("Button F1 pressed");
           }
        }
      else
@@ -487,7 +522,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F2))                         //F2 button
        {lcd.print("F2");
        if (diagnostic_flag)
-          { Serial2.println("Button F2 pressed");}         //^^^ send button press diag to printer
+          {Serial.println("Button F2 pressed");
+            Serial2.println("Button F2 pressed");}         //^^^ send button press diag to printer
        }
      else
        {lcd.print("   ");}
@@ -497,7 +533,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F3))                         //F3 button
        {lcd.print("F3");
         if (diagnostic_flag)
-           {Serial2.println("Button F3 pressed");}         //^^^ send button press diag to printer
+           {Serial.println("Button F3 pressed");
+            Serial2.println("Button F3 pressed");}         //^^^ send button press diag to printer
        }
      else
         {lcd.print("   ");}
@@ -506,7 +543,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F4))                         //F4 button
        {lcd.print("F4");
        if (diagnostic_flag)
-          { Serial2.println("Button F2 pressed");}         //^^^ send button press diag to printer
+          {Serial.println("Button F4 pressed");
+            Serial2.println("Button F4 pressed");}         //^^^ send button press diag to printer
        }
      else
        {lcd.print("   ");}
@@ -1123,7 +1161,12 @@ void time_stamp_serial_monitor(void)
     Serial.print(now.year(), DEC);
 
 }
-
+//------------- Free Ram routine ------------------------------------------------------
+//int freeRam () {
+//  extern int __heap_start, *__brkval; 
+//  int v; 
+//  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+//}
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
               {
