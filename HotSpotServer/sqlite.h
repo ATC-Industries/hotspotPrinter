@@ -1,5 +1,5 @@
-#ifndef __HTML_H__
-#define __HTML_H__
+#ifndef __SQLITE_H__
+#define __SQLITE_H__
 
 #include <stdio.h>
 #include <stdlib.h>
