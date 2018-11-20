@@ -97,6 +97,7 @@ pin assignment                                      5 volt----------------------
 #include "css.h"                // refrence to css file to bring in CSS styles
 #include "SDfunc.h"             // refrence the SD card functions
 #include "html.h"               // refrence to HTML generation functions
+#include "sqlite.h"             // sqlite3 database functions
 
 #define EEPROM_SIZE 1024        //rom reserved for eeprom storage
 
@@ -604,6 +605,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
 //-------------- start client routine ----------------------------------------------------------------
 
+
+
     WiFiClient client = server.available();   // Listen for incoming clients
     String updateMessage = "";
     if (client)
@@ -636,7 +639,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
                         Serial.println("--------headerT:------------");            //print substring to serial monitor
                         Serial.println(headerT);
-                        Serial.println("----------------------------"); 
+                        Serial.println("----------------------------");
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
                         // Don't display date forms if not on HTML5
