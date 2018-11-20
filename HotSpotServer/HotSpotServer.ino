@@ -634,9 +634,9 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                         //-----read the returned information from form when submit button is pressed and save to memory--------
                         String headerT = header.substring(0,header.indexOf("Host:")); //create substring from begining to the word 'Host:'
 
-                        Serial.println("headerT:");            //print substring to serial monitor
+                        Serial.println("--------headerT:------------");            //print substring to serial monitor
                         Serial.println(headerT);
-
+                        Serial.println("----------------------------"); 
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
                         // Don't display date forms if not on HTML5
