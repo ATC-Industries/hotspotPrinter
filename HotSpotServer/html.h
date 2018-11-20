@@ -4,6 +4,13 @@
 #include <WiFi.h>
 void htmlHead(WiFiClient client) {
   // HTML head
+
+  // put these in head if we want images.  but need real images
+
+            //<link rel="apple-touch-icon" sizes="72x72" href="/">
+            //<link rel="apple-touch-icon" sizes="114x114" href="/">
+            //<link rel="apple-touch-icon" href="/">
+            //<link rel="apple-touch-startup-image" href="/">
   client.println(R"(
       <!DOCTYPE html>
       <html>
@@ -11,11 +18,6 @@ void htmlHead(WiFiClient client) {
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
           <meta name="apple-mobile-web-app-capable" content="yes">
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-          <link rel="apple-touch-icon" sizes="72x72" href="/">
-          <link rel="apple-touch-icon" sizes="114x114" href="/">
-          <link rel="apple-touch-icon" href="/">
-          <link rel="apple-touch-startup-image" href="/">
 
           <meta http-equiv="X-UA-Compatible" content="IE=edge">
           <meta name="HandheldFriendly" content="true">
