@@ -484,7 +484,7 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_PRINT))                      //if pushbutton is pressed (low condition), print the ticket
       { no_sig_flag = 0 ;                                 //clear flag so that 'no signal' message can appear if needed
         if (diagnostic_flag)                              //^^^ diagnostic message
-          {Serial.println("Print button pressed");
+          {Serial.println("Print button  pressed");
             Serial2.println("Print button pressed");}
         print_ticket();                                   //print the weight ticket
         delay(300);
