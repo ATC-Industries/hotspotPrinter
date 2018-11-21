@@ -18,6 +18,8 @@ change parameters related to the printing of the weigh ticket.
 Pass word override - power up the system while holding down the print button,default
 pass word is [987654321]
 
+HOld F1 down on cold boot to enter diagnostic mode.
+
                                                                                                                   __________________________
 pin assignment                                      5 volt--------------------------------------------------------|                         |
                 5v   Gnd          |-------------|     GND  -------------------------------------------------------|                         |
@@ -134,7 +136,7 @@ bool isSDCardPresent = false;   // Flag checked on startup true if SD card is fo
 bool diagnostic_flag = false;   // Flag to send all Serial Monitor diagnostic to printer
 String passwordMessage = "";    //
 bool passSuccess = false;       //
-volatile int ticket;            // ticket serial number
+int ticket;            // ticket serial number
 byte Imac[6];                   // array to hold the mac address
 String checkbox1_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox2_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
@@ -142,7 +144,7 @@ String checkbox3_status = "";   // Holds chekbox status "checked" or "" to be in
 String checkbox4_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox5_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 volatile int interruptCounter;  // varible that tracks number of interupts
-int totalInterruptCounter;      // counter to track total number of interrupts
+volatile int totalInterruptCounter;      // counter to track total number of interrupts
 int no_signal_timer;            // timeout counter used to display No Signal on display
 char *database[100][2];         // database array to hold anglers name and weight
 hw_timer_t * timer = NULL;      /* in order to configure the timer, we will need
@@ -267,6 +269,10 @@ void setup(){
         Serial.println("failed to intialize EEPROM");               //display error to monitor
         Serial2.println("Error - failed to intialize EEPROM");      //send error code to printer
         }
+    else{
+         Serial2.println("EEprom initized successfully");}
+          
+        
     passwordString = (EEPROM.readString(password_addr));           //retriev password stored in eeprom
     Serial.print("Setting AP (Access Point)…\n");                 // Connect to Wi-Fi network with SSID and password
 
@@ -349,12 +355,17 @@ void setup(){
 
     Serial2.write(0x0A);
     Serial2.println("----------------------------------------------------------");
-    cut_paper();
+    if (!diagnostic_flag)
+       {cut_paper();}
 
     char verString[10];
     sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
     lcd.setCursor(0,3);
     lcd.print(verString);                                                 //print software version
+    if (diagnostic_flag == true)                                                  //^^^diagnostic mode
+        { Serial2.print(">>Software ");
+          Serial2.println(verString);}
+    
 
     delay(3000);                                                          //leave ssid and ip on oled sceen for this delay
     line1 = (EEPROM.readString(line1_eeprom_addr));                       //recall values saved in eeprom
@@ -388,23 +399,34 @@ void setup(){
 //-------- get the MAC address of the WiFi module ----------
     WiFi.macAddress(Imac);
     Serial.print("MAC");
+    if (diagnostic_flag == true)
+        {Serial2.print(">>MAC address");}
     for(int i=5;i>=0;i--)
       {
       Serial.print(":");
       Serial.print(Imac[i],HEX);                        //print the mac address to serial monitor
       if (diagnostic_flag == true)                      //^^^ print mac address to printer when in diagnostic mode
-         {Serial2.println(Imac[i],HEX);}                //send mac adreesss to printer
+         { Serial2.print(":");
+           Serial2.print(Imac[i],HEX);}                //send mac adreesss to printer
       }
     Serial.print("\n");
+    Serial2.println("");
     // Check if SD card is present
     isSDCardPresent = isSDCard();                          //set flag if sd card is present
     if (!isSDCardPresent)
       { time_stamp_serial_monitor();
         Serial.print("SD card not present");
         if (diagnostic_flag)                              //^^^ diagnostic message
-          {Serial2.println("SD card not present");}
+          {Serial2.println(">>setup() -SD card not present");}
       }
-   // Serial.println(freeRam());                            //routine to disply free ram to SM
+   else
+      if (diagnostic_flag)                                //^^^ diagnostic message 
+          {Serial2.println(">>setup() - SD card present");
+           Serial2.printf(">>Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
+           Serial2.printf(">>Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
+          
+          }              
+                               
 }//void setup() ending terminator
 
 
@@ -451,8 +473,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_PRINT))                      //if pushbutton is pressed (low condition), print the ticket
       { no_sig_flag = 0 ;                                 //clear flag so that 'no signal' message can appear if needed
         if (diagnostic_flag)                              //^^^ diagnostic message
-          {Serial.println("Print button  pressed");
-            Serial2.println("Print button pressed");}
+          {Serial.println(">>Print button  pressed");
+            Serial2.println(">>Print button pressed");}
         print_ticket();                                   //print the weight ticket
         delay(300);
         if (checkbox1_status == "checked")                //if checkbox "print 2 tickets" is checked
@@ -478,8 +500,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F1))                         //F1 button
        {lcd.print("F1");
        if (diagnostic_flag)
-          {Serial2.println("Button F1 pressed");          //^^^ send button press diag to printer
-           Serial.println("Button F1 pressed");
+          {Serial2.println(">>Button F1 pressed");          //^^^ send button press diag to printer
+           Serial.println(">>Button F1 pressed");
           }
        }
      else
@@ -489,8 +511,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F2))                         //F2 button
        {lcd.print("F2");
        if (diagnostic_flag)
-          {Serial.println("Button F2 pressed");
-            Serial2.println("Button F2 pressed");}         //^^^ send button press diag to printer
+          {Serial.println(">>Button F2 pressed");
+            Serial2.println(">>Button F2 pressed");}         //^^^ send button press diag to printer
        }
      else
        {lcd.print("   ");}
@@ -500,8 +522,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F3))                         //F3 button
        {lcd.print("F3");
         if (diagnostic_flag)
-           {Serial.println("Button F3 pressed");
-            Serial2.println("Button F3 pressed");}         //^^^ send button press diag to printer
+           {Serial.println(">>Button F3 pressed");
+            Serial2.println(">>Button F3 pressed");}         //^^^ send button press diag to printer
        }
      else
         {lcd.print("   ");}
@@ -510,8 +532,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      if (!digitalRead(button_F4))                         //F4 button
        {lcd.print("F4");
        if (diagnostic_flag)
-          {Serial.println("Button F4 pressed");
-            Serial2.println("Button F4 pressed");}         //^^^ send button press diag to printer
+          {Serial.println(">>Button F4 pressed");
+            Serial2.println(">>Button F4 pressed");}         //^^^ send button press diag to printer
        }
      else
        {lcd.print("   ");}

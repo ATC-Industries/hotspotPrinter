@@ -15,20 +15,20 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
     Serial.printf("Listing directory: %s\n", dirname);
     if (diagnostic_flag)                                         //^^^if  diagnostic mode
       {
-       Serial2.printf("Listing directory: %s\n", dirname);       //print directories to printer 
+       Serial2.printf(">>Listing directory: %s\n", dirname);       //print directories to printer 
       }
     File root = fs.open(dirname);
     if(!root){
         Serial.println("Failed to open directory");
         if (diagnostic_flag)                                         //^^^if  diagnostic mode
-            {Serial2.printf("ListDir() - Failed to open directory");}       //print directories to printer 
+            {Serial2.printf(">>ListDir() - Failed to open directory");}       //print directories to printer 
       
         return;
     }
     if(!root.isDirectory()){
         Serial.println("Not a directory");
         if (diagnostic_flag)                                         //^^^if  diagnostic mode
-            {Serial2.printf("Not a directory");}
+            {Serial2.printf(">>listDir() - Not a directory");}
         return;
     }
 
@@ -63,13 +63,13 @@ void searchForUpdate(fs::FS &fs, const char * dirname, String arrayOfUpdateFiles
     if(!root){
         Serial.println("Failed to open directory");
         if (diagnostic_flag)                                         //^^^if  diagnostic mode
-            {Serial2.printf("SearchForUpdate(): Failed to open directory");}
+            {Serial2.printf(">>SearchForUpdate(): Failed to open directory");}
         return;
     }
     if(!root.isDirectory()){
         Serial.println("Not a directory");
         if (diagnostic_flag)                                         //^^^if  diagnostic mode
-           {Serial2.printf("Not a directory");}
+           {Serial2.printf(">>searchForUpdate() - Not a directory");}
         
         return;
     }
@@ -85,7 +85,8 @@ void searchForUpdate(fs::FS &fs, const char * dirname, String arrayOfUpdateFiles
             {
                 Serial.println(file.name());
                 if (diagnostic_flag)                                         //^^^if  diagnostic mode
-                  {Serial2.printf(file.name());}
+                  { Serial2.print(">>>");
+                    Serial2.println(file.name());}
                 arrayOfUpdateFiles[counter] = fileName;
                 counter++;
             }
@@ -465,7 +466,11 @@ void updateFirmware(String& updateMessage, String updateFile) {
 void checkForUpdateFirmware(String& updateMessage) {
         uint8_t cardType;
         Serial.println("Searching for available updates");
-
+        if (diagnostic_flag)
+                   {
+                    Serial2.println("Searching for available updates");
+                   }
+        
         // You can uncomment this and build again
         //Serial.println("Update successfull");
 
@@ -473,6 +478,10 @@ void checkForUpdateFirmware(String& updateMessage) {
         if (!SD.begin()) {
                 //rebootEspWithReason("Card Mount Failed");
                 updateMessage = "Card Mount Failed";
+                if (diagnostic_flag)
+                   {
+                    Serial2.println("checkForUpdateFirmware() - Card Mount Failed");
+                   }
         }
 
         cardType = SD.cardType();
@@ -492,7 +501,10 @@ void checkForUpdateFirmware(String& updateMessage) {
 bool isSDCard() {
         uint8_t cardType;
         Serial.println("Checking if SD card is installed");
-
+         if (diagnostic_flag)
+           {
+            Serial2.println("isSDCard() - Checking if SD card is installed");
+           }
         // You can uncomment this and build again
         //Serial.println("Update successfull");
 
@@ -500,6 +512,10 @@ bool isSDCard() {
         if (!SD.begin()) {
                 //rebootEspWithReason("Card Mount Failed");
                 Serial.println("Card Mount Failed");
+                if (diagnostic_flag)
+                   {
+                    Serial2.println("isSDCard() - Card Mount Failed");
+                   }
                 return false;
         }
 
@@ -508,9 +524,17 @@ bool isSDCard() {
         if (cardType == CARD_NONE) {
                 //rebootEspWithReason("No SD card attached");
                 Serial.println("No SD card attached");
+                if (diagnostic_flag)
+                   {
+                    Serial2.println("isSDCard() - No SD card attached");
+                   }
                 return false;
         }else{
             Serial.println("SD Card found");
+            if (diagnostic_flag)
+                   {
+                    Serial2.println("isSDCard() - SD Card found");
+                   }
             return true;
         }
 }
