@@ -2,7 +2,7 @@
 #define __SDFUNC_H__
 
 String arrayOfUpdateFiles[20] = {};
-
+extern bool diagnostic_flag;
 void rebootEspWithReason(String reason);
 
 /**
@@ -13,14 +13,22 @@ void rebootEspWithReason(String reason);
  */
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
     Serial.printf("Listing directory: %s\n", dirname);
-
+    if (diagnostic_flag)                                         //^^^if  diagnostic mode
+      {
+       Serial2.printf("Listing directory: %s\n", dirname);       //print directories to printer 
+      }
     File root = fs.open(dirname);
     if(!root){
         Serial.println("Failed to open directory");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+            {Serial2.printf("ListDir() - Failed to open directory");}       //print directories to printer 
+      
         return;
     }
     if(!root.isDirectory()){
         Serial.println("Not a directory");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+            {Serial2.printf("Not a directory");}
         return;
     }
 
@@ -37,6 +45,12 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
             Serial.print(file.name());
             Serial.print("  SIZE: ");
             Serial.println(file.size());
+            if (diagnostic_flag){                                         //^^^if  diagnostic mode
+                Serial2.print("  FILE: ");
+                Serial2.print(file.name());
+                Serial2.print("  SIZE: ");
+                Serial2.println(file.size());
+                }
         }
         file = root.openNextFile();
     }
@@ -48,10 +62,15 @@ void searchForUpdate(fs::FS &fs, const char * dirname, String arrayOfUpdateFiles
     File root = fs.open(dirname);
     if(!root){
         Serial.println("Failed to open directory");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+            {Serial2.printf("SearchForUpdate(): Failed to open directory");}
         return;
     }
     if(!root.isDirectory()){
         Serial.println("Not a directory");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+           {Serial2.printf("Not a directory");}
+        
         return;
     }
 
@@ -65,6 +84,8 @@ void searchForUpdate(fs::FS &fs, const char * dirname, String arrayOfUpdateFiles
             if((fileName.indexOf("update") >= 0) && (fileName.indexOf(".bin") >= 0))
             {
                 Serial.println(file.name());
+                if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.printf(file.name());}
                 arrayOfUpdateFiles[counter] = fileName;
                 counter++;
             }
@@ -83,8 +104,12 @@ void createDir(fs::FS &fs, const char * path){
     Serial.printf("Creating Dir: %s\n", path);
     if(fs.mkdir(path)){
         Serial.println("Dir created");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.printf("Dir created");}
     } else {
         Serial.println("mkdir failed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.printf("mkdir failed");}
     }
 }
 
@@ -97,8 +122,12 @@ void removeDir(fs::FS &fs, const char * path){
     Serial.printf("Removing Dir: %s\n", path);
     if(fs.rmdir(path)){
         Serial.println("Dir removed");
+         if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("removeDir() -Dir removed");}
     } else {
         Serial.println("rmdir failed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("removeDir() - rmdir failed");}
     }
 }
 
@@ -113,14 +142,20 @@ void readFile(fs::FS &fs, const char * path){
     File file = fs.open(path);
     if(!file){
         Serial.println("Failed to open file for reading");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("readFile()- Failed to open file for reading");}
         return;
     }
 
     Serial.print("Read from file: ");
+     if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.print("Read from file: ");}
     while(file.available()){
         Serial.write(file.read());
-    }
-    file.close();
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.write(file.read());}
+        }
+   file.close();
 }
 
 /**
@@ -132,15 +167,24 @@ void readFile(fs::FS &fs, const char * path){
 void writeFile(fs::FS &fs, const char * path, const char * message){
     Serial.printf("Writing file: %s\n", path);
 
+    if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.printf("writeFile() - Writing file: %s\n", path);}
+
     File file = fs.open(path, FILE_WRITE);
     if(!file){
         Serial.println("Failed to open file for writing");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("writeFile() - Failed to open file for writing");}
         return;
     }
     if(file.print(message)){
         Serial.println("File written");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("writeFile() - File written");}
     } else {
         Serial.println("Write failed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("writeFile() - Write failed");}
     }
     file.close();
 }
@@ -157,14 +201,21 @@ void appendFile(fs::FS &fs, const char * path, const char * message){
     File file = fs.open(path, FILE_APPEND);
     if(!file){
         Serial.println("Failed to open file for appending");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("appendFile() - Failed to open file for appending");}
         return;
     }
     if(file.print(message)){
         Serial.println("Message appended");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("appendFile() - Message appended");
     } else {
         Serial.println("Append failed");
-    }
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("appendFile() - Append failed");}
+         }
     file.close();
+    }
 }
 
 /**
@@ -177,8 +228,12 @@ void renameFile(fs::FS &fs, const char * path1, const char * path2){
     Serial.printf("Renaming file %s to %s\n", path1, path2);
     if (fs.rename(path1, path2)) {
         Serial.println("File renamed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("renameFile() - File renamed");}
     } else {
         Serial.println("Rename failed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("renameFile() - Rename failed");}
     }
 }
 
@@ -191,8 +246,12 @@ void deleteFile(fs::FS &fs, const char * path){
     Serial.printf("Deleting file: %s\n", path);
     if(fs.remove(path)){
         Serial.println("File deleted");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("deleteFile() - File deleted");}
     } else {
         Serial.println("Delete failed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("deleteFile() - Delete failed");}
     }
 }
 

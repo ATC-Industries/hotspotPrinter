@@ -46,40 +46,6 @@ pin assignment                                      5 volt----------------------
 
 
 */
-////------ Files for SQL database
-//#include "Arduino.h"
-//#include <EDB.h>
-//#define TABLE_SIZE 8192         //allocate sd card space for table
-//#define RECORDS_TO_CREATE 10
-//
-//char* db_name = "/db/edb_test.db";  //declare database name
-//File dbFile;
-//
-////// Arbitrary record definition for this table.
-////// This should be modified to reflect your record needs.
-//struct LogEvent {
-//    int id;
-//    int temperature;
-//}
-//logEvent;
-////
-////// The read and write handlers for using the SD Library
-//inline void writer (unsigned long address, const byte* data, unsigned int recsize) {
-//    dbFile.seek(address);
-//    dbFile.write(data,recsize);
-//    dbFile.flush();
-//}
-//
-//inline void reader (unsigned long address, byte* data, unsigned int recsize) {
-//    digitalWrite(13, HIGH);
-//    dbFile.seek(address);
-//    dbFile.read(data,recsize);
-//    digitalWrite(13, LOW);
-//}
-//
-//// Create an EDB object with the appropriate write and read handlers
-//EDB db(&writer, &reader);
-
 
 //------ Include files ---------------------------------------------------------
 #include <WiFi.h>               // Load Wi-Fi library
