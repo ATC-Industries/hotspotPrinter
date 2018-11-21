@@ -375,27 +375,41 @@ void performUpdate(Stream &updateSource, size_t updateSize) {
                 size_t written = Update.writeStream(updateSource);
                 if (written == updateSize) {
                         Serial.println("Written : " + String(written) + " successfully");
+                        if (diagnostic_flag){
+                                Serial2.println(">>performUpdate() - Written : " + String(written) + " successfully");
+                                }
                 }
                 else {
                         Serial.println("Written only : " + String(written) + "/" + String(updateSize) + ". Retry?");
+                        if (diagnostic_flag){
+                               Serial2.println(">>performUpdate() -Written only : " + String(written) + "/" + String(updateSize) + ". Retry?");
+                               }
                 }
                 if (Update.end()) {
                         Serial.println("OTA done!");
                         if (Update.isFinished()) {
                                 Serial.println("Update successfully completed. Rebooting.");
+                                if (diagnostic_flag){
+                                    Serial2.println(">>performUpdate() - Update successfully completed. Rebooting.");}
                         }
                         else {
                                 Serial.println("Update not finished? Something went wrong!");
+                                 if (diagnostic_flag){
+                                    Serial2.println(">>performUpdate() - Update not finished? Something went wrong!");}
                         }
                 }
                 else {
                         Serial.println("Error Occurred. Error #: " + String(Update.getError()));
+                             if (diagnostic_flag){
+                                    Serial2.println(">>performUpdate() - Error Occurred. Error #: " + String(Update.getError()));}
                 }
 
         }
         else
         {
                 Serial.println("Not enough space to begin OTA");
+                if (diagnostic_flag){
+                         Serial2.println(">>performUpdate() - Not enough space to begin OTA");}
         }
 }
 
@@ -405,6 +419,8 @@ void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
         if (updateBin) {
                 if(updateBin.isDirectory()) {
                         Serial.println("Error, update.bin is not a file");
+                        if (diagnostic_flag){
+                             Serial2.println(">>updateBin() - Error, update.bin is not a file");}
                         updateMessage = "Error, update.bin is not a file";
                         updateBin.close();
                         return;
@@ -414,10 +430,14 @@ void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
 
                 if (updateSize > 0) {
                         Serial.println("Try to start update");
+                        if (diagnostic_flag){
+                             Serial2.println(">>updateBin() - Try to start update");}
                         performUpdate(updateBin, updateSize);
                 }
                 else {
                         Serial.println("Error, file is empty");
+                        if (diagnostic_flag){
+                             Serial2.println(">>updateBin() - Error, file is empty");}
                         updateMessage = "Error, file is empty";
                 }
 
@@ -429,6 +449,8 @@ void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
         }
         else {
                 Serial.println("Could not load update.bin from sd root");
+                if (diagnostic_flag){
+                             Serial2.println(">>updateBin() - Could not load update.bin from sd root");}
                 updateMessage += "Could not load update.bin from sd root";
         }
 }
@@ -465,10 +487,10 @@ void updateFirmware(String& updateMessage, String updateFile) {
  */
 void checkForUpdateFirmware(String& updateMessage) {
         uint8_t cardType;
-        Serial.println("Searching for available updates");
+        Serial.println("checkForUpdateFirmware() - Searching for available updates");
         if (diagnostic_flag)
                    {
-                    Serial2.println("Searching for available updates");
+                    Serial2.println(">>checkForUpdateFirmware() - Searching for available updates");
                    }
         
         // You can uncomment this and build again
@@ -480,8 +502,7 @@ void checkForUpdateFirmware(String& updateMessage) {
                 updateMessage = "Card Mount Failed";
                 if (diagnostic_flag)
                    {
-                    Serial2.println("checkForUpdateFirmware() - Card Mount Failed");
-                   }
+                    Serial2.println(">>checkForUpdateFirmware() - Card Mount Failed");}
         }
 
         cardType = SD.cardType();
@@ -501,9 +522,13 @@ void checkForUpdateFirmware(String& updateMessage) {
 bool isSDCard() {
         uint8_t cardType;
         Serial.println("Checking if SD card is installed");
+        
          if (diagnostic_flag)
            {
-            Serial2.println("isSDCard() - Checking if SD card is installed");
+            Serial2.println(">>isSDCard() - Checking if SD card is installed");
+            if (diagnostic_flag)
+                   {
+                    Serial2.println(">>isSDCard() - Checking if SD card is installed");}
            }
         // You can uncomment this and build again
         //Serial.println("Update successfull");
@@ -514,7 +539,7 @@ bool isSDCard() {
                 Serial.println("Card Mount Failed");
                 if (diagnostic_flag)
                    {
-                    Serial2.println("isSDCard() - Card Mount Failed");
+                    Serial2.println(">>isSDCard() - Card Mount Failed");
                    }
                 return false;
         }
@@ -526,14 +551,14 @@ bool isSDCard() {
                 Serial.println("No SD card attached");
                 if (diagnostic_flag)
                    {
-                    Serial2.println("isSDCard() - No SD card attached");
+                    Serial2.println(">>isSDCard() - No SD card attached");
                    }
                 return false;
         }else{
             Serial.println("SD Card found");
             if (diagnostic_flag)
                    {
-                    Serial2.println("isSDCard() - SD Card found");
+                    Serial2.println(">>isSDCard() - SD Card found");
                    }
             return true;
         }
@@ -545,6 +570,11 @@ bool isSDCard() {
  */
 void rebootEspWithReason(String reason){
         Serial.println(reason);
+        if (diagnostic_flag)
+                   {
+                    Serial2.print(">>rebootEspWithReason() - ");
+                    Serial2.println(reason);
+                   }
         delay(1000);
         ESP.restart();
 }

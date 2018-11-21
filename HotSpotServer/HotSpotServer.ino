@@ -468,7 +468,7 @@ void loop(){
    //--------------- read  button routines -------------------------------------------------------
 
 if (read_keyboard_timer >= 2)                             //read keypad every 200 ms
-     {read_keyboard_timer = 0;                            //reset timer
+     {read_keyboard_timer = 0;                            //reset key scan timer
 
      if (!digitalRead(button_PRINT))                      //if pushbutton is pressed (low condition), print the ticket
       { no_sig_flag = 0 ;                                 //clear flag so that 'no signal' message can appear if needed
@@ -480,14 +480,14 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
         if (checkbox1_status == "checked")                //if checkbox "print 2 tickets" is checked
             {print_ticket();}                             //print second ticket if print 2 copies is selected
         while (!digitalRead(button_PRINT))                //loop while button is held down
-            {delay(80);}
+            {delay(30);}
 
        if (checkbox3_status == "checked")                 //if check box 'print serial number' is checked
           {serial_number++;                               //increment serial number
             EEPROM.writeInt(serial_number_addr,serial_number); //save serial number to eeprom
             Serial.println(EEPROM.readInt(serial_number_addr));  //*** diagnostic
           }
-       lcd.clear();
+       lcd.clear();                                       //clear lcd display
 //       lcd.setCursor(3,1);
 //       lcd.print("PRINTING...");                          //display 'Printing' message to lcd
 //       delay(2000);
@@ -528,11 +528,12 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
      else
         {lcd.print("   ");}
 
-     lcd.setCursor(17,3);
+    
      if (!digitalRead(button_F4))                         //F4 button
-       {lcd.print("F4");
-       if (diagnostic_flag)
-          {Serial.println(">>Button F4 pressed");
+       { lcd.setCursor(17,3);
+         lcd.print("F4");
+         if (diagnostic_flag){
+            Serial.println(">>Button F4 pressed");
             Serial2.println(">>Button F4 pressed");}         //^^^ send button press diag to printer
        }
      else
@@ -542,16 +543,21 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 //-------------- F1 + F4 key press will reboot computer ---------------------------
   if (!digitalRead(button_F1) &&  !digitalRead(button_F4))  // If button 1 and 4 are pressed at same time reboot
        {
-        lcd.clear();
-        lcd.setCursor(0,1);
-        lcd.print("Rebooting");                                 //display 'rebooting'  on Lcd
-        // delay and print dots 11 times.
-        for (int i = 0; i < 11; i++){
-            delay(100);
-            lcd.print(".");
-        }
-        ESP.restart();}
-    }//end if read_keyboard_timer
+        delay(2000);
+        if (!digitalRead(button_F1) &&  !digitalRead(button_F4)) //if still holding after 2 seconds
+            {
+            lcd.clear();
+            lcd.setCursor(0,1);
+            lcd.print("Rebooting");                                 //display 'rebooting'  on Lcd
+            // delay and print dots 11 times.
+            for (int i = 0; i < 11; i++){
+                delay(100);
+                lcd.print(".");
+                }
+             rebootEspWithReason("manual reboot");                                 //reboot computer
+            }
+        } 
+    }//end if read_keyboard_timer = 0
 
 
 //--------------- radio uart recieve ---------------------------------------------------------------
@@ -601,8 +607,14 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
     {                                 // If a new client connects (tablet or cell phone logs on)
         Serial.println("New Client.");          // print a message out in the serial port monitor
         String currentLine = "";                // make a String to hold incoming data from the client
+        if (client.connected()){
+            if (diagnostic_flag){
+                Serial2.println(">>loop()- Client connected...");}
+            }
         while (client.connected())
         {            // loop while the client's connected
+          
+          
             if (client.available())
             {         // if there's bytes to read from the client,
                 char c = client.read();     // read a byte, then
@@ -627,6 +639,10 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
                         Serial.println("--------headerT:------------");            //print substring to serial monitor
                         Serial.println(headerT);
+                        if (diagnostic_flag){
+                           Serial2.print(">>loop() - ");
+                           Serial2.println(headerT);
+                           }
                         Serial.println("----------------------------");
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
