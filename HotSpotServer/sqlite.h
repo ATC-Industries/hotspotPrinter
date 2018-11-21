@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <sqlite3.h>            // sqlite3 data base Files
 
+
 const char* data = "Callback function called";
 static int callback(void *data, int argc, char **argv, char **azColName){
    int i;
@@ -44,9 +45,23 @@ int db_exec(sqlite3 *db, const char *sql) {
 }
 
 #endif
+//create_member_table{
+//int rc = db_exec(db1,"CREATE TABLE IF NOT EXIST Membership(`Weighin ID`  INTEGER,
+//  `Angler ID` INTEGER,
+//  `Boat ID` INTEGER,
+//  `Tournament ID` INTEGER,
+//  `Date`  TEXT,
+//  `Weight`  INTEGER,
+//  `Number Fish` INTEGER,
+//  `Short Fish`  INTEGER,
+//  `Live Fish` INTEGER,
+//  `Minutes Late`  INTEGER,
+//  `IsRegistered?` INTEGER,
+//  `HasBumped?`  INTEGER,
+//  `Has Weighed` INTEGER)")
+//;}
 
-
-
+//rc = db_exec(db1, "CREATE TABLE test_table (name text)");
 // code to go in loop\
 //-----------------------
 
@@ -108,12 +123,12 @@ int db_exec(sqlite3 *db, const char *sql) {
 //      return;
 //  }
 //
-// //   rc = db_exec(db1, "CREATE TABLE test_table (name text)");
-// //   if (rc != SQLITE_OK) {
-// //       sqlite3_close(db1);
-// //       sqlite3_close(db2);
-// //       return;
-// //   }
+//   rc = db_exec(db1, "CREATE TABLE test_table (name text)");
+//    if (rc != SQLITE_OK) {
+//       sqlite3_close(db1);
+//       sqlite3_close(db2);
+//        return;
+//   }
 //
 //       rc = db_exec(db2, "Select name from sqlite_master WHERE type = 'table'");  //list tables
 //  if (rc != SQLITE_OK) {
