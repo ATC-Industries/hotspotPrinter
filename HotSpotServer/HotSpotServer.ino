@@ -50,6 +50,9 @@ pin assignment                                      5 volt----------------------
 */
 
 //------ Include files ---------------------------------------------------------
+#include <stdio.h>
+#include <stdlib.h>
+#include <sqlite3.h>            //database engine
 #include <WiFi.h>               // Load Wi-Fi library
 #include <EEPROM.h>             //driver for eeprom
 //------ files for sd card -----------------------------------------------------
@@ -201,7 +204,7 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
 void setup(){
-
+    sqlite3_initialize();                     //start the database engine
     Wire.begin();                             //start i2c for RTC
 
     //---------- declare input buttons with pullup -----------------------------
@@ -270,8 +273,9 @@ void setup(){
         Serial2.println("Error - failed to intialize EEPROM");      //send error code to printer
         }
     else{
+         if (diagnostic_flag){
          Serial2.println("EEprom initized successfully");}
-          
+        }  
         
     passwordString = (EEPROM.readString(password_addr));           //retriev password stored in eeprom
     Serial.print("Setting AP (Access Point)…\n");                 // Connect to Wi-Fi network with SSID and password
@@ -434,7 +438,7 @@ void setup(){
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
 
-//---- 100 ms timer---------
+//--------- 100 ms timer---------
    if (interruptCounter > 0)                            //every one second 100 msec int is generated
       {
       portENTER_CRITICAL(&timerMux);
@@ -443,7 +447,7 @@ void loop(){
       totalInterruptCounter++;                          //increment counter for ints generated every second
       }
 
-//---- 1 second timer------
+//-------- 1 second timer------
   if (ClockTimer >=10)                                  //update clock every one second
       {lcd_display_time();                              //display time upper left corner of lcd
        lcd_display_date();                              //display date upper right corner of lcd
@@ -451,7 +455,7 @@ void loop(){
       }
 
 
-//---- no signal timer -------
+//--------- no signal timer -------
    if (totalInterruptCounter >=50)
       { lcd_display_time();
         totalInterruptCounter = 0;                        //reset counter
@@ -465,7 +469,7 @@ void loop(){
              no_sig_flag = 1;                             //set flag so display will not update every loop
            }
       }
-   //--------------- read  button routines -------------------------------------------------------
+//--------------- read  button routines -------------------------------------------------------
 
 if (read_keyboard_timer >= 2)                             //read keypad every 200 ms
      {read_keyboard_timer = 0;                            //reset key scan timer
@@ -1197,11 +1201,6 @@ void print_ticket(void)
                Serial2.write(0x0A);
 
 
-//----------save data to database -------------------------------------------------------------
-              // weight = "112.56";
-               //line4.toCharArray(,30);
-              // *database [ticket][0] = ;     //save name to data base
-             //  *database [ticket][1] = weight;        //save the weight
 
 //--------- print weight H2 & CS-19 lb mode ---------------------------------------------------
                if(statt == 1 )                                //h2 lb mode
