@@ -164,6 +164,7 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 
 
 //----------funtion prototypes -------------------------------------------------
+void recall_eeprom_values(void);
 void clear_output_buffer(void);
 void clear_radio_rx_array(void);        // routine to clear rx buffer from xbee radio
 void print_ticket(void);                // function to print the weigh ticket
@@ -238,7 +239,7 @@ void setup(){
 
      Serial2.write(0x1B);                //upside down printing
      Serial2.write('{');
-     Serial2.write('1');
+     Serial2.write('1');                 //change to zero for right side printing
 
      Serial2.write(0x1B);                //B Font 12x24
      Serial2.write('M');
@@ -276,13 +277,7 @@ void setup(){
          if (diagnostic_flag){
          Serial2.println("EEprom initized successfully");}
         }  
-        
-    passwordString = (EEPROM.readString(password_addr));           //retriev password stored in eeprom
-    Serial.print("Setting AP (Access Point)…\n");                 // Connect to Wi-Fi network with SSID and password
-
-
-
-
+  
 //-----------------Hold Print button on cold start to bring in temporary password to log on ---------------------
  /* Remove the password parameter, if you want the AP (Access Point) to be open
        if 'button_PRINT' is pulled low,(print button pressed) a temporary password will
@@ -371,17 +366,8 @@ void setup(){
           Serial2.println(verString);}
     
 
-    delay(3000);                                                          //leave ssid and ip on oled sceen for this delay
-    line1 = (EEPROM.readString(line1_eeprom_addr));                       //recall values saved in eeprom
-    line2 = (EEPROM.readString(line2_eeprom_addr));
-    line3 = (EEPROM.readString(line3_eeprom_addr));
-    line4 = (EEPROM.readString(line4_eeprom_addr));
-    serial_number = EEPROM.readInt(serial_number_addr);                  //get ticket serial number
-    Serial.println("Load S/N "+ String(serial_number));                  //print serial number to serial monitor
-    cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));        //recall checkbox status (boolean)
-    cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
-    cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
-    cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
+    delay(2000);                                                          //leave ssid and ip on oled sceen for this delay
+    recall_eeprom_values();  
 
     cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";    //set 'checkbox#_is_checked' to match 'checkbox#_status'
     cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
@@ -411,43 +397,57 @@ void setup(){
       Serial.print(Imac[i],HEX);                        //print the mac address to serial monitor
       if (diagnostic_flag == true)                      //^^^ print mac address to printer when in diagnostic mode
          { Serial2.print(":");
-           Serial2.print(Imac[i],HEX);}                //send mac adreesss to printer
+           Serial2.print(Imac[i],HEX);}                //send mac adress to printer
       }
     Serial.print("\n");
     Serial2.println("");
+    
     // Check if SD card is present
     isSDCardPresent = isSDCard();                          //set flag if sd card is present
     if (!isSDCardPresent)
-      { time_stamp_serial_monitor();
+      {// time_stamp_serial_monitor();
         Serial.print("SD card not present");
         if (diagnostic_flag)                              //^^^ diagnostic message
           {Serial2.println(">>setup() -SD card not present");}
       }
-   else
-      if (diagnostic_flag)                                //^^^ diagnostic message 
+   
+    if (diagnostic_flag)                                //^^^ diagnostic message 
           {Serial2.println(">>setup() - SD card present");
            Serial2.printf(">>Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
            Serial2.printf(">>Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
           
           }
 
+////-------------test code for data base---------------------
 
-  if (openDb("/sd/sdcard/census2000names.db", &db1))
+
+//sqlite3 *db3;
+if (openDb("/sd/sdcard/census2000names.db", &db1))
    {
-       Serial.println("census2000names.db opened...");
+       Serial.println("data base opened from main program");
        return;
    }
-   else
-   {
-    Serial.println("Data base failed to open"); 
+//  int rc = db_exec(db3, "CREATE  DATABASE ptsangler");  
+//      rc = db_exec(db3,"CREATE TABLE IF NOT EXISTS `Membership` (`Weighin ID`  INTEGER,`Angler ID` INTEGER,`Boat ID` INTEGER,`Tournament ID` INTEGER,`Date`  TEXT,`Weight`  INTEGER,`Number Fish` INTEGER,`Short Fish`  INTEGER,`Live Fish` INTEGER,`Minutes Late`  INTEGER,`IsRegistered?` INTEGER,`HasBumped?`  INTEGER,`Has Weighed` INTEGER)");
+//      if (rc != SQLITE_OK) {
+//         sqlite3_close(db3);
+//         return;
+//      }
+
+
+int rc = db_exec(db1, "Select * from surnames where name = 'CLARKSON'");
+ if (rc != SQLITE_OK) {
+       sqlite3_close(db1);
+       return;
    }
-
-
-
-
-
-             
-                               
+ rc = db_exec(db1, "Select name from sqlite_master WHERE type = 'table'");
+   if (rc != SQLITE_OK) {
+       sqlite3_close(db1);
+ //      sqlite3_close(db2);
+       return;
+   }
+    
+//---------------------------------------------------------------                               
 }//void setup() ending terminator
 
 
@@ -680,7 +680,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 updatePageFlag = false;
                                 changePasswordPageFlag = false;
                                 setTimePageFlag = false;
-                            } else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
+                            } 
+                            else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
                                 {
                                 print_ticket();                         //print weigh ticket
                                 Serial.println("PRINT BUTTON WAS PRESSED ON WEB PAGE");
@@ -1113,7 +1114,7 @@ void ReadTime(void){
     Serial.println();
     }
 
-//------------- display time on LCD ---------------------------------------------
+//------------- display time on LCD upper left corner---------------------------------------------
 void lcd_display_time(void){
     DateTime now = rtc.now();
     lcd.setCursor(0,0);
@@ -1130,7 +1131,7 @@ void lcd_display_time(void){
     lcd.print(now.second(), DEC);
     lcd.print("  ");
    }
-//-------------display date on LCD  ----------------------------------------------
+//-------------display date on LCD upper right corner ----------------------------------------------
 void lcd_display_date(void){
     DateTime now = rtc.now();
     lcd.setCursor(10,0);
@@ -1170,17 +1171,7 @@ void time_stamp_serial_monitor(void)
 
 }
 
-//-----------------open data  base ---------------------------------
-int openDb(const char *filename, sqlite3 **db) {
-   int rc = sqlite3_open(filename, db);
-   if (rc) {
-       Serial.printf("Can't open database: %s\n", sqlite3_errmsg(*db));
-       return rc;
-   } else {
-       Serial.printf("openDB() - %s 0pened database successfully\n,db");
-   }
-   return rc;
-}
+
 
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
@@ -1513,6 +1504,23 @@ void set_text_reverse(bool on_off)                            //set or clear rev
       else
           Serial2.write('0');
       }
+
+//------------------------------------------------------------------------------
+void recall_eeprom_values(void){
+    line1 = (EEPROM.readString(line1_eeprom_addr));                       //recall values saved in eeprom
+    line2 = (EEPROM.readString(line2_eeprom_addr));
+    line3 = (EEPROM.readString(line3_eeprom_addr));
+    line4 = (EEPROM.readString(line4_eeprom_addr));
+    serial_number = EEPROM.readInt(serial_number_addr);                  //get ticket serial number
+    Serial.println("Load S/N "+ String(serial_number));                  //print serial number to serial monitor
+    cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));        //recall checkbox status (boolean)
+    cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
+    cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
+    cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
+    passwordString = (EEPROM.readString(password_addr));           //retrieve password stored in eeprom
+}
+
+      
 //-----------------------------------------------------------------------------
 void clear_radio_rx_array(void)                               //routine to clear radio rx buffer
      {int i=0;
