@@ -46,10 +46,7 @@ int db_exec(sqlite3 *db, const char *sql) {
 
 #endif
 //create_member_table{
-//int rc = db_exec(db1,"CREATE TABLE IF NOT EXIST Membership(`Weighin ID`  INTEGER,
-//  `Angler ID` INTEGER,
-//  `Boat ID` INTEGER,
-//  `Tournament ID` INTEGER,
+//int rc = db_exec(db1,"CREATE TABLE IF NOT EXIST Membership(`Weighin ID`  INTEGER,`Angler ID` INTEGER,`Boat ID` INTEGER,'Tournament ID` INTEGER,
 //  `Date`  TEXT,
 //  `Weight`  INTEGER,
 //  `Number Fish` INTEGER,

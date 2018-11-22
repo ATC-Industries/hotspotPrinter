@@ -1,7 +1,4 @@
 
-
-
-
 /**************************************************************
   Terry Clarkson & Adam Clarkson
   11/02/18
@@ -17,7 +14,7 @@ change parameters related to the printing of the weigh ticket.
 
 Pass word override - power up the system while holding down the print button,default
 pass word is [987654321]
-
+F1 + F4 = system reboot
 HOld F1 down on cold boot to enter diagnostic mode.
 
                                                                                                                   __________________________
@@ -176,6 +173,7 @@ void processRadioString();              // routine to process radio rx string
 void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minute, byte Second);
 // Checks status of checkbox and sets flags for proper HTML display
 void checkboxStatus(String h, bool& is_checked, String& status, String number);
+//int openDb(const char *filename, sqlite3 **db);
 char* string2char(String str)
 {
     if(str.length()!= 0)
@@ -204,7 +202,9 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
 void setup(){
+    listDir(SD, "/", 2);
     sqlite3_initialize();                     //start the database engine
+    sqlite3 *db1;                            //declare varible as a sqlite3 file 
     Wire.begin();                             //start i2c for RTC
 
     //---------- declare input buttons with pullup -----------------------------
@@ -429,7 +429,24 @@ void setup(){
            Serial2.printf(">>Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
            Serial2.printf(">>Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
           
-          }              
+          }
+
+
+  if (openDb("/sd/sdcard/census2000names.db", &db1))
+   {
+       Serial.println("census2000names.db opened...");
+       return;
+   }
+   else
+   {
+    Serial.println("Data base failed to open"); 
+   }
+
+
+
+
+
+             
                                
 }//void setup() ending terminator
 
@@ -1152,12 +1169,19 @@ void time_stamp_serial_monitor(void)
     Serial.print(now.year(), DEC);
 
 }
-//------------- Free Ram routine ------------------------------------------------------
-//int freeRam () {
-//  extern int __heap_start, *__brkval;
-//  int v;
-//  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-//}
+
+//-----------------open data  base ---------------------------------
+int openDb(const char *filename, sqlite3 **db) {
+   int rc = sqlite3_open(filename, db);
+   if (rc) {
+       Serial.printf("Can't open database: %s\n", sqlite3_errmsg(*db));
+       return rc;
+   } else {
+       Serial.printf("openDB() - %s 0pened database successfully\n,db");
+   }
+   return rc;
+}
+
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
               {
