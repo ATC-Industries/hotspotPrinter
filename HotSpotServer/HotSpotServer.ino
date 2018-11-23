@@ -488,29 +488,29 @@ void loop(){
       }
 //--------------- read  button routines -------------------------------------------------------
 
-if (read_keyboard_timer >= 2)                             //read keypad every 200 ms
-     {read_keyboard_timer = 0;                            //reset key scan timer
+if (read_keyboard_timer >= 2)                                             //read keypad every 200 ms
+     {read_keyboard_timer = 0;                                            //reset key scan timer
 
-     if (!digitalRead(button_PRINT))                      //if pushbutton is pressed (low condition), print the ticket
-      { no_sig_flag = 0 ;                                 //clear flag so that 'no signal' message can appear if needed
-        if (diagnostic_flag)                              //^^^ diagnostic message
+     if (!digitalRead(button_PRINT))                                      //if pushbutton is pressed (low condition), print the ticket
+      { no_sig_flag = 0 ;                                                 //clear flag so that 'no signal' message can appear if needed
+        if (diagnostic_flag)                                              //^^^ diagnostic message
           {Serial.println(">>Print button  pressed");
             Serial2.println(">>Print button pressed");}
-        print_ticket();                                   //print the weight ticket
+        print_ticket();                                                   //print the weight ticket
         delay(300);
-        if (checkbox1_status == "checked")                //if checkbox "print 2 tickets" is checked
-            {print_ticket();}                             //print second ticket if print 2 copies is selected
-        while (!digitalRead(button_PRINT))                //loop while button is held down
+        if (checkbox1_status == "checked")                                //if checkbox "print 2 tickets" is checked
+            {print_ticket();}                                             //print second ticket if print 2 copies is selected
+        while (!digitalRead(button_PRINT))                                //loop while button is held down
             {delay(30);}
 
-       if (checkbox3_status == "checked")                 //if check box 'print serial number' is checked
-          {serial_number++;                               //increment serial number
-            EEPROM.writeInt(serial_number_addr,serial_number); //save serial number to eeprom
-            Serial.println(EEPROM.readInt(serial_number_addr));  //*** diagnostic
+       if (checkbox3_status == "checked")                                 //if check box 'print serial number' is checked
+          {serial_number++;                                               //increment serial number
+            EEPROM.writeInt(serial_number_addr,serial_number);            //save serial number to eeprom
+            Serial.println(EEPROM.readInt(serial_number_addr));           //*** diagnostic
           }
-       lcd.clear();                                       //clear lcd display
+       lcd.clear();                                                       //clear lcd display
 //       lcd.setCursor(3,1);
-//       lcd.print("PRINTING...");                          //display 'Printing' message to lcd
+//       lcd.print("PRINTING...");                                        //display 'Printing' message to lcd
 //       delay(2000);
 
 
@@ -518,10 +518,10 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
        lcd.clear();
       }
      lcd.setCursor(0,3);
-     if (!digitalRead(button_F1))                         //F1 button
+     if (!digitalRead(button_F1))                                         //F1 button
        {lcd.print("F1");
        if (diagnostic_flag)
-          {Serial2.println(">>Button F1 pressed");          //^^^ send button press diag to printer
+          {Serial2.println(">>Button F1 pressed");                        //^^^ send button press diag to printer
            Serial.println(">>Button F1 pressed");
           }
        }
@@ -529,53 +529,53 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
         {lcd.print("   ");}
 
      lcd.setCursor(6,3);
-     if (!digitalRead(button_F2))                         //F2 button
+     if (!digitalRead(button_F2))                                         //F2 button
        {lcd.print("F2");
        if (diagnostic_flag)
           {Serial.println(">>Button F2 pressed");
-            Serial2.println(">>Button F2 pressed");}         //^^^ send button press diag to printer
+            Serial2.println(">>Button F2 pressed");}                      //^^^ send button press diag to printer
        }
      else
        {lcd.print("   ");}
 
 
        lcd.setCursor(11,3);
-     if (!digitalRead(button_F3))                         //F3 button
+     if (!digitalRead(button_F3))                                         //F3 button
        {lcd.print("F3");
         if (diagnostic_flag)
            {Serial.println(">>Button F3 pressed");
-            Serial2.println(">>Button F3 pressed");}         //^^^ send button press diag to printer
+            Serial2.println(">>Button F3 pressed");}                      //^^^ send button press diag to printer
        }
      else
         {lcd.print("   ");}
 
     
-     if (!digitalRead(button_F4))                         //F4 button
+     if (!digitalRead(button_F4))                                       //F4 button
        { lcd.setCursor(17,3);
          lcd.print("F4");
          if (diagnostic_flag){
             Serial.println(">>Button F4 pressed");
-            Serial2.println(">>Button F4 pressed");}         //^^^ send button press diag to printer
+            Serial2.println(">>Button F4 pressed");}                    //^^^ send button press diag to printer
        }
      else
        {lcd.print("   ");}
 
 
 //-------------- F1 + F4 key press will reboot computer ---------------------------
-  if (!digitalRead(button_F1) &&  !digitalRead(button_F4))  // If button 1 and 4 are pressed at same time reboot
+  if (!digitalRead(button_F1) &&  !digitalRead(button_F4))              // If button 1 and 4 are pressed at same time reboot
        {
         delay(2000);
-        if (!digitalRead(button_F1) &&  !digitalRead(button_F4)) //if still holding after 2 seconds
+        if (!digitalRead(button_F1) &&  !digitalRead(button_F4))        //if still holding after 2 seconds
             {
             lcd.clear();
             lcd.setCursor(0,1);
-            lcd.print("Rebooting");                                 //display 'rebooting'  on Lcd
-            // delay and print dots 11 times.
-            for (int i = 0; i < 11; i++){
+            lcd.print("Rebooting");                                     //display 'rebooting'  on Lcd
+           
+            for (int i = 0; i < 11; i++){                              // delay and print dots 11 times.
                 delay(100);
                 lcd.print(".");
                 }
-             rebootEspWithReason("manual reboot");                                 //reboot computer
+             rebootEspWithReason("manual reboot");                      //reboot computer
             }
         } 
     }//end if read_keyboard_timer = 0
@@ -592,12 +592,9 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                radio_rx_pointer = 0;                                //reset the rx radio buffer
               }
            if (c == 0x0D || c == 0x0A)                              //if character is CR or LF then process buffer
-              {c = 0x00;
+              {c = 0x00;                                            //set this character to a null zero
                //-------------display weight on LCD-----------------------------------
                no_sig_flag = 0;                                     //clear flag used in no sig message routine
-               //lcd.clear();
-               lcd.setCursor(3,1);                                  //3rd position 2 line
-          //     lcd.print(radio_rx_array);                         //send recieved string to display
                int inc = 0;
                while (inc <= 15)
                  {if (radio_rx_array[inc] >= 31)                    //do not display characters with ascaii value of 30 or less
@@ -622,30 +619,30 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
 
 
-    WiFiClient client = server.available();   // Listen for incoming clients
-    String updateMessage = "";
-    if (client)
-    {                                 // If a new client connects (tablet or cell phone logs on)
-        Serial.println("New Client.");          // print a message out in the serial port monitor
-        String currentLine = "";                // make a String to hold incoming data from the client
+    WiFiClient client = server.available();           // Listen for incoming clients
+    String updateMessage = "";                        //create a varible string  
+    if (client)                                       //if client is connected
+    {                                                 // If a new client connects (tablet or cell phone logs on)
+        Serial.println("New Client.");                // print a message out in the serial port monitor
+        String currentLine = "";                      // make a String to hold incoming data from the client
         if (client.connected()){
-            if (diagnostic_flag){
+            if (diagnostic_flag){                     // ^^^ diagnostic code
                 Serial2.println(">>loop()- Client connected...");}
             }
         while (client.connected())
-        {            // loop while the client's connected
+        {                                             // loop while the client's connected
           
           
             if (client.available())
             {         // if there's bytes to read from the client,
-                char c = client.read();     // read a byte, then
-                Serial.write(c);            // print it out the serial monitor
-                header += c;                //add character to the header string
+                char c = client.read();               // read a byte, then
+                Serial.write(c);                      // print it out the serial monitor
+                header += c;                          //add character to the header string
                 if (c == '\n')
                 //if (header.length() > 500)
-                {                // if the byte is a newline character
-                    // if the current line is blank, you got two newline characters in a row.
-                    // that's the end of the client HTTP request, so send a response:
+                {                                     // if the byte is a newline character
+                                                      // if the current line is blank, you got two newline characters in a row.
+                                                      // that's the end of the client HTTP request, so send a response:
                     if (currentLine.length() == 0)
                     {
                         // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
@@ -822,10 +819,10 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 // success banner
                                 // Save password to password Variable
                                 //pass1.toCharArray(password,30);
-                                passwordString = pass1;
+                                passwordString = pass1;                           
                                 // Save password to EEPROM
-                                EEPROM.writeString(password_addr, pass1.substring(0,20));
-                                EEPROM.commit();                         ////save to eeprom
+                                EEPROM.writeString(password_addr, pass1.substring(0,20));            //save password to eeprom
+                                EEPROM.commit();                                                     //commit to eeprom
                                 }
                             }
 
@@ -1066,7 +1063,6 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
         header = "";                            // Clear the header variable
         save_header = "";
-
         client.stop();                         // Close the connection
         Serial.println("Client disconnected.");//send status message to serial debug window
         Serial.println("");
@@ -1146,11 +1142,9 @@ void lcd_display_date(void){
     lcd.print(now.year(), DEC);
 }
 //-------------- send time stamp to Serial Monitor --------------------------------
-void time_stamp_serial_monitor(void)
-{
- DateTime now = rtc.now();
-
-     if (now.hour()<10)                               //add leading zero
+void time_stamp_serial_monitor(void){
+    DateTime now = rtc.now();                        //get current time and date
+    if (now.hour()<10)                               //add leading zero
       {Serial.print("0");}
     Serial.print(now.hour(), DEC);
     Serial.print(':');
@@ -1168,10 +1162,7 @@ void time_stamp_serial_monitor(void)
     Serial.print(now.day(), DEC);
     Serial.print('/');
     Serial.print(now.year(), DEC);
-
 }
-
-
 
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
@@ -1474,9 +1465,7 @@ void print_ticket(void)
      Serial2.write(0x42);                                         //decimal 66
      Serial2.write(0xB0);                                         //length to feed before cut (mm)
      }
-
-
-//--------- clear ooutput buffer ---------------------------------------------------------------------------
+//--------- clear output buffer ---------------------------------------------------------------------------
 void clear_output_buffer(void)
     {int i=0;
      while(i <= 30)
@@ -1484,7 +1473,6 @@ void clear_output_buffer(void)
           i=i+1;
          }
     }
-
 //--------- set printer text size ---------------------------------
 void set_text_size(unsigned int size)                           //set font size on printer
       {
@@ -1495,8 +1483,8 @@ void set_text_size(unsigned int size)                           //set font size 
 
 
 //----- set printer for reverse text ------------------------------------
-void set_text_reverse(bool on_off)                            //set or clear reverse text for printer epson command
-      {
+void set_text_reverse(bool on_off){                            //set or clear reverse text for printer epson command
+      
       Serial2.write(0x1D);
       Serial2.write('B');
       if (on_off)
@@ -1522,8 +1510,8 @@ void recall_eeprom_values(void){
 
       
 //-----------------------------------------------------------------------------
-void clear_radio_rx_array(void)                               //routine to clear radio rx buffer
-     {int i=0;
+void clear_radio_rx_array(void){                               //routine to clear radio rx buffer
+     int i=0;
      while(i <= 30)
       {radio_rx_array[i] = 0x00;                            //set all 30 locations to 0x00
       i=i+1;
@@ -1533,8 +1521,8 @@ void clear_radio_rx_array(void)                               //routine to clear
 
 
 //----------------------Process radio string if flag is set--------------------------------
-void processRadioString()
-{ int i = 25;
+void processRadioString(){
+  int i = 25;
   no_signal_timer = 0;                                //reset the no signal timer since a reading was sensed
   lock_flag = false;                                  //preset lock flag to false
   while(i >= 3)                                       //search from  the 7 to the 15th character in array
@@ -1587,82 +1575,6 @@ void processRadioString()
   }
 }//void processRadioString()
 
-
-//-------------------------------------------
-
-
-
-
-//void convert_string(void)
-//   {                                      //take 11 byte input string and convert to 14 byte ts string
-//
-//   if(buffer[0] == 0xFF)                 //if string starts with 0xFF this is a weight value to send to remotes and taysys
-//       {
-//
-//       output_string[14] = 0x00;
-//       output_string[13] = 0x0D;               //"cr" carriage return
-//       if (buffer[3] ==0x4c)
-//          {
-//           output_string[12] = 0x48;             //(changes to H when locked)
-//          }
-//       else
-//          {output_string[12] = 0x4D;}             //"M" indicates movement
-//       output_string[11] = 0x47;                //"G" or "N" for gross mode or net mode
-//       output_string[10] = 0x4C;                //"L"  indicates lbs
-//       output_string[9] =  buffer[9];           //hundreths column
-//       output_string[8] =  buffer[8];           //tenths column
-//       output_string[7] =  buffer[7];                //"." decimal point
-//       output_string[6] =  buffer[6];           //value of weight
-//       output_string[5] =  buffer[5];
-//       output_string[4] =  buffer[4];
-//       output_string[3] =  buffer[3];
-//       output_string[2] =  0x20;
-//       output_string[1] =  0x20;
-//       output_string[0] =  0x02;
-//       fprintf(ComB,"%s",output_string);                     //send data out    x = 0;
-//       clear_output_buffer();
-//       }
-//    else
-//       {
-//
-//      fprintf(ComB,"%s",temp_buffer);
-//     }
-//
-//   }*/
-
-
-
-////--------------timer interupt code example ----------------------
-//volatile int interruptCounter;                              //varible that tracks number of interupts
-//int totalInterruptCounter;                                  //counter to track total number of interrupts
-//
-//hw_timer_t * timer = NULL;                                 //in order to configure the timer, we will need
-//                                                           //a pointer to a variable of type hw_timer_t,
-//                                                           //which we will later use in the Arduino setup function.
-//
-//
-//portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;      //we will need to declare a variable of type portMUX_TYPE,
-//                                                           //which we will use to take care of the synchronization
-//                                                           //between the main loop and the ISR, when modifying a shared variable.
-
-//------------------- Timer INterupt  ---------------------------------------------------------------------------------------
-//void IRAM_ATTR onTimer()                                  //this is the actual interuupt(place before void setup() code)
-//  {
-//  portENTER_CRITICAL_ISR(&timerMux);
-//  interruptCounter++;                                      //put code to perform during interrupt here
-//  portEXIT_CRITICAL_ISR(&timerMux);
-//  }
-//
-//void setup() {
-//
-//  Serial.begin(115200);
-//
-//  timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
-//  timerAttachInterrupt(timer,&onTimer,               //&onTimer is the function to call when intrrupt occurs,"true" is edge interupted
-//  timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times
-//  timerAlarmEnable(timer);                              //this line enables the timer and starts it
-//
-//}
 
 
 //------------------EEPROM examples-------------------------------------------------------------------------------
@@ -1724,14 +1636,7 @@ void processRadioString()
 //  EEPROM.writeString(address, gratitude);
 //  Serial.println(EEPROM.readString(address));
 
-
-
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//=======================================================Sub Routines===============================================================
-
-
-
-
 
 // sample html code for tabs
 //      <ul class="nav nav-pills dark-tabs">
