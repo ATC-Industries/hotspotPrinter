@@ -26,7 +26,7 @@ pin assignment                                      5 volt----------------------
               |___________| |SVP                   IO22 | ---- SCL pin to 4x20 LCD display --------------|----|   |       SD CARD           |
                     |  |    |SVN                   TXD0 | ---- Serial TX Monitor and programming uart0   |  L |   |                         |
       ___________   22 21   |IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
-     /           \  --------|IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
+     /           \          |IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
     |             |---------|IO32                   GND |                                                ------   |                         |
     |             |---------|IO33                  IO19 | ---- SPI MISO to SD card--------------------------------|                         |
     |   XBEE      |         |IO25                  IO18 | ---- clock on SD card-----------------------------------|                         |
@@ -121,6 +121,7 @@ int serial_number;              // Stores device serial number
 int read_keyboard_timer;         // timer that reads the keyboard every 200ms
 char output_string[31];         // converted data to send out
 char temp_str[31];              //
+int rc = 0;                     // use in SQL routines
 String temp_val = "";           //
 char weight[15];                //
 int ClockTimer = 0;             //
@@ -203,7 +204,7 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
 void setup(){
-    listDir(SD, "/", 2);
+    listDir(SD, "/", 2);                      //SD card directory listing, '2' = 2 levels deep
     sqlite3_initialize();                     //start the database engine
     sqlite3 *db1;                            //declare varible as a sqlite3 file 
     Wire.begin();                             //start i2c for RTC
@@ -323,7 +324,6 @@ void setup(){
     IPAddress IP = WiFi.softAPIP();                               //get the ip address
     Serial.print("AP IP address: ");                              //print ip address to SM
     Serial.println(IP);
-
     server.begin();                                               //start server
     lcd.clear();                                                  //clear LCD
     lcd.setCursor(0,0);
@@ -420,32 +420,16 @@ void setup(){
 
 ////-------------test code for data base---------------------
 
+//note - data base used in this was created with DB browser and loaded onto sd card 
+   sqlite3 *db3;                                                                 //delclare a pointer to the data base
+   openDb("/sd/PTS.db", &db3);                                                  //open database on SD card, assign to 'db3'
+     
+   db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");            //list tables in data base
+   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('John Smith','55')");
+   sqlite3_close(db3);                                                          //close database
 
-//sqlite3 *db3;
-if (openDb("/sd/sdcard/census2000names.db", &db1))
-   {
-       Serial.println("data base opened from main program");
-       return;
-   }
-//  int rc = db_exec(db3, "CREATE  DATABASE ptsangler");  
-//      rc = db_exec(db3,"CREATE TABLE IF NOT EXISTS `Membership` (`Weighin ID`  INTEGER,`Angler ID` INTEGER,`Boat ID` INTEGER,`Tournament ID` INTEGER,`Date`  TEXT,`Weight`  INTEGER,`Number Fish` INTEGER,`Short Fish`  INTEGER,`Live Fish` INTEGER,`Minutes Late`  INTEGER,`IsRegistered?` INTEGER,`HasBumped?`  INTEGER,`Has Weighed` INTEGER)");
-//      if (rc != SQLITE_OK) {
-//         sqlite3_close(db3);
-//         return;
-//      }
-
-
-int rc = db_exec(db1, "Select * from surnames where name = 'CLARKSON'");
- if (rc != SQLITE_OK) {
-       sqlite3_close(db1);
-       return;
-   }
- rc = db_exec(db1, "Select name from sqlite_master WHERE type = 'table'");
-   if (rc != SQLITE_OK) {
-       sqlite3_close(db1);
- //      sqlite3_close(db2);
-       return;
-   }
+ 
+ 
     
 //---------------------------------------------------------------                               
 }//void setup() ending terminator

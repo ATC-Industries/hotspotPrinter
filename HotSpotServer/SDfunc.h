@@ -12,31 +12,35 @@ void rebootEspWithReason(String reason);
  * @param levels  number of levels deep you want to list
  */
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
-    Serial.printf("Listing directory: %s\n", dirname);
-    if (diagnostic_flag)                                         //^^^if  diagnostic mode
+    Serial.printf("Listing directory: %s\n", dirname);                          //print to serial monitor
+    if (diagnostic_flag)                                                        //^^^if  diagnostic mode
       {
-       Serial2.printf(">>Listing directory: %s\n", dirname);       //print directories to printer 
+       Serial2.printf(">>listDir() - Listing directory: %s\n", dirname);       //print directories to printer 
       }
     File root = fs.open(dirname);
     if(!root){
         Serial.println("Failed to open directory");
-        if (diagnostic_flag)                                         //^^^if  diagnostic mode
-            {Serial2.printf(">>ListDir() - Failed to open directory");}       //print directories to printer 
+        if (diagnostic_flag)                                                    //^^^if  diagnostic mode
+            {Serial2.printf(">>ListDir() - Failed to open directory");}         //print directories to printer 
       
         return;
     }
     if(!root.isDirectory()){
         Serial.println("Not a directory");
-        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+        if (diagnostic_flag)                                                    //^^^if  diagnostic mode
             {Serial2.printf(">>listDir() - Not a directory");}
         return;
     }
 
     File file = root.openNextFile();
-    while(file){
+    while(file){                                                                //this loop prints out the directory
         if(file.isDirectory()){
             Serial.print("  DIR : ");
             Serial.println(file.name());
+            if (diagnostic_flag){                                               //^^^ diagnostic flag
+                Serial2.print("  DIR : ");
+                Serial2.println(file.name());
+            }
             if(levels){
                 listDir(fs, file.name(), levels -1);
             }
