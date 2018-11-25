@@ -421,14 +421,33 @@ void setup(){
 ////-------------test code for data base---------------------
 
 //note - data base used in this was created with DB browser and loaded onto sd card 
-   sqlite3 *db3;                                                                 //delclare a pointer to the data base
-   openDb("/sd/PTS.db", &db3);                                                  //open database on SD card, assign to 'db3'
+   sqlite3 *db3;                                                                        //delclare a pointer to the data base
+   openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
      
-   db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");            //list tables in data base
-   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('John Smith','55')");
-   sqlite3_close(db3);                                                          //close database
+//   db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
+//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Mike Joes','50')");     //add records
+//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Sally Homer','51')");
+//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Nick Meztger','52')");
+//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Tommy Tune','53')");
+//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
+     db_exec(db3, "SELECT * FROM Angler");                                                //list entire data base
+     db_exec(db3, "SELECT COUNT(*) FROM Angler");                                         //total number of records in table
+     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
+     
+ //-----  example to pass a varible to a query---------    
+     char *namev = "Mike Joes";
+     char *IDv = "50";
+     char sSQL[50];
+     
+     sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                 //search database by rowid
+     db_exec(db3,sSQL);
+      sprintf(sSQL,"SELECT * FROM Angler WHERE name = '%s'",namev);              //search database by name
+     db_exec(db3,sSQL); 
+      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);              //search database by WEighin id
+     db_exec(db3,sSQL); 
+   sqlite3_close(db3);                                                                  //close database
 
- 
+
  
     
 //---------------------------------------------------------------                               

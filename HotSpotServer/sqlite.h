@@ -3,45 +3,49 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sqlite3.h>            // sqlite3 data base Files
+#include <sqlite3.h>                                                         // sqlite3 data base Files
 
-
-const char* data = "Callback function called";
-static int callback(void *data, int argc, char **argv, char **azColName){
-   int i;
-   Serial.printf("%s: ", (const char*)data);
-   for (i = 0; i<argc; i++){
-       Serial.printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");  //print column name and value
-   }
-   Serial.printf("\n");
-   return 0;
+int rec;
+const char* data = "SQL reply";
+static int callback(void *data, int argc, char **argv, char **azColName) {  //function to display column name and value
+  int i;
+  //zero counter that counts records found
+  Serial.printf("%s:\n", (const char*)data);                               //print 'SQL reply' to serial monitor
+  for (i = 0; i < argc; i++) {                                             //loop through all the columns selected in query
+    Serial.printf("%s = %s\t", azColName[i], argv[i] ? argv[i] : "NULL");  //print column name and value then tab
+  }
+  Serial.printf("\n");                                                     //print a space between records
+  rec++;                                                                   //increment record counter
+  return 0;
 }
 
 int openDb(const char *filename, sqlite3 **db) {
-   int rc = sqlite3_open(filename, db);
-   if (rc) {
-       Serial.printf("OpenDb() - Can't open database: %s\n", sqlite3_errmsg(*db));
-       return rc;
-   } else {
-       Serial.printf("OpenDb() - Opened database successfully\n,");
-   }
-   return rc;
+  int rc = sqlite3_open(filename, db);
+  if (rc) {
+    Serial.printf("OpenDb() - Can't open database: %s\n", sqlite3_errmsg(*db));
+    return rc;
+  } else {
+    Serial.printf("OpenDb() - Opened database successfully\n,");
+  }
+  return rc;
 }
 
 char *zErrMsg = 0;
-int db_exec(sqlite3 *db, const char *sql) {
-   Serial.println(sql);
-   long start = micros();
-   int rc = sqlite3_exec(db, sql, callback, (void*)data, &zErrMsg);       //callback function prints the answer to query 
-   if (rc != SQLITE_OK) {                                                 //if error
-       Serial.printf("SQL error: %s\n", zErrMsg);                         //print the error message on error
-       sqlite3_free(zErrMsg);
-   } else {
-       Serial.printf("Operation done successfully\n");
-   }
-   Serial.print(F("Time taken:"));                                        //print in usec, time to perform Database task
-   Serial.println(micros()-start);
-   return rc;
+int db_exec(sqlite3 *db, const char *sql) {                                //this routine is where SQL commands are executed
+  Serial.println(sql);
+  long start = micros();
+  int rc = sqlite3_exec(db, sql, callback, (void*)data, &zErrMsg);       //callback function prints the data to query
+  if (rc != SQLITE_OK) {                                                 //if error
+    Serial.printf("SQL error: %s\n", zErrMsg);                         //print the error message on error
+    sqlite3_free(zErrMsg);
+  } else {
+    Serial.printf("Operation done successfully\n");
+  }
+  Serial.printf("%d records found\n", rec);
+  rec = 0;                                                                //reset record counter
+  Serial.print(F("Time taken:"));                                        //print in usec, time to perform Database task
+  Serial.println(micros() - start);
+  return rc;
 }
 
 #endif
