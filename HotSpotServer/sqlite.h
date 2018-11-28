@@ -7,11 +7,13 @@
 
 int rec;
 const char* data = "SQL reply";
+// This callback routine is where the return data from the query is processed
+
 static int callback(void *data, int argc, char **argv, char **azColName) {  //function to display column name and value
   int i;
   //zero counter that counts records found
   Serial.printf("%s:\n", (const char*)data);                               //print 'SQL reply' to serial monitor
-  for (i = 0; i < argc; i++) {                                             //loop through all the columns selected in query
+  for (i = 0; i < argc; i++) {                                             //display all the columns selected in query
     Serial.printf("%s = %s\t", azColName[i], argv[i] ? argv[i] : "NULL");  //print column name and value then tab
   }
   Serial.printf("\n");                                                     //print a space between records

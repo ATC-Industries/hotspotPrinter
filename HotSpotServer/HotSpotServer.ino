@@ -43,7 +43,7 @@ pin assignment                                      5 volt----------------------
                             _____________________________
 
 
-
+                    IO 34 & 35 do not have internal pullups
 */
 
 //------ Include files ---------------------------------------------------------
@@ -162,9 +162,35 @@ bool changePasswordPageFlag = false; // True if on change password page
 bool setTimePageFlag = false;   // True if on set time and date page
 bool allowUserDefinedDate = true;  // set to false to turn off date entry form
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+byte UpArrow[8] = {
+  0b00000,
+  0b00000,
+  0b00100,
+  0b01110,
+  0b11111,
+  0b11111,
+  0b11111,
+  0b01010
+};
 
+byte DownArrow[8] = {
+  0b00000,
+  0b00000,
+  0b11111,
+  0b11111,
+  0b11111,
+  0b01110,
+  0b00100,
+  0b00000
+};
 
 //----------funtion prototypes -------------------------------------------------
+void checkboxStatus(String h, bool& is_checked, String& status, String number);
+void lcd_display_date(void);
+void lcd_display_time(void);
+void time_stamp_serial_monitor(void);
+void recall_eeprom_values(void);
+void clear_output_buffer(void);
 void recall_eeprom_values(void);
 void clear_output_buffer(void);
 void clear_radio_rx_array(void);        // routine to clear rx buffer from xbee radio
@@ -232,8 +258,8 @@ void setup(){
     delay(1000);                               //time for the serial ports to setup
     lcd.init();                               //initialize the LCD display
     lcd.backlight();                          //turn on backlight
-
-
+    lcd.createChar(0, UpArrow);
+    lcd.createChar(1, DownArrow);
 //--------------Initialize printer for upside down print -----------------------------
      Serial2.write(0x1B);                //initialize pos2 printer
      Serial2.write('@');
@@ -422,22 +448,25 @@ void setup(){
 
 //note - data base used in this was created with DB browser and loaded onto sd card 
    sqlite3 *db3;                                                                        //delclare a pointer to the data base
+   sqlite3 *db4;
+                                                                  //create database
    openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
-     
+    
 //   db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Mike Joes','50')");     //add records
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Sally Homer','51')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Nick Meztger','52')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Tommy Tune','53')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
+     db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
      db_exec(db3, "SELECT * FROM Angler");                                                //list entire data base
      db_exec(db3, "SELECT COUNT(*) FROM Angler");                                         //total number of records in table
      db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
      
  //-----  example to pass a varible to a query---------    
      char *namev = "Mike Joes";
-     char *IDv = "50";
-     char sSQL[50];
+     char *IDv = "4";
+     char sSQL[50];                                                             //varible that holds the sql string  
      
      sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                 //search database by rowid
      db_exec(db3,sSQL);
@@ -445,7 +474,7 @@ void setup(){
      db_exec(db3,sSQL); 
       sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);              //search database by WEighin id
      db_exec(db3,sSQL); 
-   sqlite3_close(db3);                                                                  //close database
+     sqlite3_close(db3);                                                                  //close database
 
 
  
@@ -516,11 +545,11 @@ if (read_keyboard_timer >= 2)                                             //read
 //       lcd.print("PRINTING...");                                        //display 'Printing' message to lcd
 //       delay(2000);
 
-
-
        lcd.clear();
       }
-     lcd.setCursor(0,3);
+
+//---- F1 button press ----------------      
+     lcd.setCursor(1,3);
      if (!digitalRead(button_F1))                                         //F1 button
        {lcd.print("F1");
        if (diagnostic_flag)
@@ -529,8 +558,11 @@ if (read_keyboard_timer >= 2)                                             //read
           }
        }
      else
-        {lcd.print("   ");}
-
+        { lcd.setCursor(1,3);
+          lcd.write(byte(0));                                         //cutom character up key
+          //lcd.print("   ");
+          }
+//----------F2 button press ---------------
      lcd.setCursor(6,3);
      if (!digitalRead(button_F2))                                         //F2 button
        {lcd.print("F2");
@@ -539,9 +571,12 @@ if (read_keyboard_timer >= 2)                                             //read
             Serial2.println(">>Button F2 pressed");}                      //^^^ send button press diag to printer
        }
      else
-       {lcd.print("   ");}
+       {
+        lcd.setCursor(6,3);
+          lcd.write(byte(1)); 
+        lcd.print("   ");}
 
-
+//--------- F3 button press -------------------
        lcd.setCursor(11,3);
      if (!digitalRead(button_F3))                                         //F3 button
        {lcd.print("F3");
@@ -552,7 +587,8 @@ if (read_keyboard_timer >= 2)                                             //read
      else
         {lcd.print("   ");}
 
-    
+//-------- F4 button press ---------------------    
+     
      if (!digitalRead(button_F4))                                       //F4 button
        { lcd.setCursor(17,3);
          lcd.print("F4");
