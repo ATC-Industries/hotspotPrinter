@@ -106,6 +106,10 @@ WiFiServer server(80);          // Set web server port number to 80
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
+const String results[][5] = {{"Tom Smith","22","5","0","3"}};              //array the holds name
+
+
+
 String header;                  // Variable to store the HTTP request header
 String save_header;             //
 String line1 = "";              // String to hold value of Line 1 input box
@@ -260,6 +264,9 @@ void setup(){
     lcd.backlight();                          //turn on backlight
     lcd.createChar(0, UpArrow);
     lcd.createChar(1, DownArrow);
+
+    Serial.println(results[0][0]);        //print name
+    Serial.println(results[0][1]);
 //--------------Initialize printer for upside down print -----------------------------
      Serial2.write(0x1B);                //initialize pos2 printer
      Serial2.write('@');
@@ -458,26 +465,27 @@ void setup(){
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Nick Meztger','52')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Tommy Tune','53')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
-     db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
+//    db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
      db_exec(db3, "SELECT * FROM Angler");                                                //list entire data base
-     db_exec(db3, "SELECT COUNT(*) FROM Angler");                                         //total number of records in table
-     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
+//     db_exec(db3, "SELECT COUNT(*) FROM Angler");                                         //total number of records in table
+//     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
      
  //-----  example to pass a varible to a query---------    
      char *namev = "Mike Joes";
      char *IDv = "4";
      char sSQL[50];                                                             //varible that holds the sql string  
      
-     sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                 //search database by rowid
-     db_exec(db3,sSQL);
-      sprintf(sSQL,"SELECT * FROM Angler WHERE name = '%s'",namev);              //search database by name
-     db_exec(db3,sSQL); 
-      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);              //search database by WEighin id
-     db_exec(db3,sSQL); 
+//     sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                 //search database by rowid
+//     db_exec(db3,sSQL);
+//      sprintf(sSQL,"SELECT * FROM Angler WHERE name = '%s'",namev);              //search database by name
+//     db_exec(db3,sSQL); 
+//      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);              //search database by WEighin id
+//     db_exec(db3,sSQL); 
      sqlite3_close(db3);                                                                  //close database
-
-
- 
+     int r = 0;
+     while (r++ <= rec){
+        Serial.println( results[r][0]);                    // print the names from array
+        }
     
 //---------------------------------------------------------------                               
 }//void setup() ending terminator

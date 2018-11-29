@@ -3,8 +3,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sqlite3.h>                                                         // sqlite3 data base Files
+#include <sqlite3.h>  
 
+extern const String results[][5];
 int rec;
 const char* data = "SQL reply";
 // This callback routine is where the return data from the query is processed
@@ -15,6 +16,7 @@ static int callback(void *data, int argc, char **argv, char **azColName) {  //fu
   Serial.printf("%s:\n", (const char*)data);                               //print 'SQL reply' to serial monitor
   for (i = 0; i < argc; i++) {                                             //display all the columns selected in query
     Serial.printf("%s = %s\t", azColName[i], argv[i] ? argv[i] : "NULL");  //print column name and value then tab
+ //   results[rec][i] = argv[i];                                             //save to array
   }
   Serial.printf("\n");                                                     //print a space between records
   rec++;                                                                   //increment record counter
