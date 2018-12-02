@@ -10,14 +10,16 @@
 #include <stdlib.h>
 #include <sqlite3.h>  
 
-extern String results [20][30];
-extern int rec;
-const char* data = "SQL reply";
+extern String results [20][5];     //this must be declared here and in main so values will xfer
+extern int rec;                     //must be declared here and in main program so values xfer
+const char* data = "SQL reply";     //text to be printed when sql commands are processed
 
 
-// This callback routine is where the return data from the query is processed
-//argc = number of columns in query
-//
+/* This callback routine is where the return data from the query is processed
+    argc = number of columns in query (integer value)
+    argv = the value that is in the colum (string)
+    azColName = the name of the column (string)
+*/
 static int callback(void *data, int argc, char **argv, char **azColName) {  //function to display column name and value
   int i;
     

@@ -106,8 +106,8 @@ WiFiServer server(80);          // Set web server port number to 80
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
-String results[20][30];    //array the holds sql data
-int rec;
+String results[20][5];          //array the holds sql data
+int rec;                        //number of records in database
 String header;                  // Variable to store the HTTP request header
 String save_header;             //
 String line1 = "";              // String to hold value of Line 1 input box
@@ -478,14 +478,26 @@ void setup(){
 //     db_exec(db3,sSQL); 
      sqlite3_close(db3);                                                                  //close database
      int r = 0;
-     Serial.printf("----------------------------%d\n\r",rec);
+     Serial.printf("------array values ----------------------  %d records ------\n\r",rec);
      while (r <= rec-1){                                   //Print all records found
-        Serial.print( results[r][0]+"  ");                    // print the names from array
+        Serial.print( results[r][0]+"\t\t");                    // print the names from array
         Serial.println( results[r][1]);
         r++;
         }
-    Serial.print( results[1][0]+"  ");                    // print the names from array
-        Serial.println( results[1][1]);
+   Serial.printf("-------------- end of array -----------------------------------");
+      lcd.clear();
+      r = 0;
+      while (r <= rec-1){                                   //Print all records found
+       
+        lcd.setCursor(0,r);
+        lcd.print( results[r][0]);                    // print the names from array
+        lcd.setCursor(15,r);
+        lcd.println( results[r][1]);
+        r++;
+        delay(250);
+        }
+
+   
 //---------------------------------------------------------------                               
 }//void setup() ending terminator
 
