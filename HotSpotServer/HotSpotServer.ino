@@ -106,10 +106,8 @@ WiFiServer server(80);          // Set web server port number to 80
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
-const String results[][5] = {{"Tom Smith","22","5","0","3"}};              //array the holds name
-
-
-
+String results[20][30];    //array the holds sql data
+int rec;
 String header;                  // Variable to store the HTTP request header
 String save_header;             //
 String line1 = "";              // String to hold value of Line 1 input box
@@ -174,7 +172,7 @@ byte UpArrow[8] = {
   0b11111,
   0b11111,
   0b11111,
-  0b01010
+  0b00010
 };
 
 byte DownArrow[8] = {
@@ -262,11 +260,11 @@ void setup(){
     delay(1000);                               //time for the serial ports to setup
     lcd.init();                               //initialize the LCD display
     lcd.backlight();                          //turn on backlight
-    lcd.createChar(0, UpArrow);
-    lcd.createChar(1, DownArrow);
+    lcd.createChar(0, UpArrow);               //assign custom character to location 0
+    lcd.createChar(1, DownArrow);             //assign custom character to location 1
 
-    Serial.println(results[0][0]);        //print name
-    Serial.println(results[0][1]);
+   // Serial.print(results[0][0]);        //print name
+   // Serial.println(results[0][1]);
 //--------------Initialize printer for upside down print -----------------------------
      Serial2.write(0x1B);                //initialize pos2 printer
      Serial2.write('@');
@@ -301,8 +299,7 @@ void setup(){
 
 
 //------------- initialize the EEPROM --------------------------------------
-    if (!EEPROM.begin(EEPROM_SIZE))                                 //set aside memory for eeprom size
-        {
+    if (!EEPROM.begin(EEPROM_SIZE)){                                 //set aside memory for eeprom size
         time_stamp_serial_monitor();
         Serial.println("failed to intialize EEPROM");               //display error to monitor
         Serial2.println("Error - failed to intialize EEPROM");      //send error code to printer
@@ -416,16 +413,14 @@ void setup(){
     lcd.print(line3);
     delay(3000);
     lcd.clear();
-   // lcd.setCursor(0,3);
-   // lcd.print(line4);                                   //line 4 on lcd used to display button functions
-
+  
 //-------- get the MAC address of the WiFi module ----------
     WiFi.macAddress(Imac);
     Serial.print("MAC");
     if (diagnostic_flag == true)
         {Serial2.print(">>MAC address");}
-    for(int i=5;i>=0;i--)
-      {
+    for(int i=5;i>=0;i--){
+      
       Serial.print(":");
       Serial.print(Imac[i],HEX);                        //print the mac address to serial monitor
       if (diagnostic_flag == true)                      //^^^ print mac address to printer when in diagnostic mode
@@ -444,8 +439,8 @@ void setup(){
           {Serial2.println(">>setup() -SD card not present");}
       }
    
-    if (diagnostic_flag)                                //^^^ diagnostic message 
-          {Serial2.println(">>setup() - SD card present");
+    if (diagnostic_flag){                                //^^^ diagnostic message 
+          Serial2.println(">>setup() - SD card present");
            Serial2.printf(">>Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
            Serial2.printf(">>Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
           
@@ -465,7 +460,7 @@ void setup(){
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Nick Meztger','52')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Tommy Tune','53')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
-//    db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
+//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
      db_exec(db3, "SELECT * FROM Angler");                                                //list entire data base
 //     db_exec(db3, "SELECT COUNT(*) FROM Angler");                                         //total number of records in table
 //     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
@@ -483,10 +478,14 @@ void setup(){
 //     db_exec(db3,sSQL); 
      sqlite3_close(db3);                                                                  //close database
      int r = 0;
-     while (r++ <= rec){
-        Serial.println( results[r][0]);                    // print the names from array
+     Serial.printf("----------------------------%d\n\r",rec);
+     while (r <= rec-1){                                   //Print all records found
+        Serial.print( results[r][0]+"  ");                    // print the names from array
+        Serial.println( results[r][1]);
+        r++;
         }
-    
+    Serial.print( results[1][0]+"  ");                    // print the names from array
+        Serial.println( results[1][1]);
 //---------------------------------------------------------------                               
 }//void setup() ending terminator
 
@@ -568,7 +567,7 @@ if (read_keyboard_timer >= 2)                                             //read
      else
         { lcd.setCursor(1,3);
           lcd.write(byte(0));                                         //cutom character up key
-          //lcd.print("   ");
+          lcd.print(" ");
           }
 //----------F2 button press ---------------
      lcd.setCursor(6,3);
@@ -581,8 +580,8 @@ if (read_keyboard_timer >= 2)                                             //read
      else
        {
         lcd.setCursor(6,3);
-          lcd.write(byte(1)); 
-        lcd.print("   ");}
+        lcd.write(byte(1)); 
+        lcd.print("  ");}
 
 //--------- F3 button press -------------------
        lcd.setCursor(11,3);
@@ -596,9 +595,9 @@ if (read_keyboard_timer >= 2)                                             //read
         {lcd.print("   ");}
 
 //-------- F4 button press ---------------------    
-     
+     lcd.setCursor(17,3);
      if (!digitalRead(button_F4))                                       //F4 button
-       { lcd.setCursor(17,3);
+       { 
          lcd.print("F4");
          if (diagnostic_flag){
             Serial.println(">>Button F4 pressed");

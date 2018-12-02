@@ -1,3 +1,8 @@
+// example of parsing a string for a substring a : location and triming spaces 
+// string dayUsers = inputLines[2].Substring(inputLines[2].IndexOf(':') + 1).Trim();
+
+
+
 #ifndef __SQLITE_H__
 #define __SQLITE_H__
 
@@ -5,21 +10,30 @@
 #include <stdlib.h>
 #include <sqlite3.h>  
 
-extern const String results[][5];
-int rec;
+extern String results [20][30];
+extern int rec;
 const char* data = "SQL reply";
-// This callback routine is where the return data from the query is processed
 
+
+// This callback routine is where the return data from the query is processed
+//argc = number of columns in query
+//
 static int callback(void *data, int argc, char **argv, char **azColName) {  //function to display column name and value
   int i;
-  //zero counter that counts records found
-  Serial.printf("%s:\n", (const char*)data);                               //print 'SQL reply' to serial monitor
+    
+  
+ // Serial.printf("%s:\n", (const char*)data);                               //print 'SQL reply' to serial monitor
+  if (rec == 0)
+      {Serial.printf("%s\t\t%s\n\r",azColName[0],azColName[1]);}          //only print the column names once
   for (i = 0; i < argc; i++) {                                             //display all the columns selected in query
-    Serial.printf("%s = %s\t", azColName[i], argv[i] ? argv[i] : "NULL");  //print column name and value then tab
- //   results[rec][i] = argv[i];                                             //save to array
+      Serial.printf("%s\t", argv[i] ? argv[i] : "NULL");                   //print the field values
+    //Serial.printf("%s = %s\t", azColName[i], argv[i] ? argv[i] : "NULL");  //print column name and value then tab
+   results[rec][i] = argv[i];                                             //save to array
   }
+   
   Serial.printf("\n");                                                     //print a space between records
   rec++;                                                                   //increment record counter
+// results[rec][i] = '\0';                                                //  add null zero
   return 0;
 }
 
@@ -46,7 +60,7 @@ int db_exec(sqlite3 *db, const char *sql) {                                //thi
     Serial.printf("Operation done successfully\n");
   }
   Serial.printf("%d records found\n", rec);
-  rec = 0;                                                                //reset record counter
+ // rec = 0;                                                                //reset record counter
   Serial.print(F("Time taken:"));                                        //print in usec, time to perform Database task
   Serial.println(micros() - start);
   return rc;
