@@ -3,11 +3,11 @@
   Terry Clarkson & Adam Clarkson
   11/02/18
 ***************************************************************
-           [NOTE- TO-Do list located at bottom of this file]
+       
 
 This program uses a serial port to read an XBee radio board connected to UART 1
 and send the weight value recieved from a scale to a printer connected to UART 2
-UART 1 is used for a debug monitor.
+UART 0 is used for a debug monitor.
 
 The board is setup as a WIFI hotspot so user can log onto the system and set and
 change parameters related to the printing of the weigh ticket.
@@ -187,6 +187,7 @@ byte DownArrow[8] = {
 };
 
 //----------funtion prototypes -------------------------------------------------
+void check_sd_mem(void);
 void checkboxStatus(String h, bool& is_checked, String& status, String number);
 void lcd_display_date(void);
 void lcd_display_time(void);
@@ -433,70 +434,67 @@ void setup(){
     // Check if SD card is present
     isSDCardPresent = isSDCard();                          //set flag if sd card is present
     if (!isSDCardPresent)
-      {// time_stamp_serial_monitor();
+      {
         Serial.print("SD card not present");
         if (diagnostic_flag)                              //^^^ diagnostic message
           {Serial2.println(">>setup() -SD card not present");}
       }
    
-    if (diagnostic_flag){                                //^^^ diagnostic message 
-          Serial2.println(">>setup() - SD card present");
-           Serial2.printf(">>Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
-           Serial2.printf(">>Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
-          
+     else if (diagnostic_flag){                                //^^^ diagnostic message 
+           check_sd_mem();                            //send to printer, card memory statistics
           }
 
 ////-------------test code for data base---------------------
 
-//note - data base used in this was created with DB browser and loaded onto sd card 
+//note - data base used for this was created with DB browser and loaded onto sd card 
    sqlite3 *db3;                                                                        //delclare a pointer to the data base
    sqlite3 *db4;
-                                                                  //create database
+                                                                                        //create database
    openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
-    
-//   db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
+     Serial.printf("----List Tables ---------\n\r");   
+     db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Mike Joes','50')");     //add records
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Sally Homer','51')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Nick Meztger','52')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Tommy Tune','53')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
-     db_exec(db3, "SELECT * FROM Angler");                                                //list entire data base
-//     db_exec(db3, "SELECT COUNT(*) FROM Angler");                                         //total number of records in table
+     db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                                                //list entire data base
+    
+//     db_exec(db3, "SELECT COUNT(*) FROM Angler");                                 //total number of records in table
 //     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
      
- //-----  example to pass a varible to a query---------    
+ //-----  example to pass varibles to a sql query---------    
      char *namev = "Mike Joes";
      char *IDv = "4";
-     char sSQL[50];                                                             //varible that holds the sql string  
+     char sSQL[50];                                                                 //varible that holds the sql string  
      
-//     sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                 //search database by rowid
-//     db_exec(db3,sSQL);
+//     sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                  //search database by rowid
+//     db_exec(db3,sSQL);                                                          //this is theactual query to database
 //      sprintf(sSQL,"SELECT * FROM Angler WHERE name = '%s'",namev);              //search database by name
 //     db_exec(db3,sSQL); 
-//      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);              //search database by WEighin id
+//      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);             //search database by WEighin id
 //     db_exec(db3,sSQL); 
-     sqlite3_close(db3);                                                                  //close database
+     sqlite3_close(db3);                                                           //close database
      int r = 0;
-     Serial.printf("------array values ----------------------  %d records ------\n\r",rec);
-     while (r <= rec-1){                                   //Print all records found
-        Serial.print( results[r][0]+"\t\t");                    // print the names from array
+     Serial.printf("----array values -----  %d records ------\n\r",rec);
+     while (r <= rec-1){                                                            //Print all records found
+        Serial.print( results[r][0]+"\t\t");                                        // print the column names from array
         Serial.println( results[r][1]);
         r++;
         }
-   Serial.printf("-------------- end of array -----------------------------------");
-      lcd.clear();
-      r = 0;
-      while (r <= rec-1){                                   //Print all records found
-       
-        lcd.setCursor(0,r);
-        lcd.print( results[r][0]);                    // print the names from array
-        lcd.setCursor(15,r);
-        lcd.println( results[r][1]);
-        r++;
-        delay(250);
-        }
-
+//   Serial.printf("---------- end of array ---------------------");
+//      lcd.clear();
+//      r = 0;
+//      while (r <= rec-1){                                                           //Print all records found
+//        lcd.setCursor(0,r);
+//        lcd.print( results[r][0]);                                                  // print the first column from array
+//        lcd.setCursor(15,r);
+//        lcd.println( results[r][1]);                                                //print the second column from array
+//        r++;
+//        delay(250);
+//        }
+    
    
 //---------------------------------------------------------------                               
 }//void setup() ending terminator
@@ -531,6 +529,7 @@ void loop(){
            { statt = 0;                                   //set display mode to 0 so "No Signal" will be displayed
              if (!no_sig_flag)                            //if flag is not set
                {
+               lcd.clear();                                //clear lcd screen
                lcd.setCursor(2,1);
                lcd.print("** No  Signal **");
                }
@@ -578,7 +577,7 @@ if (read_keyboard_timer >= 2)                                             //read
        }
      else
         { lcd.setCursor(1,3);
-          lcd.write(byte(0));                                         //cutom character up key
+          lcd.write(byte(0));                                               //cutom character up key
           lcd.print(" ");
           }
 //----------F2 button press ---------------
@@ -654,15 +653,18 @@ if (read_keyboard_timer >= 2)                                             //read
                //-------------display weight on LCD-----------------------------------
                no_sig_flag = 0;                                     //clear flag used in no sig message routine
                int inc = 0;
+               lcd.setCursor(2,1);
                while (inc <= 15)
                  {if (radio_rx_array[inc] >= 31)                    //do not display characters with ascaii value of 30 or less
-                        {lcd.write(radio_rx_array[inc]);            //write character to screen
+                        {                       //center up weight
+                          lcd.write(radio_rx_array[inc]);            //write character to screen
                          if (radio_rx_array[inc] == 'H' && radio_rx_array[inc+1] != 'O')  //locked value and not 'HOLD'?
                              {lcd.setCursor(3,2);
                               lcd.print(" *** LOCKED ***");         //Display "locked" message on lcd
                              }
                          if (radio_rx_array[inc] == 'M')
-                             {lcd.setCursor(0,2);
+                             {
+                              lcd.setCursor(0,2);
                               lcd.print("                  ");     //erase 'LOCKED" message if not locked
                              }
                      }
@@ -670,8 +672,8 @@ if (read_keyboard_timer >= 2)                                             //read
                  }
 
                processRadioString();
-               }
-          }
+               }//if (c == 0x0D || c == 0x0A)
+          }// if (Serial1.available() > 0) 
 
 //-------------- start client routine ----------------------------------------------------------------
 
@@ -1146,7 +1148,12 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
    status = "";                                    //set to null value if not checked
   }
 }
-
+//---------------- check availble size and memory left on SD card --------------------------
+void check_sd_mem(void){     
+           Serial2.println(">>setup() - SD card present");
+           Serial2.printf(">>Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
+           Serial2.printf(">>Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
+           }
 //----------------- Read Time date and send to serial monitor -----------------------------------
 void ReadTime(void){
     DateTime now = rtc.now();
