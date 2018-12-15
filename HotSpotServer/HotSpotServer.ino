@@ -66,6 +66,7 @@ pin assignment                                      5 volt----------------------
 #include "SDfunc.h"             // refrence the SD card functions
 #include "html.h"               // refrence to HTML generation functions
 #include "sqlite.h"             // sqlite3 database functions
+#include "OutputPrint.h"        //routines to print data results to printer
 
 #define EEPROM_SIZE 1024        //rom reserved for eeprom storage
 
@@ -106,7 +107,8 @@ WiFiServer server(80);          // Set web server port number to 80
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
-String results[20][5];          //array the holds sql data
+ char sSQL[50];                 //varible that holds the sql string
+String results[250][5];          //array the holds sql data 251 results 6 columns
 int rec;                        //number of records in database
 String header;                  // Variable to store the HTTP request header
 String save_header;             //
@@ -218,12 +220,12 @@ char* string2char(String str)
 LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 or 3f for a 20 chars and 4 line display
 RTC_DS3231 rtc;                                        //start an instance of the real time clock named 'rtc'
 
-//-------------Interuput routines ----------------------------------------------
+//-------------Timer Interuput routines ----------------------------------------------
 void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt(place before void setup() code)
   {
   portENTER_CRITICAL_ISR(&timerMux);
   interruptCounter++;                   //put code to perform during interrupt here
-  read_keyboard_timer++;
+  read_keyboard_timer++;                //timer to scan keyboard keys for press
   ClockTimer++;                          //timer used to read clock every second
   portEXIT_CRITICAL_ISR(&timerMux);
   }
@@ -447,19 +449,19 @@ void setup(){
 ////-------------test code for data base---------------------
 
 //note - data base used for this was created with DB browser and loaded onto sd card 
-   sqlite3 *db3;                                                                        //delclare a pointer to the data base
-   sqlite3 *db4;
-                                                                                        //create database
+   sqlite3 *db3;                                                                        //declare a pointer to the data base
    openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
-     Serial.printf("----List Tables ---------\n\r");   
+   Serial.printf("----List Tables ---------\n\r");   
      db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
+    Serial.printf("----End of Tables ---------\n\r");  
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Mike Joes','50')");     //add records
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Sally Homer','51')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Nick Meztger','52')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Tommy Tune','53')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
-     db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                                                //list entire data base
+
+     db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                  //list entire data base
     
 //     db_exec(db3, "SELECT COUNT(*) FROM Angler");                                 //total number of records in table
 //     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
@@ -467,7 +469,7 @@ void setup(){
  //-----  example to pass varibles to a sql query---------    
      char *namev = "Mike Joes";
      char *IDv = "4";
-     char sSQL[50];                                                                 //varible that holds the sql string  
+      
      
 //     sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                  //search database by rowid
 //     db_exec(db3,sSQL);                                                          //this is theactual query to database
@@ -475,7 +477,7 @@ void setup(){
 //     db_exec(db3,sSQL); 
 //      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);             //search database by WEighin id
 //     db_exec(db3,sSQL); 
-     sqlite3_close(db3);                                                           //close database
+    sqlite3_close(db3);                                                           //close database
      int r = 0;
      Serial.printf("----array values -----  %d records ------\n\r",rec);
      while (r <= rec-1){                                                            //Print all records found
@@ -483,18 +485,7 @@ void setup(){
         Serial.println( results[r][1]);
         r++;
         }
-//   Serial.printf("---------- end of array ---------------------");
-//      lcd.clear();
-//      r = 0;
-//      while (r <= rec-1){                                                           //Print all records found
-//        lcd.setCursor(0,r);
-//        lcd.print( results[r][0]);                                                  // print the first column from array
-//        lcd.setCursor(15,r);
-//        lcd.println( results[r][1]);                                                //print the second column from array
-//        r++;
-//        delay(250);
-//        }
-    
+     Serial.printf("---------- end of array ---------------------");
    
 //---------------------------------------------------------------                               
 }//void setup() ending terminator
@@ -504,7 +495,7 @@ void setup(){
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
 
-//--------- 100 ms timer---------
+//--------- 100 ms timer-----------------------------
    if (interruptCounter > 0)                            //every one second 100 msec int is generated
       {
       portENTER_CRITICAL(&timerMux);
@@ -513,7 +504,7 @@ void loop(){
       totalInterruptCounter++;                          //increment counter for ints generated every second
       }
 
-//-------- 1 second timer------
+//-------- 1 second timer-----------------------------
   if (ClockTimer >=10)                                  //update clock every one second
       {lcd_display_time();                              //display time upper left corner of lcd
        lcd_display_date();                              //display date upper right corner of lcd
@@ -521,7 +512,7 @@ void loop(){
       }
 
 
-//--------- no signal timer -------
+//--------- no signal timer -------(5 seconds)----------
    if (totalInterruptCounter >=50)
       { lcd_display_time();
         totalInterruptCounter = 0;                        //reset counter
@@ -540,8 +531,8 @@ void loop(){
 
 if (read_keyboard_timer >= 2)                                             //read keypad every 200 ms
      {read_keyboard_timer = 0;                                            //reset key scan timer
-
-     if (!digitalRead(button_PRINT))                                      //if pushbutton is pressed (low condition), print the ticket
+//----  PRINT button pressed?  -------------
+   if (!digitalRead(button_PRINT))                                      //if pushbutton is pressed (low condition), print the ticket
       { no_sig_flag = 0 ;                                                 //clear flag so that 'no signal' message can appear if needed
         if (diagnostic_flag)                                              //^^^ diagnostic message
           {Serial.println(">>Print button  pressed");
@@ -554,31 +545,37 @@ if (read_keyboard_timer >= 2)                                             //read
             {delay(30);}
 
        if (checkbox3_status == "checked")                                 //if check box 'print serial number' is checked
-          {serial_number++;                                               //increment serial number
-            EEPROM.writeInt(serial_number_addr,serial_number);            //save serial number to eeprom
-            Serial.println(EEPROM.readInt(serial_number_addr));           //*** diagnostic
+          {serial_number++;                                              //increment serial number
+            EEPROM.writeInt(serial_number_addr,serial_number);           //save serial number to eeprom
+            Serial.println(EEPROM.readInt(serial_number_addr));          //*** diagnostic
           }
-       lcd.clear();                                                       //clear lcd display
+       lcd.clear();                                                      //clear lcd display
 //       lcd.setCursor(3,1);
-//       lcd.print("PRINTING...");                                        //display 'Printing' message to lcd
+//       lcd.print("PRINTING...");                                       //display 'Printing' message to lcd
 //       delay(2000);
 
        lcd.clear();
       }
 
-//---- F1 button press ----------------      
+//---- F1 button pressed? ----------------      
      lcd.setCursor(1,3);
-     if (!digitalRead(button_F1))                                         //F1 button
-       {lcd.print("F1");
+     if (!digitalRead(button_F1))                                        //F1 button
+       { lcd.print("F1");
+       
+         sqlite3 *db3; 
+         openDb("/sd/PTS.db", &db3);                                     //open the database
+         db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");   //query the angler list and sort by boat numb decending
+         sqlite3_close(db3);                                             //close database
+         print_results();                                                //send results to printer
        if (diagnostic_flag)
-          {Serial2.println(">>Button F1 pressed");                        //^^^ send button press diag to printer
+          {Serial2.println(">>Button F1 pressed");                       //^^^ send button press diag to printer
            Serial.println(">>Button F1 pressed");
           }
        }
      else
-        { lcd.setCursor(1,3);
-          lcd.write(byte(0));                                               //cutom character up key
-          lcd.print(" ");
+        { lcd.setCursor(0,3);
+         
+          lcd.print("Res");
           }
 //----------F2 button press ---------------
      lcd.setCursor(6,3);
@@ -594,7 +591,7 @@ if (read_keyboard_timer >= 2)                                             //read
         lcd.write(byte(1)); 
         lcd.print("  ");}
 
-//--------- F3 button press -------------------
+//--------- F3 button pressed? -------------------
        lcd.setCursor(11,3);
      if (!digitalRead(button_F3))                                         //F3 button
        {lcd.print("F3");
@@ -605,7 +602,7 @@ if (read_keyboard_timer >= 2)                                             //read
      else
         {lcd.print("   ");}
 
-//-------- F4 button press ---------------------    
+//-------- F4 button pressed? ---------------------    
      lcd.setCursor(17,3);
      if (!digitalRead(button_F4))                                       //F4 button
        { 

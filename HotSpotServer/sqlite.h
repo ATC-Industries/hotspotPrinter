@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <sqlite3.h>  
 
-extern String results [20][5];     //this must be declared here and in main so values will xfer
+extern  String results[250][5];      //array the holds sql data
 extern int rec;                     //must be declared here and in main program so values xfer
 const char* data = "SQL reply";     //text to be printed when sql commands are processed
 
@@ -22,9 +22,9 @@ const char* data = "SQL reply";     //text to be printed when sql commands are p
 */
 static int callback(void *data, int argc, char **argv, char **azColName) {  //function to display column name and value
   int i;
-    
+ // rec = 0;                                                                 //reset pointer  
   
- // Serial.printf("%s:\n", (const char*)data);                               //print 'SQL reply' to serial monitor
+ // Serial.printf("%s:\n", (const char*)data);                            //print 'SQL reply' to serial monitor
   if (rec == 0)
       {Serial.printf("%s\t\t%s\n\r",azColName[0],azColName[1]);}          //only print the column names once
   for (i = 0; i < argc; i++) {                                             //display all the columns selected in query
@@ -32,10 +32,9 @@ static int callback(void *data, int argc, char **argv, char **azColName) {  //fu
     //Serial.printf("%s = %s\t", azColName[i], argv[i] ? argv[i] : "NULL");  //print column name and value then tab
    results[rec][i] = argv[i];                                             //save to array
   }
-   
   Serial.printf("\n");                                                     //print a space between records
   rec++;                                                                   //increment record counter
-// results[rec][i] = '\0';                                                //  add null zero
+
   return 0;
 }
 
@@ -52,8 +51,9 @@ int openDb(const char *filename, sqlite3 **db) {
 
 char *zErrMsg = 0;
 int db_exec(sqlite3 *db, const char *sql) {                                //this routine is where SQL commands are executed
+  rec=0;
   Serial.println(sql);
-  long start = micros();
+  long start = micros();                                                //record current count to calculate process time
   int rc = sqlite3_exec(db, sql, callback, (void*)data, &zErrMsg);       //callback function prints the data to query
   if (rc != SQLITE_OK) {                                                 //if error
     Serial.printf("SQL error: %s\n", zErrMsg);                         //print the error message on error
@@ -62,9 +62,9 @@ int db_exec(sqlite3 *db, const char *sql) {                                //thi
     Serial.printf("Operation done successfully\n");
   }
   Serial.printf("%d records found\n", rec);
- // rec = 0;                                                                //reset record counter
+
   Serial.print(F("Time taken:"));                                        //print in usec, time to perform Database task
-  Serial.println(micros() - start);
+  Serial.println(micros() - start);                                      //show how long it took to process this command
   return rc;
 }
 
