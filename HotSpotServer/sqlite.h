@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <sqlite3.h>  
 
-extern  String results[250][5];      //array the holds sql data
+extern  String results[50][7];      //array the holds sql data
 extern int rec;                     //must be declared here and in main program so values xfer
 const char* data = "SQL reply";     //text to be printed when sql commands are processed
 
@@ -26,7 +26,7 @@ static int callback(void *data, int argc, char **argv, char **azColName) {  //fu
   
  // Serial.printf("%s:\n", (const char*)data);                            //print 'SQL reply' to serial monitor
   if (rec == 0)
-      {Serial.printf("%s\t\t%s\n\r",azColName[0],azColName[1]);}          //only print the column names once
+      {Serial.printf("%s\t%s\n\r",azColName[0],azColName[1]);}          //only print the column names once
   for (i = 0; i < argc; i++) {                                             //display all the columns selected in query
       Serial.printf("%s\t", argv[i] ? argv[i] : "NULL");                   //print the field values
     //Serial.printf("%s = %s\t", azColName[i], argv[i] ? argv[i] : "NULL");  //print column name and value then tab

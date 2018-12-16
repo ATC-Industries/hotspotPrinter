@@ -108,7 +108,7 @@ WiFiServer server(80);          // Set web server port number to 80
 
 //-----------------Define varibles----------------------------------------------
  char sSQL[50];                 //varible that holds the sql string
-String results[250][5];          //array the holds sql data 251 results 6 columns
+String results[50][7];          //array the holds sql data 251 results 6 columns
 int rec;                        //number of records in database
 String header;                  // Variable to store the HTTP request header
 String save_header;             //
@@ -189,6 +189,7 @@ byte DownArrow[8] = {
 };
 
 //----------funtion prototypes -------------------------------------------------
+void cut_paper(void);
 void check_sd_mem(void);
 void checkboxStatus(String h, bool& is_checked, String& status, String number);
 void lcd_display_date(void);
@@ -451,6 +452,16 @@ void setup(){
 //note - data base used for this was created with DB browser and loaded onto sd card 
    sqlite3 *db3;                                                                        //declare a pointer to the data base
    openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
+//--add new table----------
+
+   // db_exec(db3, "DROP TABLE weighin"); 
+   db_exec(db3, "CREATE TABLE weighin (ID INTEGER NOT NULL UNIQUE,TotalFish INTEGER NOT NULL DEFAULT 0,LiveFish  INTEGER DEFAULT 0,ShortFish INTEGER DEFAULT 0,Late  INTEGER DEFAULT 0,weight INTEGER DEFAULT 0, adj_weight INTEGER DEFAULT 0)");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('98','5','4','0','5','359','570')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('97','4','4','1','3','790','650')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('96','5','5','3','6','1220','1098')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('95','3','3','0','8','689','550')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('94','4','4','3','4','389','880')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('93','2','2','2','2','769','770')");
    Serial.printf("----List Tables ---------\n\r");   
      db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
     Serial.printf("----End of Tables ---------\n\r");  
@@ -462,7 +473,8 @@ void setup(){
 //   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
 
      db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                  //list entire data base
-    
+     Serial.print("---weighin table columns------");
+     db_exec(db3, "SELECT * FROM weighin Order BY adj_weight DESC"); 
 //     db_exec(db3, "SELECT COUNT(*) FROM Angler");                                 //total number of records in table
 //     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
      
@@ -480,12 +492,21 @@ void setup(){
     sqlite3_close(db3);                                                           //close database
      int r = 0;
      Serial.printf("----array values -----  %d records ------\n\r",rec);
-     while (r <= rec-1){                                                            //Print all records found
-        Serial.print( results[r][0]+"\t\t");                                        // print the column names from array
-        Serial.println( results[r][1]);
-        r++;
+     
+     while (r <= rec-1){                                                          //Print all records found in query
+        int i = 0;
+        while (i <= 6)                                                            //display the 7 columns
+         {                
+            Serial.print( results[r][i]+"\t");                                    //display all the column values (add tab)
+           i++;
+          }
+          Serial.println(" ");                                                     
+        r++;                                                                      //advance to next record
         }
      Serial.printf("---------- end of array ---------------------");
+
+Serial2.print("\0x010\0x04\0x04");    //check paper roll status/ reply 0x6C = out of paper.....  0x0c low on paper
+
    
 //---------------------------------------------------------------                               
 }//void setup() ending terminator
@@ -560,27 +581,36 @@ if (read_keyboard_timer >= 2)                                             //read
 //---- F1 button pressed? ----------------      
      lcd.setCursor(1,3);
      if (!digitalRead(button_F1))                                        //F1 button
-       { lcd.print("F1");
+       { lcd.setCursor(2,3);
+        lcd.write(byte(1));                                             //show down arrow icon 
+        lcd.print("  ");
        
          sqlite3 *db3; 
          openDb("/sd/PTS.db", &db3);                                     //open the database
          db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");   //query the angler list and sort by boat numb decending
          sqlite3_close(db3);                                             //close database
          print_results();                                                //send results to printer
-       if (diagnostic_flag)
+         delay(1000);                                                    //delay, so 2 copies do not print
+         if (diagnostic_flag)
           {Serial2.println(">>Button F1 pressed");                       //^^^ send button press diag to printer
            Serial.println(">>Button F1 pressed");
           }
        }
-     else
-        { lcd.setCursor(0,3);
-         
+     else{
+         lcd.setCursor(0,3);
           lcd.print("Res");
-          }
+        }
 //----------F2 button press ---------------
      lcd.setCursor(6,3);
      if (!digitalRead(button_F2))                                         //F2 button
        {lcd.print("F2");
+        sqlite3 *db3; 
+         openDb("/sd/PTS.db", &db3);                                     //open the database
+         db_exec(db3, "SELECT * FROM weighin ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
+         sqlite3_close(db3);                                             //close database
+        //Serial2.print("\x1b\x44\x08\x0C\x10\0x14\0x18\0x1C\x00"); // Set tab stops at 8, 12,16,20,24,28  characters
+       print_weigh_results();
+       
        if (diagnostic_flag)
           {Serial.println(">>Button F2 pressed");
             Serial2.println(">>Button F2 pressed");}                      //^^^ send button press diag to printer
@@ -636,6 +666,15 @@ if (read_keyboard_timer >= 2)                                             //read
 
 
 //--------------- radio uart recieve ---------------------------------------------------------------
+      if (Serial2.available() > 0)                                   //feedback from the printer
+           {char c;
+           c = (char)Serial1.read(); 
+           Serial.print(c);                                            //send to serial monitor
+           if (c == 0x00)                                           //if null zero
+             Serial.println("");
+           }
+
+
       if (Serial1.available() > 0)                                  //if data in recieve buffer, send to serial monitor
           {char c;
            c = (char)Serial1.read();                                //get byte from uart buffer
