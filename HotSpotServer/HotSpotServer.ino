@@ -108,7 +108,7 @@ WiFiServer server(80);          // Set web server port number to 80
 
 //-----------------Define varibles----------------------------------------------
  char sSQL[50];                 //varible that holds the sql string
-String results[50][7];          //array the holds sql data 251 results 6 columns
+String results[100][9];          //array the holds sql data 251 results 6 columns
 int rec;                        //number of records in database
 String header;                  // Variable to store the HTTP request header
 String save_header;             //
@@ -452,30 +452,71 @@ void setup(){
 //note - data base used for this was created with DB browser and loaded onto sd card 
    sqlite3 *db3;                                                                        //declare a pointer to the data base
    openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
-//--add new table----------
+ 
+ 
+ 
+ //-- add table if they do not exist ----------
+/*
+   // db_exec(db3, "DROP TABLE weighin");                        //unrem this line to erase old table and create new table
+   db_exec(db3, "CREATE TABLE weighin"
+   "(ID        INTEGER NOT NULL UNIQUE,"
+   "TotalFish  INTEGER NOT NULL DEFAULT 0,"
+   "LiveFish   INTEGER DEFAULT 0,"
+   "ShortFish  INTEGER DEFAULT 0,"
+   "Late       INTEGER DEFAULT 0,"
+   "weight     INTEGER DEFAULT 0,"
+   "adj_weight INTEGER DEFAULT 0,"
+   "PRIMARY KEY (ID)");
 
-   // db_exec(db3, "DROP TABLE weighin"); 
-   db_exec(db3, "CREATE TABLE weighin (ID INTEGER NOT NULL UNIQUE,TotalFish INTEGER NOT NULL DEFAULT 0,LiveFish  INTEGER DEFAULT 0,ShortFish INTEGER DEFAULT 0,Late  INTEGER DEFAULT 0,weight INTEGER DEFAULT 0, adj_weight INTEGER DEFAULT 0)");
+
+ //  db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
+  // db_exec(db3, "DROP TABLE Id"); 
+   db_exec(db3, "CREATE TABLE Angler(ID INTEGER NOT NULL UNIQUE,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
+
+    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
+    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('102','Bill','Brown','K')");
+    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('104','Carl','Sager','W')");
+    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('99','Steve','Phillips','A')");
+    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('98','Brian','RedStone','C')");
+    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('97','Mike','Bluewater','D')");
+    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('96','Mitch','Calmer','E')");
+    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('95','Shawn','Shipner','F')"); 
+ */
+ /*  
    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('98','5','4','0','5','359','570')");     //add records
    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('97','4','4','1','3','790','650')");
    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('96','5','5','3','6','1220','1098')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('95','3','3','0','8','689','550')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('95','4','3','0','8','689','550')");
    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('94','4','4','3','4','389','880')");
    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('93','2','2','2','2','769','770')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('92','5','4','1','5','359','444')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('91','4','4','1','3','560','555')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('90','5','2','3','6','1686','1666')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('89','5','3','0','8','875','770')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('88','5','4','3','4','890','789')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('87','5','3','2','1','1012','912')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('85','5','4','0','5','359','570')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('84','4','4','1','3','790','650')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('83','5','5','3','6','1220','1098')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('82','4','3','0','8','689','567')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('81','4','4','3','4','389','879')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('80','2','2','2','2','769','789')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('79','5','4','1','5','359','456')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('78','4','4','1','3','560','567')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('77','5','2','3','6','1686','1678')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('76','5','3','0','8','875','789')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('75','5','4','3','4','900','897')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('74','4','3','2','1','1012','987')");
+
+   */
    Serial.printf("----List Tables ---------\n\r");   
      db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
     Serial.printf("----End of Tables ---------\n\r");  
-//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Mike Joes','50')");     //add records
-//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Sally Homer','51')");
-//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Nick Meztger','52')");
-//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Tommy Tune','53')");
-//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
-//   db_exec(db3, "INSERT INTO Angler (name,WeighInId) Values ('Homer Simpson','4')");
 
-     db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                  //list entire data base
-     Serial.print("---weighin table columns------");
+//     db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                  //list entire data base
+     Serial.println("--- weighin results by adj_weight ------");
      db_exec(db3, "SELECT * FROM weighin Order BY adj_weight DESC"); 
-//     db_exec(db3, "SELECT COUNT(*) FROM Angler");                                 //total number of records in table
+     db_exec(db3, "SELECT * FROM Angler");                                 //total number of records in table
 //     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
      
  //-----  example to pass varibles to a sql query---------    
@@ -606,7 +647,7 @@ if (read_keyboard_timer >= 2)                                             //read
        {lcd.print("F2");
         sqlite3 *db3; 
          openDb("/sd/PTS.db", &db3);                                     //open the database
-         db_exec(db3, "SELECT * FROM weighin ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
+         db_exec(db3, "SELECT Angler.id,Angler.FirstName,Angler.LastName,weighin.totalFish,weighin.liveFish,weighin.shortFish,weighin.late,weighin.weight,weighin.adj_weight FROM angler INNER JOIN Weighin on Weighin.ID = Angler.ID ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
          sqlite3_close(db3);                                             //close database
         //Serial2.print("\x1b\x44\x08\x0C\x10\0x14\0x18\0x1C\x00"); // Set tab stops at 8, 12,16,20,24,28  characters
        print_weigh_results();
@@ -614,6 +655,7 @@ if (read_keyboard_timer >= 2)                                             //read
        if (diagnostic_flag)
           {Serial.println(">>Button F2 pressed");
             Serial2.println(">>Button F2 pressed");}                      //^^^ send button press diag to printer
+       delay(1000);                                                        //switch debounce
        }
      else
        {
