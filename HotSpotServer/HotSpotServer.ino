@@ -107,15 +107,17 @@ WiFiServer server(80);          // Set web server port number to 80
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
+String current_time; 
+ char* system_time;
  char sSQL[50];                 //varible that holds the sql string
 String results[100][9];          //array the holds sql data 251 results 6 columns
 int rec;                        //number of records in database
 String header;                  // Variable to store the HTTP request header
 String save_header;             //
-String line1 = "";              // String to hold value of Line 1 input box
-String line2 = "";              // String to hold value of Line 2 input box
-String line3 = "";              // String to hold value of Line 3 input box
-String line4 = "";              // String to hold value of Line 4 input box
+//String line1 = "";              // String to hold value of Line 1 input box
+//String line2 = "";              // String to hold value of Line 2 input box
+//String line3 = "";              // String to hold value of Line 3 input box
+//String line4 = "";              // String to hold value of Line 4 input box
 String last_weight = "";        //
 char radio_rx_array[31];        // array being recieved on xbee radio
 bool radio_rx_ready = false;    // whether the rec radio string is complete
@@ -201,7 +203,7 @@ void recall_eeprom_values(void);
 void clear_output_buffer(void);
 void clear_radio_rx_array(void);        // routine to clear rx buffer from xbee radio
 void print_ticket(void);                // function to print the weigh ticket
-void set_text_size(unsigned int size);  // oled set text size routine
+//void set_text_size(unsigned int size);  // oled set text size routine
 void set_text_reverse(bool on_off);     // oled set reverse text on/off
 void processRadioString();              // routine to process radio rx string
 void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minute, byte Second);
@@ -467,21 +469,21 @@ void setup(){
    "weight     INTEGER DEFAULT 0,"
    "adj_weight INTEGER DEFAULT 0,"
    "PRIMARY KEY (ID)");
-
-
- //  db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
-  // db_exec(db3, "DROP TABLE Id"); 
-   db_exec(db3, "CREATE TABLE Angler(ID INTEGER NOT NULL UNIQUE,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
-
-    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
-    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('102','Bill','Brown','K')");
-    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('104','Carl','Sager','W')");
-    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('99','Steve','Phillips','A')");
-    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('98','Brian','RedStone','C')");
-    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('97','Mike','Bluewater','D')");
-    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('96','Mitch','Calmer','E')");
-    db_exec(db3, "INSERT INTO Angler(ID,FirstName,LastName,MiddleInit) Values ('95','Shawn','Shipner','F')"); 
  */
+
+  db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
+  // db_exec(db3, "DROP TABLE Id"); 
+   db_exec(db3, "CREATE TABLE Angler(ID INTEGER,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
+
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')"); 
+
  /*  
    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('98','5','4','0','5','359','570')");     //add records
    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('97','4','4','1','3','790','650')");
@@ -546,7 +548,7 @@ void setup(){
         }
      Serial.printf("---------- end of array ---------------------");
 
-Serial2.print("\0x010\0x04\0x04");    //check paper roll status/ reply 0x6C = out of paper.....  0x0c low on paper
+///Serial2.print("\0x010\0x04\0x04");    //check paper roll status/ reply 0x6C = out of paper.....  0x0c low on paper
 
    
 //---------------------------------------------------------------                               
@@ -628,7 +630,7 @@ if (read_keyboard_timer >= 2)                                             //read
        
          sqlite3 *db3; 
          openDb("/sd/PTS.db", &db3);                                     //open the database
-         db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");   //query the angler list and sort by boat numb decending
+         db_exec(db3, "SELECT * FROM Angler ORDER BY Id DESC");   //query the angler list and sort by boat numb decending
          sqlite3_close(db3);                                             //close database
          print_results();                                                //send results to printer
          delay(1000);                                                    //delay, so 2 copies do not print
@@ -1251,8 +1253,8 @@ void ReadTime(void){
     Serial.print(':');
     Serial.print(now.second(), DEC);
     Serial.println();
-    }
-
+    
+}
 //------------- display time on LCD upper left corner---------------------------------------------
 void lcd_display_time(void){
     DateTime now = rtc.now();
@@ -1269,6 +1271,11 @@ void lcd_display_time(void){
       {lcd.print("0");}
     lcd.print(now.second(), DEC);
     lcd.print("  ");
+    
+    
+    current_time = String(now.hour()) + ":" + String(now.minute()) + ":" + String(now.second()) + "\n";
+
+ 
    }
 //-------------display date on LCD upper right corner ----------------------------------------------
 void lcd_display_date(void){
@@ -1325,7 +1332,7 @@ void print_ticket(void)
 
                Serial2.write(0x1B);                         //justification: center text
                Serial2.write('a');
-               Serial2.write('1');
+               Serial2.write('1');                           //0= left, 1 = center 2= right
 
                Serial2.write(0x1B);                         //bold mode on
                Serial2.write(0x21);
