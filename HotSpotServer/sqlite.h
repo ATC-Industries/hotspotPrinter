@@ -44,7 +44,7 @@ int openDb(const char *filename, sqlite3 **db) {
     Serial.printf("OpenDb() - Can't open database: %s\n", sqlite3_errmsg(*db));
     return rc;
   } else {
-    Serial.printf("OpenDb() - Opened database successfully\n,");
+    Serial.printf("OpenDb() - Opened database successfully\n");
   }
   return rc;
 }

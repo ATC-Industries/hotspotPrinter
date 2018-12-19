@@ -473,26 +473,26 @@ void setup(){
    "PRIMARY KEY (ID)");
  */
 
-//  db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
+  db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
   // db_exec(db3, "DROP TABLE Id");
-   db_exec(db3, "CREATE TABLE Angler(ID INTEGER,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
+   db_exec(db3, "CREATE TABLE Angler(ID INTEGER UNIQUE NOT NULL,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
    //
    //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
-   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')");
-   //
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')");
+   
    // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
    // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
    // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
@@ -640,7 +640,7 @@ if (read_keyboard_timer >= 2)                                             //read
 
          sqlite3 *db3;
          openDb("/sd/PTS.db", &db3);                                     //open the database
-         db_exec(db3, "SELECT * FROM Angler ORDER BY Id DESC");   //query the angler list and sort by boat numb decending
+         db_exec(db3, "SELECT * FROM Angler ");   //query the angler list and sort by boat numb decending
          sqlite3_close(db3);                                             //close database
          print_results();                                                //send results to printer
          delay(1000);                                                    //delay, so 2 copies do not print
@@ -804,7 +804,7 @@ if (read_keyboard_timer >= 2)                                             //read
 
                         //-----read the returned information from form when submit button is pressed and save to memory--------
                         String headerT = header.substring(0,header.indexOf("Host:")); //create substring from begining to the word 'Host:'
-
+                        Serial.print("running line 807");
                         Serial.println("--------headerT:------------");            //print substring to serial monitor
                         Serial.println(headerT);
                         if (diagnostic_flag){
@@ -1057,8 +1057,8 @@ if (read_keyboard_timer >= 2)                                             //read
 
                             rtc.adjust(DateTime(year, month, day, hour, minute, 0));
                         }
-                        else if ((headerT.indexOf("first_Name=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'Line1=' is found and text 'favicon' is not found
-                        {
+                        else if ((headerT.indexOf("first_Name=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'first_name=' is found and text 'favicon' is not found
+                        {                            
                             String first_Name =  header.substring(header.indexOf("first_Name=")+11,header.indexOf("&last_Name="));//parse out the varible strings for the the 4 lines
                             String last_Name =  header.substring(header.indexOf("last_Name=")+10,header.indexOf("&middle_Name="));
                             String middle_Name =  header.substring(header.indexOf("middle_Name=")+12,header.indexOf("&address1="));
@@ -1074,21 +1074,21 @@ if (read_keyboard_timer >= 2)                                             //read
                             //TODO
                             //FIX
                             String inputState = "IN";  //  not working right now so everything gets IN for now
-
-                            String tempStr = "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,Email)Values('" +   first_Name + "','" + last_Name + "','" + middle_Name + "','" + address1 + "','" + address2 + "','" + city + "','" + inputState + "','" + zip + "','" + cell_phone + "','" + home_phone + "','" + ssn + "','" + dob + "','" + email + "')";
-                            char* tempChar = string2char(tempStr);
-                            Serial.println(first_Name);
-                            Serial.println("Testing and stuff");
-                            Serial.println(tempStr);
-                            sqlite3 *db3;                                                                        //declare a pointer to the data base
-                            openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
-                            Serial.println("before db_exec");
-                          db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Jones','Who')");
-                            //db_exec(db3, tempChar);
-
-                            Serial.println("after db_exec");
-                            sqlite3_close(db3);
-                            Serial.println("after sqlite3_close");
+//
+//                            String tempStr = "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,Email)Values('" +   first_Name + "','" + last_Name + "','" + middle_Name + "','" + address1 + "','" + address2 + "','" + city + "','" + inputState + "','" + zip + "','" + cell_phone + "','" + home_phone + "','" + ssn + "','" + dob + "','" + email + "')";
+//                            char* tempChar = string2char(tempStr);
+//                            Serial.println(first_Name);
+//                            Serial.println("Testing and stuff");
+//                            Serial.println(tempStr);
+//                            sqlite3 *db3;                                                                        //declare a pointer to the data base
+//                            openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
+//                            Serial.println("before db_exec");
+//                          db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Jones','Who')");
+//                            //db_exec(db3, tempChar);
+//
+//                            Serial.println("after db_exec");
+//                            sqlite3_close(db3);
+//                            Serial.println("after sqlite3_close");
                                                  // Sample code to add to DB
                         //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
 
