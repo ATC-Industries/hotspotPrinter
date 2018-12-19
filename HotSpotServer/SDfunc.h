@@ -2,7 +2,7 @@
 #define __SDFUNC_H__
 
 String arrayOfUpdateFiles[20] = {};
-
+extern bool diagnostic_flag;
 void rebootEspWithReason(String reason);
 
 /**
@@ -12,23 +12,35 @@ void rebootEspWithReason(String reason);
  * @param levels  number of levels deep you want to list
  */
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
-    Serial.printf("Listing directory: %s\n", dirname);
-
+    Serial.printf("Listing directory: %s\n", dirname);                          //print to serial monitor
+    if (diagnostic_flag)                                                        //^^^if  diagnostic mode
+      {
+       Serial2.printf(">>listDir() - Listing directory: %s\n", dirname);       //print directories to printer 
+      }
     File root = fs.open(dirname);
     if(!root){
         Serial.println("Failed to open directory");
+        if (diagnostic_flag)                                                    //^^^if  diagnostic mode
+            {Serial2.printf(">>ListDir() - Failed to open directory");}         //print directories to printer 
+      
         return;
     }
     if(!root.isDirectory()){
         Serial.println("Not a directory");
+        if (diagnostic_flag)                                                    //^^^if  diagnostic mode
+            {Serial2.printf(">>listDir() - Not a directory");}
         return;
     }
 
     File file = root.openNextFile();
-    while(file){
+    while(file){                                                                //this loop prints out the directory
         if(file.isDirectory()){
             Serial.print("  DIR : ");
             Serial.println(file.name());
+            if (diagnostic_flag){                                               //^^^ diagnostic flag
+                Serial2.print("  DIR : ");
+                Serial2.println(file.name());
+            }
             if(levels){
                 listDir(fs, file.name(), levels -1);
             }
@@ -37,6 +49,12 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
             Serial.print(file.name());
             Serial.print("  SIZE: ");
             Serial.println(file.size());
+            if (diagnostic_flag){                                         //^^^if  diagnostic mode
+                Serial2.print("  FILE: ");
+                Serial2.print(file.name());
+                Serial2.print("  SIZE: ");
+                Serial2.println(file.size());
+                }
         }
         file = root.openNextFile();
     }
@@ -48,10 +66,15 @@ void searchForUpdate(fs::FS &fs, const char * dirname, String arrayOfUpdateFiles
     File root = fs.open(dirname);
     if(!root){
         Serial.println("Failed to open directory");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+            {Serial2.printf(">>SearchForUpdate(): Failed to open directory");}
         return;
     }
     if(!root.isDirectory()){
         Serial.println("Not a directory");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+           {Serial2.printf(">>searchForUpdate() - Not a directory");}
+        
         return;
     }
 
@@ -65,6 +88,9 @@ void searchForUpdate(fs::FS &fs, const char * dirname, String arrayOfUpdateFiles
             if((fileName.indexOf("update") >= 0) && (fileName.indexOf(".bin") >= 0))
             {
                 Serial.println(file.name());
+                if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  { Serial2.print(">>>");
+                    Serial2.println(file.name());}
                 arrayOfUpdateFiles[counter] = fileName;
                 counter++;
             }
@@ -83,8 +109,12 @@ void createDir(fs::FS &fs, const char * path){
     Serial.printf("Creating Dir: %s\n", path);
     if(fs.mkdir(path)){
         Serial.println("Dir created");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.printf("Dir created");}
     } else {
         Serial.println("mkdir failed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.printf("mkdir failed");}
     }
 }
 
@@ -97,8 +127,12 @@ void removeDir(fs::FS &fs, const char * path){
     Serial.printf("Removing Dir: %s\n", path);
     if(fs.rmdir(path)){
         Serial.println("Dir removed");
+         if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("removeDir() -Dir removed");}
     } else {
         Serial.println("rmdir failed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("removeDir() - rmdir failed");}
     }
 }
 
@@ -113,14 +147,20 @@ void readFile(fs::FS &fs, const char * path){
     File file = fs.open(path);
     if(!file){
         Serial.println("Failed to open file for reading");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("readFile()- Failed to open file for reading");}
         return;
     }
 
     Serial.print("Read from file: ");
+     if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.print("Read from file: ");}
     while(file.available()){
         Serial.write(file.read());
-    }
-    file.close();
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.write(file.read());}
+        }
+   file.close();
 }
 
 /**
@@ -132,15 +172,24 @@ void readFile(fs::FS &fs, const char * path){
 void writeFile(fs::FS &fs, const char * path, const char * message){
     Serial.printf("Writing file: %s\n", path);
 
+    if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.printf("writeFile() - Writing file: %s\n", path);}
+
     File file = fs.open(path, FILE_WRITE);
     if(!file){
         Serial.println("Failed to open file for writing");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("writeFile() - Failed to open file for writing");}
         return;
     }
     if(file.print(message)){
         Serial.println("File written");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("writeFile() - File written");}
     } else {
         Serial.println("Write failed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("writeFile() - Write failed");}
     }
     file.close();
 }
@@ -157,14 +206,21 @@ void appendFile(fs::FS &fs, const char * path, const char * message){
     File file = fs.open(path, FILE_APPEND);
     if(!file){
         Serial.println("Failed to open file for appending");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("appendFile() - Failed to open file for appending");}
         return;
     }
     if(file.print(message)){
         Serial.println("Message appended");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("appendFile() - Message appended");
     } else {
         Serial.println("Append failed");
-    }
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("appendFile() - Append failed");}
+         }
     file.close();
+    }
 }
 
 /**
@@ -177,8 +233,12 @@ void renameFile(fs::FS &fs, const char * path1, const char * path2){
     Serial.printf("Renaming file %s to %s\n", path1, path2);
     if (fs.rename(path1, path2)) {
         Serial.println("File renamed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("renameFile() - File renamed");}
     } else {
         Serial.println("Rename failed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("renameFile() - Rename failed");}
     }
 }
 
@@ -191,8 +251,12 @@ void deleteFile(fs::FS &fs, const char * path){
     Serial.printf("Deleting file: %s\n", path);
     if(fs.remove(path)){
         Serial.println("File deleted");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("deleteFile() - File deleted");}
     } else {
         Serial.println("Delete failed");
+        if (diagnostic_flag)                                         //^^^if  diagnostic mode
+                  {Serial2.println("deleteFile() - Delete failed");}
     }
 }
 
@@ -315,27 +379,41 @@ void performUpdate(Stream &updateSource, size_t updateSize) {
                 size_t written = Update.writeStream(updateSource);
                 if (written == updateSize) {
                         Serial.println("Written : " + String(written) + " successfully");
+                        if (diagnostic_flag){
+                                Serial2.println(">>performUpdate() - Written : " + String(written) + " successfully");
+                                }
                 }
                 else {
                         Serial.println("Written only : " + String(written) + "/" + String(updateSize) + ". Retry?");
+                        if (diagnostic_flag){
+                               Serial2.println(">>performUpdate() -Written only : " + String(written) + "/" + String(updateSize) + ". Retry?");
+                               }
                 }
                 if (Update.end()) {
                         Serial.println("OTA done!");
                         if (Update.isFinished()) {
                                 Serial.println("Update successfully completed. Rebooting.");
+                                if (diagnostic_flag){
+                                    Serial2.println(">>performUpdate() - Update successfully completed. Rebooting.");}
                         }
                         else {
                                 Serial.println("Update not finished? Something went wrong!");
+                                 if (diagnostic_flag){
+                                    Serial2.println(">>performUpdate() - Update not finished? Something went wrong!");}
                         }
                 }
                 else {
                         Serial.println("Error Occurred. Error #: " + String(Update.getError()));
+                             if (diagnostic_flag){
+                                    Serial2.println(">>performUpdate() - Error Occurred. Error #: " + String(Update.getError()));}
                 }
 
         }
         else
         {
                 Serial.println("Not enough space to begin OTA");
+                if (diagnostic_flag){
+                         Serial2.println(">>performUpdate() - Not enough space to begin OTA");}
         }
 }
 
@@ -345,6 +423,8 @@ void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
         if (updateBin) {
                 if(updateBin.isDirectory()) {
                         Serial.println("Error, update.bin is not a file");
+                        if (diagnostic_flag){
+                             Serial2.println(">>updateBin() - Error, update.bin is not a file");}
                         updateMessage = "Error, update.bin is not a file";
                         updateBin.close();
                         return;
@@ -354,10 +434,14 @@ void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
 
                 if (updateSize > 0) {
                         Serial.println("Try to start update");
+                        if (diagnostic_flag){
+                             Serial2.println(">>updateBin() - Try to start update");}
                         performUpdate(updateBin, updateSize);
                 }
                 else {
                         Serial.println("Error, file is empty");
+                        if (diagnostic_flag){
+                             Serial2.println(">>updateBin() - Error, file is empty");}
                         updateMessage = "Error, file is empty";
                 }
 
@@ -369,6 +453,8 @@ void updateFromFS(fs::FS &fs, String updateFileName, String& updateMessage) {
         }
         else {
                 Serial.println("Could not load update.bin from sd root");
+                if (diagnostic_flag){
+                             Serial2.println(">>updateBin() - Could not load update.bin from sd root");}
                 updateMessage += "Could not load update.bin from sd root";
         }
 }
@@ -405,8 +491,12 @@ void updateFirmware(String& updateMessage, String updateFile) {
  */
 void checkForUpdateFirmware(String& updateMessage) {
         uint8_t cardType;
-        Serial.println("Searching for available updates");
-
+        Serial.println("checkForUpdateFirmware() - Searching for available updates");
+        if (diagnostic_flag)
+                   {
+                    Serial2.println(">>checkForUpdateFirmware() - Searching for available updates");
+                   }
+        
         // You can uncomment this and build again
         //Serial.println("Update successfull");
 
@@ -414,6 +504,9 @@ void checkForUpdateFirmware(String& updateMessage) {
         if (!SD.begin()) {
                 //rebootEspWithReason("Card Mount Failed");
                 updateMessage = "Card Mount Failed";
+                if (diagnostic_flag)
+                   {
+                    Serial2.println(">>checkForUpdateFirmware() - Card Mount Failed");}
         }
 
         cardType = SD.cardType();
@@ -433,7 +526,14 @@ void checkForUpdateFirmware(String& updateMessage) {
 bool isSDCard() {
         uint8_t cardType;
         Serial.println("Checking if SD card is installed");
-
+        
+         if (diagnostic_flag)
+           {
+            Serial2.println(">>isSDCard() - Checking if SD card is installed");
+            if (diagnostic_flag)
+                   {
+                    Serial2.println(">>isSDCard() - Checking if SD card is installed");}
+           }
         // You can uncomment this and build again
         //Serial.println("Update successfull");
 
@@ -441,6 +541,10 @@ bool isSDCard() {
         if (!SD.begin()) {
                 //rebootEspWithReason("Card Mount Failed");
                 Serial.println("Card Mount Failed");
+                if (diagnostic_flag)
+                   {
+                    Serial2.println(">>isSDCard() - Card Mount Failed");
+                   }
                 return false;
         }
 
@@ -449,9 +553,17 @@ bool isSDCard() {
         if (cardType == CARD_NONE) {
                 //rebootEspWithReason("No SD card attached");
                 Serial.println("No SD card attached");
+                if (diagnostic_flag)
+                   {
+                    Serial2.println(">>isSDCard() - No SD card attached");
+                   }
                 return false;
         }else{
             Serial.println("SD Card found");
+            if (diagnostic_flag)
+                   {
+                    Serial2.println(">>isSDCard() - SD Card found");
+                   }
             return true;
         }
 }
@@ -462,6 +574,11 @@ bool isSDCard() {
  */
 void rebootEspWithReason(String reason){
         Serial.println(reason);
+        if (diagnostic_flag)
+                   {
+                    Serial2.print(">>rebootEspWithReason() - ");
+                    Serial2.println(reason);
+                   }
         delay(1000);
         ESP.restart();
 }

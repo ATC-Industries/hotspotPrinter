@@ -1,22 +1,21 @@
 
-
-
-
 /**************************************************************
   Terry Clarkson & Adam Clarkson
   11/02/18
 ***************************************************************
-           [NOTE- TO-Do list located at bottom of this file]
+       
 
 This program uses a serial port to read an XBee radio board connected to UART 1
 and send the weight value recieved from a scale to a printer connected to UART 2
-UART 1 is used for a debug monitor.
+UART 0 is used for a debug monitor.
 
 The board is setup as a WIFI hotspot so user can log onto the system and set and
 change parameters related to the printing of the weigh ticket.
 
 Pass word override - power up the system while holding down the print button,default
 pass word is [987654321]
+F1 + F4 = system reboot
+HOld F1 down on cold boot to enter diagnostic mode.
 
                                                                                                                   __________________________
 pin assignment                                      5 volt--------------------------------------------------------|                         |
@@ -27,7 +26,7 @@ pin assignment                                      5 volt----------------------
               |___________| |SVP                   IO22 | ---- SCL pin to 4x20 LCD display --------------|----|   |       SD CARD           |
                     |  |    |SVN                   TXD0 | ---- Serial TX Monitor and programming uart0   |  L |   |                         |
       ___________   22 21   |IO34                  RXD0 | ---- Serial RX Monitor and programming uart0   |  C |   |                         |
-     /           \  --------|IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
+     /           \          |IO35                  IO21 | ---- SDA pin to 4x20 LCD display --------------|  D |   |                         |
     |             |---------|IO32                   GND |                                                ------   |                         |
     |             |---------|IO33                  IO19 | ---- SPI MISO to SD card--------------------------------|                         |
     |   XBEE      |         |IO25                  IO18 | ---- clock on SD card-----------------------------------|                         |
@@ -44,44 +43,13 @@ pin assignment                                      5 volt----------------------
                             _____________________________
 
 
-
+                    IO 34 & 35 do not have internal pullups
 */
-////------ Files for SQL database
-//#include "Arduino.h"
-//#include <EDB.h>
-//#define TABLE_SIZE 8192         //allocate sd card space for table
-//#define RECORDS_TO_CREATE 10
-//
-//char* db_name = "/db/edb_test.db";  //declare database name
-//File dbFile;
-//
-////// Arbitrary record definition for this table.
-////// This should be modified to reflect your record needs.
-//struct LogEvent {
-//    int id;
-//    int temperature;
-//}
-//logEvent;
-////
-////// The read and write handlers for using the SD Library
-//inline void writer (unsigned long address, const byte* data, unsigned int recsize) {
-//    dbFile.seek(address);
-//    dbFile.write(data,recsize);
-//    dbFile.flush();
-//}
-//
-//inline void reader (unsigned long address, byte* data, unsigned int recsize) {
-//    digitalWrite(13, HIGH);
-//    dbFile.seek(address);
-//    dbFile.read(data,recsize);
-//    digitalWrite(13, LOW);
-//}
-//
-//// Create an EDB object with the appropriate write and read handlers
-//EDB db(&writer, &reader);
-
 
 //------ Include files ---------------------------------------------------------
+#include <stdio.h>
+#include <stdlib.h>
+#include <sqlite3.h>            //database engine
 #include <WiFi.h>               // Load Wi-Fi library
 #include <EEPROM.h>             //driver for eeprom
 //------ files for sd card -----------------------------------------------------
@@ -98,6 +66,7 @@ pin assignment                                      5 volt----------------------
 #include "SDfunc.h"             // refrence the SD card functions
 #include "html.h"               // refrence to HTML generation functions
 #include "sqlite.h"             // sqlite3 database functions
+#include "OutputPrint.h"        //routines to print data results to printer
 
 #define EEPROM_SIZE 1024        //rom reserved for eeprom storage
 
@@ -138,12 +107,18 @@ WiFiServer server(80);          // Set web server port number to 80
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
+String current_date;
+String current_time; 
+ char* system_time;
+ char sSQL[50];                 //varible that holds the sql string
+String results[100][9];          //array the holds sql data 251 results 6 columns
+int rec;                        //number of records in database
 String header;                  // Variable to store the HTTP request header
 String save_header;             //
-String line1 = "";              // String to hold value of Line 1 input box
-String line2 = "";              // String to hold value of Line 2 input box
-String line3 = "";              // String to hold value of Line 3 input box
-String line4 = "";              // String to hold value of Line 4 input box
+//String line1 = "";              // String to hold value of Line 1 input box
+//String line2 = "";              // String to hold value of Line 2 input box
+//String line3 = "";              // String to hold value of Line 3 input box
+//String line4 = "";              // String to hold value of Line 4 input box
 String last_weight = "";        //
 char radio_rx_array[31];        // array being recieved on xbee radio
 bool radio_rx_ready = false;    // whether the rec radio string is complete
@@ -153,6 +128,7 @@ int serial_number;              // Stores device serial number
 int read_keyboard_timer;         // timer that reads the keyboard every 200ms
 char output_string[31];         // converted data to send out
 char temp_str[31];              //
+int rc = 0;                     // use in SQL routines
 String temp_val = "";           //
 char weight[15];                //
 int ClockTimer = 0;             //
@@ -168,7 +144,7 @@ bool isSDCardPresent = false;   // Flag checked on startup true if SD card is fo
 bool diagnostic_flag = false;   // Flag to send all Serial Monitor diagnostic to printer
 String passwordMessage = "";    //
 bool passSuccess = false;       //
-volatile int ticket;            // ticket serial number
+int ticket;            // ticket serial number
 byte Imac[6];                   // array to hold the mac address
 String checkbox1_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox2_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
@@ -176,7 +152,7 @@ String checkbox3_status = "";   // Holds chekbox status "checked" or "" to be in
 String checkbox4_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox5_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 volatile int interruptCounter;  // varible that tracks number of interupts
-int totalInterruptCounter;      // counter to track total number of interrupts
+volatile int totalInterruptCounter;      // counter to track total number of interrupts
 int no_signal_timer;            // timeout counter used to display No Signal on display
 char *database[100][2];         // database array to hold anglers name and weight
 hw_timer_t * timer = NULL;      /* in order to configure the timer, we will need
@@ -193,18 +169,49 @@ bool changePasswordPageFlag = false; // True if on change password page
 bool setTimePageFlag = false;   // True if on set time and date page
 bool allowUserDefinedDate = true;  // set to false to turn off date entry form
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+byte UpArrow[8] = {
+  0b00000,
+  0b00000,
+  0b00100,
+  0b01110,
+  0b11111,
+  0b11111,
+  0b11111,
+  0b00010
+};
 
+byte DownArrow[8] = {
+  0b00000,
+  0b00000,
+  0b11111,
+  0b11111,
+  0b11111,
+  0b01110,
+  0b00100,
+  0b00000
+};
 
 //----------funtion prototypes -------------------------------------------------
+void get_time(void);
+void cut_paper(void);
+void check_sd_mem(void);
+void checkboxStatus(String h, bool& is_checked, String& status, String number);
+void lcd_display_date(void);
+void lcd_display_time(void);
+
+void recall_eeprom_values(void);
+void clear_output_buffer(void);
+void recall_eeprom_values(void);
 void clear_output_buffer(void);
 void clear_radio_rx_array(void);        // routine to clear rx buffer from xbee radio
 void print_ticket(void);                // function to print the weigh ticket
-void set_text_size(unsigned int size);  // oled set text size routine
+//void set_text_size(unsigned int size);  // oled set text size routine
 void set_text_reverse(bool on_off);     // oled set reverse text on/off
 void processRadioString();              // routine to process radio rx string
 void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minute, byte Second);
 // Checks status of checkbox and sets flags for proper HTML display
 void checkboxStatus(String h, bool& is_checked, String& status, String number);
+//int openDb(const char *filename, sqlite3 **db);
 char* string2char(String str)
 {
     if(str.length()!= 0)
@@ -218,12 +225,12 @@ char* string2char(String str)
 LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 or 3f for a 20 chars and 4 line display
 RTC_DS3231 rtc;                                        //start an instance of the real time clock named 'rtc'
 
-//-------------Interuput routines ----------------------------------------------
+//-------------Timer Interuput routines ----------------------------------------------
 void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt(place before void setup() code)
   {
   portENTER_CRITICAL_ISR(&timerMux);
   interruptCounter++;                   //put code to perform during interrupt here
-  read_keyboard_timer++;
+  read_keyboard_timer++;                //timer to scan keyboard keys for press
   ClockTimer++;                          //timer used to read clock every second
   portEXIT_CRITICAL_ISR(&timerMux);
   }
@@ -233,7 +240,9 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
 void setup(){
-
+    listDir(SD, "/", 2);                      //SD card directory listing, '2' = 2 levels deep
+    sqlite3_initialize();                     //start the database engine
+    sqlite3 *db1;                            //declare varible as a sqlite3 file 
     Wire.begin();                             //start i2c for RTC
 
     //---------- declare input buttons with pullup -----------------------------
@@ -259,15 +268,18 @@ void setup(){
     delay(1000);                               //time for the serial ports to setup
     lcd.init();                               //initialize the LCD display
     lcd.backlight();                          //turn on backlight
+    lcd.createChar(0, UpArrow);               //assign custom character to location 0
+    lcd.createChar(1, DownArrow);             //assign custom character to location 1
 
-
+   // Serial.print(results[0][0]);        //print name
+   // Serial.println(results[0][1]);
 //--------------Initialize printer for upside down print -----------------------------
      Serial2.write(0x1B);                //initialize pos2 printer
      Serial2.write('@');
 
      Serial2.write(0x1B);                //upside down printing
      Serial2.write('{');
-     Serial2.write('1');
+     Serial2.write('1');                 //change to zero for right side printing
 
      Serial2.write(0x1B);                //B Font 12x24
      Serial2.write('M');
@@ -295,18 +307,15 @@ void setup(){
 
 
 //------------- initialize the EEPROM --------------------------------------
-    if (!EEPROM.begin(EEPROM_SIZE))                                 //set aside memory for eeprom size
-        {
-        time_stamp_serial_monitor();
+    if (!EEPROM.begin(EEPROM_SIZE)){                                 //set aside memory for eeprom size
         Serial.println("failed to intialize EEPROM");               //display error to monitor
         Serial2.println("Error - failed to intialize EEPROM");      //send error code to printer
         }
-    passwordString = (EEPROM.readString(password_addr));           //retriev password stored in eeprom
-    Serial.print("Setting AP (Access Point)…\n");                 // Connect to Wi-Fi network with SSID and password
-
-
-
-
+    else{
+         if (diagnostic_flag){
+         Serial2.println("EEprom initized successfully");}
+        }  
+  
 //-----------------Hold Print button on cold start to bring in temporary password to log on ---------------------
  /* Remove the password parameter, if you want the AP (Access Point) to be open
        if 'button_PRINT' is pulled low,(print button pressed) a temporary password will
@@ -352,7 +361,6 @@ void setup(){
     IPAddress IP = WiFi.softAPIP();                               //get the ip address
     Serial.print("AP IP address: ");                              //print ip address to SM
     Serial.println(IP);
-
     server.begin();                                               //start server
     lcd.clear();                                                  //clear LCD
     lcd.setCursor(0,0);
@@ -383,24 +391,20 @@ void setup(){
 
     Serial2.write(0x0A);
     Serial2.println("----------------------------------------------------------");
-    cut_paper();
+    if (!diagnostic_flag)
+       {cut_paper();}
 
     char verString[10];
     sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
     lcd.setCursor(0,3);
     lcd.print(verString);                                                 //print software version
+    if (diagnostic_flag == true)                                                  //^^^diagnostic mode
+        { Serial2.print(">>Software ");
+          Serial2.println(verString);}
+    
 
-    delay(3000);                                                          //leave ssid and ip on oled sceen for this delay
-    line1 = (EEPROM.readString(line1_eeprom_addr));                       //recall values saved in eeprom
-    line2 = (EEPROM.readString(line2_eeprom_addr));
-    line3 = (EEPROM.readString(line3_eeprom_addr));
-    line4 = (EEPROM.readString(line4_eeprom_addr));
-    serial_number = EEPROM.readInt(serial_number_addr);                  //get ticket serial number
-    Serial.println("Load S/N "+ String(serial_number));                  //print serial number to serial monitor
-    cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));        //recall checkbox status (boolean)
-    cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
-    cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
-    cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
+    delay(2000);                                                          //leave ssid and ip on oled sceen for this delay
+    recall_eeprom_values();  
 
     cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";    //set 'checkbox#_is_checked' to match 'checkbox#_status'
     cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
@@ -416,29 +420,145 @@ void setup(){
     lcd.print(line3);
     delay(3000);
     lcd.clear();
-   // lcd.setCursor(0,3);
-   // lcd.print(line4);                                   //line 4 on lcd used to display button functions
-
+  
 //-------- get the MAC address of the WiFi module ----------
     WiFi.macAddress(Imac);
     Serial.print("MAC");
-    for(int i=5;i>=0;i--)
-      {
+    if (diagnostic_flag == true)
+        {Serial2.print(">>MAC address");}
+    for(int i=5;i>=0;i--){
+      
       Serial.print(":");
       Serial.print(Imac[i],HEX);                        //print the mac address to serial monitor
       if (diagnostic_flag == true)                      //^^^ print mac address to printer when in diagnostic mode
-         {Serial2.println(Imac[i],HEX);}                //send mac adreesss to printer
+         { Serial2.print(":");
+           Serial2.print(Imac[i],HEX);}                //send mac adress to printer
       }
     Serial.print("\n");
+    Serial2.println("");
+    
     // Check if SD card is present
     isSDCardPresent = isSDCard();                          //set flag if sd card is present
     if (!isSDCardPresent)
-      { time_stamp_serial_monitor();
+      {
         Serial.print("SD card not present");
         if (diagnostic_flag)                              //^^^ diagnostic message
-          {Serial2.println("SD card not present");}
+          {Serial2.println(">>setup() -SD card not present");}
       }
-   // Serial.println(freeRam());                            //routine to disply free ram to SM
+   
+     else if (diagnostic_flag){                                //^^^ diagnostic message 
+           check_sd_mem();                            //send to printer, card memory statistics
+          }
+
+////-------------test code for data base---------------------
+
+//note - data base used for this was created with DB browser and loaded onto sd card 
+   sqlite3 *db3;                                                                        //declare a pointer to the data base
+   openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
+ 
+ 
+ 
+ //-- add table if they do not exist ----------
+/*
+   // db_exec(db3, "DROP TABLE weighin");                        //unrem this line to erase old table and create new table
+   db_exec(db3, "CREATE TABLE weighin"
+   "(ID        INTEGER NOT NULL UNIQUE,"
+   "TotalFish  INTEGER NOT NULL DEFAULT 0,"
+   "LiveFish   INTEGER DEFAULT 0,"
+   "ShortFish  INTEGER DEFAULT 0,"
+   "Late       INTEGER DEFAULT 0,"
+   "weight     INTEGER DEFAULT 0,"
+   "adj_weight INTEGER DEFAULT 0,"
+   "PRIMARY KEY (ID)");
+ */
+
+  db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
+  // db_exec(db3, "DROP TABLE Id"); 
+   db_exec(db3, "CREATE TABLE Angler(ID INTEGER,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
+
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')"); 
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')"); 
+  
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('4','4','3','0','8','689','550')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('5','4','4','3','4','389','880')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('6','2','2','2','2','769','770')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('7','5','4','1','5','359','444')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('8','4','4','1','3','560','555')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('9','5','2','3','6','1686','1666')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('10','5','3','0','8','875','770')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('11','5','4','3','4','890','789')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('12','5','3','2','1','1012','912')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('13','5','4','0','5','359','570')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('14','4','4','1','3','790','650')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('15','5','5','3','6','1220','1098')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('16','4','3','0','8','689','567')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('17','4','4','3','4','389','879')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('18','2','2','2','2','769','789')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('19','5','4','1','5','359','456')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('20','4','4','1','3','560','567')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('21','5','2','3','6','1686','1678')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('22','5','3','0','8','875','789')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('23','5','4','3','4','900','897')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('24','4','3','2','1','1012','987')");
+
+  
+   Serial.printf("----List Tables ---------\n\r");   
+     db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
+    Serial.printf("----End of Tables ---------\n\r");  
+
+//     db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                  //list entire data base
+     Serial.println("--- weighin results by adj_weight ------");
+     db_exec(db3, "SELECT * FROM weighin Order BY adj_weight DESC"); 
+     db_exec(db3, "SELECT * FROM Angler");                                 //total number of records in table
+//     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
+     
+ //-----  example to pass varibles to a sql query---------    
+     char *namev = "Mike Joes";
+     char *IDv = "4";
+      
+     
+//     sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                  //search database by rowid
+//     db_exec(db3,sSQL);                                                          //this is theactual query to database
+//      sprintf(sSQL,"SELECT * FROM Angler WHERE name = '%s'",namev);              //search database by name
+//     db_exec(db3,sSQL); 
+//      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);             //search database by WEighin id
+//     db_exec(db3,sSQL); 
+    sqlite3_close(db3);                                                           //close database
+     int r = 0;
+     Serial.printf("----array values -----  %d records ------\n\r",rec);
+     
+     while (r <= rec-1){                                                          //Print all records found in query
+        int i = 0;
+        while (i <= 6)                                                            //display the 7 columns
+         {                
+            Serial.print( results[r][i]+"\t");                                    //display all the column values (add tab)
+           i++;
+          }
+          Serial.println(" ");                                                     
+        r++;                                                                      //advance to next record
+        }
+     Serial.printf("---------- end of array ---------------------");
+
+///Serial2.print("\0x010\0x04\0x04");    //check paper roll status/ reply 0x6C = out of paper.....  0x0c low on paper
+
+   
+//---------------------------------------------------------------                               
 }//void setup() ending terminator
 
 
@@ -446,7 +566,7 @@ void setup(){
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
 
-//---- 100 ms timer---------
+//--------- 100 ms timer-----------------------------
    if (interruptCounter > 0)                            //every one second 100 msec int is generated
       {
       portENTER_CRITICAL(&timerMux);
@@ -455,118 +575,159 @@ void loop(){
       totalInterruptCounter++;                          //increment counter for ints generated every second
       }
 
-//---- 1 second timer------
+//-------- 1 second timer-----------------------------
   if (ClockTimer >=10)                                  //update clock every one second
-      {lcd_display_time();                              //display time upper left corner of lcd
+      {get_time();
+       get_date();
+       lcd_display_time();                              //display time upper left corner of lcd
        lcd_display_date();                              //display date upper right corner of lcd
        ClockTimer = 0;                                  //reset one second timer used for clock updates
       }
 
 
-//---- no signal timer -------
+//--------- no signal timer -------(5 seconds)----------
    if (totalInterruptCounter >=50)
-      { lcd_display_time();
+      { //lcd_display_time();
         totalInterruptCounter = 0;                        //reset counter
         if (++ no_signal_timer >= 2)                      //if no signal this timer times out
            { statt = 0;                                   //set display mode to 0 so "No Signal" will be displayed
              if (!no_sig_flag)                            //if flag is not set
                {
+               lcd.clear();                                //clear lcd screen
                lcd.setCursor(2,1);
                lcd.print("** No  Signal **");
                }
              no_sig_flag = 1;                             //set flag so display will not update every loop
            }
       }
-   //--------------- read  button routines -------------------------------------------------------
+//--------------- read  button routines -------------------------------------------------------
 
-if (read_keyboard_timer >= 2)                             //read keypad every 200 ms
-     {read_keyboard_timer = 0;                            //reset timer
-
-     if (!digitalRead(button_PRINT))                      //if pushbutton is pressed (low condition), print the ticket
-      { no_sig_flag = 0 ;                                 //clear flag so that 'no signal' message can appear if needed
-        if (diagnostic_flag)                              //^^^ diagnostic message
-          {Serial.println("Print button  pressed");
-            Serial2.println("Print button pressed");}
-        print_ticket();                                   //print the weight ticket
+if (read_keyboard_timer >= 2)                                             //read keypad every 200 ms
+     {read_keyboard_timer = 0;                                            //reset key scan timer
+//----  PRINT button pressed?  -------------
+   if (!digitalRead(button_PRINT))                                      //if pushbutton is pressed (low condition), print the ticket
+      { no_sig_flag = 0 ;                                                 //clear flag so that 'no signal' message can appear if needed
+        if (diagnostic_flag)                                              //^^^ diagnostic message
+          {Serial.println(">>Print button  pressed");
+            Serial2.println(">>Print button pressed");}
+        print_ticket();                                                   //print the weight ticket
         delay(300);
-        if (checkbox1_status == "checked")                //if checkbox "print 2 tickets" is checked
-            {print_ticket();}                             //print second ticket if print 2 copies is selected
-        while (!digitalRead(button_PRINT))                //loop while button is held down
-            {delay(80);}
+        if (checkbox1_status == "checked")                                //if checkbox "print 2 tickets" is checked
+            {print_ticket();}                                             //print second ticket if print 2 copies is selected
+        while (!digitalRead(button_PRINT))                                //loop while button is held down
+            {delay(30);}
 
-       if (checkbox3_status == "checked")                 //if check box 'print serial number' is checked
-          {serial_number++;                               //increment serial number
-            EEPROM.writeInt(serial_number_addr,serial_number); //save serial number to eeprom
-            Serial.println(EEPROM.readInt(serial_number_addr));  //*** diagnostic
+       if (checkbox3_status == "checked")                                 //if check box 'print serial number' is checked
+          {serial_number++;                                              //increment serial number
+            EEPROM.writeInt(serial_number_addr,serial_number);           //save serial number to eeprom
+            Serial.println(EEPROM.readInt(serial_number_addr));          //*** diagnostic
           }
-       lcd.clear();
+       lcd.clear();                                                      //clear lcd display
 //       lcd.setCursor(3,1);
-//       lcd.print("PRINTING...");                          //display 'Printing' message to lcd
+//       lcd.print("PRINTING...");                                       //display 'Printing' message to lcd
 //       delay(2000);
-
-
 
        lcd.clear();
       }
-     lcd.setCursor(0,3);
-     if (!digitalRead(button_F1))                         //F1 button
-       {lcd.print("F1");
-       if (diagnostic_flag)
-          {Serial2.println("Button F1 pressed");          //^^^ send button press diag to printer
-           Serial.println("Button F1 pressed");
+
+//---- F1 button pressed? ----------------      
+     lcd.setCursor(1,3);
+     if (!digitalRead(button_F1))                                        //F1 button
+       { lcd.setCursor(2,3);
+        lcd.write(byte(1));                                             //show down arrow icon 
+        lcd.print("  ");
+       
+         sqlite3 *db3; 
+         openDb("/sd/PTS.db", &db3);                                     //open the database
+         db_exec(db3, "SELECT * FROM Angler ORDER BY Id DESC");   //query the angler list and sort by boat numb decending
+         sqlite3_close(db3);                                             //close database
+         print_results();                                                //send results to printer
+         delay(1000);                                                    //delay, so 2 copies do not print
+         if (diagnostic_flag)
+          {Serial2.println(">>Button F1 pressed");                       //^^^ send button press diag to printer
+           Serial.println(">>Button F1 pressed");
           }
        }
-     else
-        {lcd.print("   ");}
-
+     else{
+         lcd.setCursor(0,3);
+          lcd.print("Res");
+        }
+//----------F2 button press ---------------
      lcd.setCursor(6,3);
-     if (!digitalRead(button_F2))                         //F2 button
+     if (!digitalRead(button_F2))                                         //F2 button
        {lcd.print("F2");
+        sqlite3 *db3; 
+         openDb("/sd/PTS.db", &db3);                                     //open the database
+         db_exec(db3, "SELECT Angler.id,Angler.FirstName,Angler.LastName,weighin.totalFish,weighin.liveFish,weighin.shortFish,weighin.late,weighin.weight,weighin.adj_weight FROM angler INNER JOIN Weighin on Weighin.ID = Angler.ID ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
+         sqlite3_close(db3);                                             //close database
+        //Serial2.print("\x1b\x44\x08\x0C\x10\0x14\0x18\0x1C\x00"); // Set tab stops at 8, 12,16,20,24,28  characters
+       print_weigh_results();
+       
        if (diagnostic_flag)
-          {Serial.println("Button F2 pressed");
-            Serial2.println("Button F2 pressed");}         //^^^ send button press diag to printer
+          {Serial.println(">>Button F2 pressed");
+            Serial2.println(">>Button F2 pressed");}                      //^^^ send button press diag to printer
+       delay(1000);                                                        //switch debounce
        }
      else
-       {lcd.print("   ");}
+       {
+        lcd.setCursor(6,3);
+        lcd.write(byte(1)); 
+        lcd.print("  ");}
 
-
+//--------- F3 button pressed? -------------------
        lcd.setCursor(11,3);
-     if (!digitalRead(button_F3))                         //F3 button
+     if (!digitalRead(button_F3))                                         //F3 button
        {lcd.print("F3");
         if (diagnostic_flag)
-           {Serial.println("Button F3 pressed");
-            Serial2.println("Button F3 pressed");}         //^^^ send button press diag to printer
+           {Serial.println(">>Button F3 pressed");
+            Serial2.println(">>Button F3 pressed");}                      //^^^ send button press diag to printer
        }
      else
         {lcd.print("   ");}
 
+//-------- F4 button pressed? ---------------------    
      lcd.setCursor(17,3);
-     if (!digitalRead(button_F4))                         //F4 button
-       {lcd.print("F4");
-       if (diagnostic_flag)
-          {Serial.println("Button F4 pressed");
-            Serial2.println("Button F4 pressed");}         //^^^ send button press diag to printer
+     if (!digitalRead(button_F4))                                       //F4 button
+       { 
+         lcd.print("F4");
+         if (diagnostic_flag){
+            Serial.println(">>Button F4 pressed");
+            Serial2.println(">>Button F4 pressed");}                    //^^^ send button press diag to printer
        }
      else
        {lcd.print("   ");}
 
 
 //-------------- F1 + F4 key press will reboot computer ---------------------------
-  if (!digitalRead(button_F1) &&  !digitalRead(button_F4))  // If button 1 and 4 are pressed at same time reboot
+  if (!digitalRead(button_F1) &&  !digitalRead(button_F4))              // If button 1 and 4 are pressed at same time reboot
        {
-        lcd.clear();
-        lcd.setCursor(0,1);
-        lcd.print("Rebooting");                                 //display 'rebooting'  on Lcd
-        // delay and print dots 11 times.
-        for (int i = 0; i < 11; i++){
-            delay(100);
-            lcd.print(".");
-        }
-        ESP.restart();}
-    }//end if read_keyboard_timer
+        delay(2000);
+        if (!digitalRead(button_F1) &&  !digitalRead(button_F4))        //if still holding after 2 seconds
+            {
+            lcd.clear();
+            lcd.setCursor(0,1);
+            lcd.print("Rebooting");                                     //display 'rebooting'  on Lcd
+           
+            for (int i = 0; i < 11; i++){                              // delay and print dots 11 times.
+                delay(100);
+                lcd.print(".");
+                }
+             rebootEspWithReason("manual reboot");                      //reboot computer
+            }
+        } 
+    }//end if read_keyboard_timer = 0
 
 
 //--------------- radio uart recieve ---------------------------------------------------------------
+      if (Serial2.available() > 0)                                   //feedback from the printer
+           {char c;
+           c = (char)Serial1.read(); 
+           Serial.print(c);                                            //send to serial monitor
+           if (c == 0x00)                                           //if null zero
+             Serial.println("");
+           }
+
+
       if (Serial1.available() > 0)                                  //if data in recieve buffer, send to serial monitor
           {char c;
            c = (char)Serial1.read();                                //get byte from uart buffer
@@ -577,22 +738,22 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                radio_rx_pointer = 0;                                //reset the rx radio buffer
               }
            if (c == 0x0D || c == 0x0A)                              //if character is CR or LF then process buffer
-              {c = 0x00;
+              {c = 0x00;                                            //set this character to a null zero
                //-------------display weight on LCD-----------------------------------
                no_sig_flag = 0;                                     //clear flag used in no sig message routine
-               //lcd.clear();
-               lcd.setCursor(3,1);                                  //3rd position 2 line
-          //     lcd.print(radio_rx_array);                         //send recieved string to display
                int inc = 0;
+               lcd.setCursor(2,1);
                while (inc <= 15)
                  {if (radio_rx_array[inc] >= 31)                    //do not display characters with ascaii value of 30 or less
-                        {lcd.write(radio_rx_array[inc]);            //write character to screen
+                        {                       //center up weight
+                          lcd.write(radio_rx_array[inc]);            //write character to screen
                          if (radio_rx_array[inc] == 'H' && radio_rx_array[inc+1] != 'O')  //locked value and not 'HOLD'?
                              {lcd.setCursor(3,2);
                               lcd.print(" *** LOCKED ***");         //Display "locked" message on lcd
                              }
                          if (radio_rx_array[inc] == 'M')
-                             {lcd.setCursor(0,2);
+                             {
+                              lcd.setCursor(0,2);
                               lcd.print("                  ");     //erase 'LOCKED" message if not locked
                              }
                      }
@@ -600,31 +761,37 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                  }
 
                processRadioString();
-               }
-          }
+               }//if (c == 0x0D || c == 0x0A)
+          }// if (Serial1.available() > 0) 
 
 //-------------- start client routine ----------------------------------------------------------------
 
 
 
-    WiFiClient client = server.available();   // Listen for incoming clients
-    String updateMessage = "";
-    if (client)
-    {                                 // If a new client connects (tablet or cell phone logs on)
-        Serial.println("New Client.");          // print a message out in the serial port monitor
-        String currentLine = "";                // make a String to hold incoming data from the client
+    WiFiClient client = server.available();           // Listen for incoming clients
+    String updateMessage = "";                        //create a varible string  
+    if (client)                                       //if client is connected
+    {                                                 // If a new client connects (tablet or cell phone logs on)
+        Serial.println("New Client.");                // print a message out in the serial port monitor
+        String currentLine = "";                      // make a String to hold incoming data from the client
+        if (client.connected()){
+            if (diagnostic_flag){                     // ^^^ diagnostic code
+                Serial2.println(">>loop()- Client connected...");}
+            }
         while (client.connected())
-        {            // loop while the client's connected
+        {                                             // loop while the client's connected
+          
+          
             if (client.available())
             {         // if there's bytes to read from the client,
-                char c = client.read();     // read a byte, then
-                Serial.write(c);            // print it out the serial monitor
-                header += c;                //add character to the header string
+                char c = client.read();               // read a byte, then
+                Serial.write(c);                      // print it out the serial monitor
+                header += c;                          //add character to the header string
                 if (c == '\n')
                 //if (header.length() > 500)
-                {                // if the byte is a newline character
-                    // if the current line is blank, you got two newline characters in a row.
-                    // that's the end of the client HTTP request, so send a response:
+                {                                     // if the byte is a newline character
+                                                      // if the current line is blank, you got two newline characters in a row.
+                                                      // that's the end of the client HTTP request, so send a response:
                     if (currentLine.length() == 0)
                     {
                         // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
@@ -639,6 +806,10 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
                         Serial.println("--------headerT:------------");            //print substring to serial monitor
                         Serial.println(headerT);
+                        if (diagnostic_flag){
+                           Serial2.print(">>loop() - ");
+                           Serial2.println(headerT);
+                           }
                         Serial.println("----------------------------");
                         // TODO Delete this line before production
                         Serial.println("password = " + passwordString);
@@ -655,7 +826,8 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 updatePageFlag = false;
                                 changePasswordPageFlag = false;
                                 setTimePageFlag = false;
-                            } else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
+                            } 
+                            else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
                                 {
                                 print_ticket();                         //print weigh ticket
                                 Serial.println("PRINT BUTTON WAS PRESSED ON WEB PAGE");
@@ -796,10 +968,10 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
                                 // success banner
                                 // Save password to password Variable
                                 //pass1.toCharArray(password,30);
-                                passwordString = pass1;
+                                passwordString = pass1;                           
                                 // Save password to EEPROM
-                                EEPROM.writeString(password_addr, pass1.substring(0,20));
-                                EEPROM.commit();                         ////save to eeprom
+                                EEPROM.writeString(password_addr, pass1.substring(0,20));            //save password to eeprom
+                                EEPROM.commit();                                                     //commit to eeprom
                                 }
                             }
 
@@ -1040,7 +1212,6 @@ if (read_keyboard_timer >= 2)                             //read keypad every 20
 
         header = "";                            // Clear the header variable
         save_header = "";
-
         client.stop();                         // Close the connection
         Serial.println("Client disconnected.");//send status message to serial debug window
         Serial.println("");
@@ -1066,7 +1237,12 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
    status = "";                                    //set to null value if not checked
   }
 }
-
+//---------------- check availble size and memory left on SD card --------------------------
+void check_sd_mem(void){     
+           Serial2.println(">>setup() - SD card present");
+           Serial2.printf(">>Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
+           Serial2.printf(">>Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
+           }
 //----------------- Read Time date and send to serial monitor -----------------------------------
 void ReadTime(void){
     DateTime now = rtc.now();
@@ -1086,70 +1262,49 @@ void ReadTime(void){
     Serial.print(':');
     Serial.print(now.second(), DEC);
     Serial.println();
+    
+}
+//------------- display time on LCD upper left corner---------------------------------------------
+void lcd_display_time(void){
+    lcd.setCursor(0,0);
+    lcd.print(current_time);
     }
 
-//------------- display time on LCD ---------------------------------------------
-void lcd_display_time(void){
+//--------------- get time from rtc -------------------------------------------------    
+void get_time(void){
+    String h = "";
+    String m = "";
+    String s = "";
     DateTime now = rtc.now();
-    lcd.setCursor(0,0);
     if (now.hour()<10)                               //add leading zero
-      {lcd.print("0");}
-    lcd.print(now.hour(), DEC);
-    lcd.print(':');
+      {h= "0";}
     if (now.minute()<10)                               //add leading zero
-      {lcd.print("0");}
-    lcd.print(now.minute(), DEC);
-    lcd.print(':');
+      {m = "0";}
     if (now.second()<10)                               //add leading zero
-      {lcd.print("0");}
-    lcd.print(now.second(), DEC);
-    lcd.print("  ");
+      {s = "0";}
+    current_time = h+String(now.hour()) + ":" + m+ String(now.minute()) + ":"+ s + String(now.second());
+   // Serial.println(current_time);
+ 
    }
-//-------------display date on LCD  ----------------------------------------------
+   
+//-------------display date on LCD upper right corner ----------------------------------------------
 void lcd_display_date(void){
-    DateTime now = rtc.now();
     lcd.setCursor(10,0);
+    lcd.println(current_date);
+    }
+
+//---------- get date from rtc --------------------------------------------------------
+void get_date(void){
+    String m = "";
+    String d = "";
+    DateTime now = rtc.now();
     if (now.month() <10)                                  //leading zero for months
-       {lcd.print("0");}
-    lcd.print(now.month(), DEC);
-    lcd.print('/');
+       {m = "0";}
     if (now.day() <10)                                    //leading zero for days
-       {lcd.print("0");}
-    lcd.print(now.day(), DEC);
-    lcd.print('/');
-    lcd.print(now.year(), DEC);
-}
-//-------------- send time stamp to Serial Monitor --------------------------------
-void time_stamp_serial_monitor(void)
-{
- DateTime now = rtc.now();
+       {d= "0";}
+    current_date = m + String(now.month()) + ":" + d+ String(now.day()) + ":" + String(now.year());
+   }
 
-     if (now.hour()<10)                               //add leading zero
-      {Serial.print("0");}
-    Serial.print(now.hour(), DEC);
-    Serial.print(':');
-    if (now.minute()<10)                               //add leading zero
-      {Serial.print("0");}
-    Serial.print(now.minute(), DEC);
-    Serial.print(':');
-    if (now.second()<10)                               //add leading zero
-      {Serial.print("0");}
-    Serial.print(now.second(), DEC);
-
-
-    Serial.print(now.month(), DEC);
-    Serial.print('/');
-    Serial.print(now.day(), DEC);
-    Serial.print('/');
-    Serial.print(now.year(), DEC);
-
-}
-//------------- Free Ram routine ------------------------------------------------------
-//int freeRam () {
-//  extern int __heap_start, *__brkval;
-//  int v;
-//  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-//}
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
               {
@@ -1168,11 +1323,9 @@ void print_ticket(void)
 
                Serial2.write(0x1B);                         //justification: center text
                Serial2.write('a');
-               Serial2.write('1');
+               Serial2.write('1');                           //0= left, 1 = center 2= right
 
-               Serial2.write(0x1B);                         //bold mode on
-               Serial2.write(0x21);
-               Serial2.write(0x38);
+               bold_on();
 
 
                Serial2.write(0x1D);                         //turn smoothing on
@@ -1193,11 +1346,6 @@ void print_ticket(void)
                Serial2.write(0x0A);
 
 
-//----------save data to database -------------------------------------------------------------
-              // weight = "112.56";
-               //line4.toCharArray(,30);
-              // *database [ticket][0] = ;     //save name to data base
-             //  *database [ticket][1] = weight;        //save the weight
 
 //--------- print weight H2 & CS-19 lb mode ---------------------------------------------------
                if(statt == 1 )                                //h2 lb mode
@@ -1270,7 +1418,7 @@ void print_ticket(void)
                Serial2.write(0x0A);                        //line feed
 
                set_text_size(0x00);                        //set text to 1x
-
+               Serial2.print (current_time + "\0x09\0x09\0x09" + current_date);
 //------------ print serial number --------------------------------------------------
                if (checkbox3_status == "checked"){          //is serialized ticket check box checked
                    Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
@@ -1456,9 +1604,7 @@ void print_ticket(void)
      Serial2.write(0x42);                                         //decimal 66
      Serial2.write(0xB0);                                         //length to feed before cut (mm)
      }
-
-
-//--------- clear ooutput buffer ---------------------------------------------------------------------------
+//--------- clear output buffer ---------------------------------------------------------------------------
 void clear_output_buffer(void)
     {int i=0;
      while(i <= 30)
@@ -1466,19 +1612,18 @@ void clear_output_buffer(void)
           i=i+1;
          }
     }
-
 //--------- set printer text size ---------------------------------
-void set_text_size(unsigned int size)                           //set font size on printer
-      {
-      Serial2.write(0x1D);                                      // set text size to small size
-      Serial2.write(0x21);
-      Serial2.write(size);                                      // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
-      }
+//void set_text_size(unsigned int size)                           //set font size on printer
+//      {
+//      Serial2.write(0x1D);                                      // set text size to small size
+//      Serial2.write(0x21);
+//      Serial2.write(size);                                      // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
+//      }
 
 
 //----- set printer for reverse text ------------------------------------
-void set_text_reverse(bool on_off)                            //set or clear reverse text for printer epson command
-      {
+void set_text_reverse(bool on_off){                            //set or clear reverse text for printer epson command
+      
       Serial2.write(0x1D);
       Serial2.write('B');
       if (on_off)
@@ -1486,9 +1631,26 @@ void set_text_reverse(bool on_off)                            //set or clear rev
       else
           Serial2.write('0');
       }
+
+//------------------------------------------------------------------------------
+void recall_eeprom_values(void){
+    line1 = (EEPROM.readString(line1_eeprom_addr));                       //recall values saved in eeprom
+    line2 = (EEPROM.readString(line2_eeprom_addr));
+    line3 = (EEPROM.readString(line3_eeprom_addr));
+    line4 = (EEPROM.readString(line4_eeprom_addr));
+    serial_number = EEPROM.readInt(serial_number_addr);                  //get ticket serial number
+    Serial.println("Load S/N "+ String(serial_number));                  //print serial number to serial monitor
+    cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));        //recall checkbox status (boolean)
+    cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
+    cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
+    cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
+    passwordString = (EEPROM.readString(password_addr));           //retrieve password stored in eeprom
+}
+
+      
 //-----------------------------------------------------------------------------
-void clear_radio_rx_array(void)                               //routine to clear radio rx buffer
-     {int i=0;
+void clear_radio_rx_array(void){                               //routine to clear radio rx buffer
+     int i=0;
      while(i <= 30)
       {radio_rx_array[i] = 0x00;                            //set all 30 locations to 0x00
       i=i+1;
@@ -1498,8 +1660,8 @@ void clear_radio_rx_array(void)                               //routine to clear
 
 
 //----------------------Process radio string if flag is set--------------------------------
-void processRadioString()
-{ int i = 25;
+void processRadioString(){
+  int i = 25;
   no_signal_timer = 0;                                //reset the no signal timer since a reading was sensed
   lock_flag = false;                                  //preset lock flag to false
   while(i >= 3)                                       //search from  the 7 to the 15th character in array
@@ -1552,82 +1714,6 @@ void processRadioString()
   }
 }//void processRadioString()
 
-
-//-------------------------------------------
-
-
-
-
-//void convert_string(void)
-//   {                                      //take 11 byte input string and convert to 14 byte ts string
-//
-//   if(buffer[0] == 0xFF)                 //if string starts with 0xFF this is a weight value to send to remotes and taysys
-//       {
-//
-//       output_string[14] = 0x00;
-//       output_string[13] = 0x0D;               //"cr" carriage return
-//       if (buffer[3] ==0x4c)
-//          {
-//           output_string[12] = 0x48;             //(changes to H when locked)
-//          }
-//       else
-//          {output_string[12] = 0x4D;}             //"M" indicates movement
-//       output_string[11] = 0x47;                //"G" or "N" for gross mode or net mode
-//       output_string[10] = 0x4C;                //"L"  indicates lbs
-//       output_string[9] =  buffer[9];           //hundreths column
-//       output_string[8] =  buffer[8];           //tenths column
-//       output_string[7] =  buffer[7];                //"." decimal point
-//       output_string[6] =  buffer[6];           //value of weight
-//       output_string[5] =  buffer[5];
-//       output_string[4] =  buffer[4];
-//       output_string[3] =  buffer[3];
-//       output_string[2] =  0x20;
-//       output_string[1] =  0x20;
-//       output_string[0] =  0x02;
-//       fprintf(ComB,"%s",output_string);                     //send data out    x = 0;
-//       clear_output_buffer();
-//       }
-//    else
-//       {
-//
-//      fprintf(ComB,"%s",temp_buffer);
-//     }
-//
-//   }*/
-
-
-
-////--------------timer interupt code example ----------------------
-//volatile int interruptCounter;                              //varible that tracks number of interupts
-//int totalInterruptCounter;                                  //counter to track total number of interrupts
-//
-//hw_timer_t * timer = NULL;                                 //in order to configure the timer, we will need
-//                                                           //a pointer to a variable of type hw_timer_t,
-//                                                           //which we will later use in the Arduino setup function.
-//
-//
-//portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;      //we will need to declare a variable of type portMUX_TYPE,
-//                                                           //which we will use to take care of the synchronization
-//                                                           //between the main loop and the ISR, when modifying a shared variable.
-
-//------------------- Timer INterupt  ---------------------------------------------------------------------------------------
-//void IRAM_ATTR onTimer()                                  //this is the actual interuupt(place before void setup() code)
-//  {
-//  portENTER_CRITICAL_ISR(&timerMux);
-//  interruptCounter++;                                      //put code to perform during interrupt here
-//  portEXIT_CRITICAL_ISR(&timerMux);
-//  }
-//
-//void setup() {
-//
-//  Serial.begin(115200);
-//
-//  timer = timerBegin(0, 80, true);                     //"0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
-//  timerAttachInterrupt(timer,&onTimer,               //&onTimer is the function to call when intrrupt occurs,"true" is edge interupted
-//  timerAlarmWrite(timer, 1000000, true);                //interupt every 1000000 times
-//  timerAlarmEnable(timer);                              //this line enables the timer and starts it
-//
-//}
 
 
 //------------------EEPROM examples-------------------------------------------------------------------------------
@@ -1689,14 +1775,7 @@ void processRadioString()
 //  EEPROM.writeString(address, gratitude);
 //  Serial.println(EEPROM.readString(address));
 
-
-
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//=======================================================Sub Routines===============================================================
-
-
-
-
 
 // sample html code for tabs
 //      <ul class="nav nav-pills dark-tabs">
