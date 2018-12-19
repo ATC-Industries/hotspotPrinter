@@ -107,6 +107,7 @@ WiFiServer server(80);          // Set web server port number to 80
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
+String current_date;
 String current_time; 
  char* system_time;
  char sSQL[50];                 //varible that holds the sql string
@@ -191,12 +192,13 @@ byte DownArrow[8] = {
 };
 
 //----------funtion prototypes -------------------------------------------------
+void get_time(void);
 void cut_paper(void);
 void check_sd_mem(void);
 void checkboxStatus(String h, bool& is_checked, String& status, String number);
 void lcd_display_date(void);
 void lcd_display_time(void);
-void time_stamp_serial_monitor(void);
+
 void recall_eeprom_values(void);
 void clear_output_buffer(void);
 void recall_eeprom_values(void);
@@ -306,7 +308,6 @@ void setup(){
 
 //------------- initialize the EEPROM --------------------------------------
     if (!EEPROM.begin(EEPROM_SIZE)){                                 //set aside memory for eeprom size
-        time_stamp_serial_monitor();
         Serial.println("failed to intialize EEPROM");               //display error to monitor
         Serial2.println("Error - failed to intialize EEPROM");      //send error code to printer
         }
@@ -483,34 +484,40 @@ void setup(){
     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')"); 
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
+    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')"); 
+  
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('4','4','3','0','8','689','550')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('5','4','4','3','4','389','880')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('6','2','2','2','2','769','770')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('7','5','4','1','5','359','444')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('8','4','4','1','3','560','555')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('9','5','2','3','6','1686','1666')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('10','5','3','0','8','875','770')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('11','5','4','3','4','890','789')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('12','5','3','2','1','1012','912')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('13','5','4','0','5','359','570')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('14','4','4','1','3','790','650')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('15','5','5','3','6','1220','1098')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('16','4','3','0','8','689','567')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('17','4','4','3','4','389','879')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('18','2','2','2','2','769','789')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('19','5','4','1','5','359','456')");     //add records
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('20','4','4','1','3','560','567')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('21','5','2','3','6','1686','1678')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('22','5','3','0','8','875','789')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('23','5','4','3','4','900','897')");
+   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('24','4','3','2','1','1012','987')");
 
- /*  
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('98','5','4','0','5','359','570')");     //add records
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('97','4','4','1','3','790','650')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('96','5','5','3','6','1220','1098')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('95','4','3','0','8','689','550')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('94','4','4','3','4','389','880')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('93','2','2','2','2','769','770')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('92','5','4','1','5','359','444')");     //add records
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('91','4','4','1','3','560','555')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('90','5','2','3','6','1686','1666')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('89','5','3','0','8','875','770')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('88','5','4','3','4','890','789')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('87','5','3','2','1','1012','912')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('85','5','4','0','5','359','570')");     //add records
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('84','4','4','1','3','790','650')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('83','5','5','3','6','1220','1098')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('82','4','3','0','8','689','567')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('81','4','4','3','4','389','879')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('80','2','2','2','2','769','789')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('79','5','4','1','5','359','456')");     //add records
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('78','4','4','1','3','560','567')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('77','5','2','3','6','1686','1678')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('76','5','3','0','8','875','789')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('75','5','4','3','4','900','897')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('74','4','3','2','1','1012','987')");
-
-   */
+  
    Serial.printf("----List Tables ---------\n\r");   
      db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
     Serial.printf("----End of Tables ---------\n\r");  
@@ -570,7 +577,9 @@ void loop(){
 
 //-------- 1 second timer-----------------------------
   if (ClockTimer >=10)                                  //update clock every one second
-      {lcd_display_time();                              //display time upper left corner of lcd
+      {get_time();
+       get_date();
+       lcd_display_time();                              //display time upper left corner of lcd
        lcd_display_date();                              //display date upper right corner of lcd
        ClockTimer = 0;                                  //reset one second timer used for clock updates
       }
@@ -578,7 +587,7 @@ void loop(){
 
 //--------- no signal timer -------(5 seconds)----------
    if (totalInterruptCounter >=50)
-      { lcd_display_time();
+      { //lcd_display_time();
         totalInterruptCounter = 0;                        //reset counter
         if (++ no_signal_timer >= 2)                      //if no signal this timer times out
            { statt = 0;                                   //set display mode to 0 so "No Signal" will be displayed
@@ -1257,62 +1266,44 @@ void ReadTime(void){
 }
 //------------- display time on LCD upper left corner---------------------------------------------
 void lcd_display_time(void){
-    DateTime now = rtc.now();
     lcd.setCursor(0,0);
-    if (now.hour()<10)                               //add leading zero
-      {lcd.print("0");}
-    lcd.print(now.hour(), DEC);
-    lcd.print(':');
-    if (now.minute()<10)                               //add leading zero
-      {lcd.print("0");}
-    lcd.print(now.minute(), DEC);
-    lcd.print(':');
-    if (now.second()<10)                               //add leading zero
-      {lcd.print("0");}
-    lcd.print(now.second(), DEC);
-    lcd.print("  ");
-    
-    
-    current_time = String(now.hour()) + ":" + String(now.minute()) + ":" + String(now.second()) + "\n";
+    lcd.print(current_time);
+    }
 
+//--------------- get time from rtc -------------------------------------------------    
+void get_time(void){
+    String h = "";
+    String m = "";
+    String s = "";
+    DateTime now = rtc.now();
+    if (now.hour()<10)                               //add leading zero
+      {h= "0";}
+    if (now.minute()<10)                               //add leading zero
+      {m = "0";}
+    if (now.second()<10)                               //add leading zero
+      {s = "0";}
+    current_time = h+String(now.hour()) + ":" + m+ String(now.minute()) + ":"+ s + String(now.second());
+   // Serial.println(current_time);
  
    }
+   
 //-------------display date on LCD upper right corner ----------------------------------------------
 void lcd_display_date(void){
-    DateTime now = rtc.now();
     lcd.setCursor(10,0);
+    lcd.println(current_date);
+    }
+
+//---------- get date from rtc --------------------------------------------------------
+void get_date(void){
+    String m = "";
+    String d = "";
+    DateTime now = rtc.now();
     if (now.month() <10)                                  //leading zero for months
-       {lcd.print("0");}
-    lcd.print(now.month(), DEC);
-    lcd.print('/');
+       {m = "0";}
     if (now.day() <10)                                    //leading zero for days
-       {lcd.print("0");}
-    lcd.print(now.day(), DEC);
-    lcd.print('/');
-    lcd.print(now.year(), DEC);
-}
-//-------------- send time stamp to Serial Monitor --------------------------------
-void time_stamp_serial_monitor(void){
-    DateTime now = rtc.now();                        //get current time and date
-    if (now.hour()<10)                               //add leading zero
-      {Serial.print("0");}
-    Serial.print(now.hour(), DEC);
-    Serial.print(':');
-    if (now.minute()<10)                               //add leading zero
-      {Serial.print("0");}
-    Serial.print(now.minute(), DEC);
-    Serial.print(':');
-    if (now.second()<10)                               //add leading zero
-      {Serial.print("0");}
-    Serial.print(now.second(), DEC);
-
-
-    Serial.print(now.month(), DEC);
-    Serial.print('/');
-    Serial.print(now.day(), DEC);
-    Serial.print('/');
-    Serial.print(now.year(), DEC);
-}
+       {d= "0";}
+    current_date = m + String(now.month()) + ":" + d+ String(now.day()) + ":" + String(now.year());
+   }
 
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
@@ -1334,9 +1325,7 @@ void print_ticket(void)
                Serial2.write('a');
                Serial2.write('1');                           //0= left, 1 = center 2= right
 
-               Serial2.write(0x1B);                         //bold mode on
-               Serial2.write(0x21);
-               Serial2.write(0x38);
+               bold_on();
 
 
                Serial2.write(0x1D);                         //turn smoothing on
@@ -1429,7 +1418,7 @@ void print_ticket(void)
                Serial2.write(0x0A);                        //line feed
 
                set_text_size(0x00);                        //set text to 1x
-
+               Serial2.print (current_time + "\0x09\0x09\0x09" + current_date);
 //------------ print serial number --------------------------------------------------
                if (checkbox3_status == "checked"){          //is serialized ticket check box checked
                    Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
@@ -1624,12 +1613,12 @@ void clear_output_buffer(void)
          }
     }
 //--------- set printer text size ---------------------------------
-void set_text_size(unsigned int size)                           //set font size on printer
-      {
-      Serial2.write(0x1D);                                      // set text size to small size
-      Serial2.write(0x21);
-      Serial2.write(size);                                      // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
-      }
+//void set_text_size(unsigned int size)                           //set font size on printer
+//      {
+//      Serial2.write(0x1D);                                      // set text size to small size
+//      Serial2.write(0x21);
+//      Serial2.write(size);                                      // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
+//      }
 
 
 //----- set printer for reverse text ------------------------------------

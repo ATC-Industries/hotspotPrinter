@@ -1,6 +1,6 @@
 //routines to print data results to printer
 
-
+//64 char wide in smallest font size
 
 
 
@@ -13,6 +13,11 @@
 void print_results(void);
 void paper_cut(void);
 void set_text_size(unsigned int size);  // oled set text size routine
+void bold_on(void);
+void bold_off(void);
+void set_text_size(unsigned int size); 
+
+
 extern String current_time;
 extern String results[100][9];          //array the holds sql data
 extern String line1 = "";              // String to hold value of Line 1 input box
@@ -34,10 +39,7 @@ void print_results(){
     Serial2.write('0');
     
     set_text_size(0X00);
-//    Serial2.write(0x1D);                         // set text size to small size
-//    Serial2.write(0x21);
-//    Serial2.write(0x00);                           // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
-    
+
 
    int r = 0;
    Serial2.print("--------------------------");
@@ -65,23 +67,19 @@ void print_results(){
 //============================ Print Weigh in Results =======================================
 void print_weigh_results(){
     int r = 0;
-    Serial2.write(0x1B);                          //A Font 
+    Serial2.write(0x1B);                          //B Font 
     Serial2.write('M');
     Serial2.write('0x01');                       //(must be font 01 for pica print)
     Serial2.write(0x1B);                         //upside down printing turn off
     Serial2.write('{');
     Serial2.write('0');
-    Serial2.write(0x1D);                         // set text size to 2x size
-    Serial2.write(0x21);
-    Serial2.write(0x11);                           // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
+    set_text_size(0X11);                         // set text size to 2x size
     Serial2.write(0x1B);                         //justification: center text
     Serial2.write('a');
     Serial2.write('1');                           //0= left, 1 = center 2= right
     Serial2.println("Weigh in results");
     Serial2.println("");                         //line feed
-    Serial2.write(0x1D);                         // set text size to small size
-    Serial2.write(0x21);
-    Serial2.write(0x00);                           // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
+    set_text_size(0X00);                         // set text size to small size
     Serial2.println(line1);
     Serial2.println(line2);
     Serial2.println(line3);
@@ -94,15 +92,11 @@ void print_weigh_results(){
     Serial2.print("--------------------------");
     Serial2.print(rec);
     Serial2.println(" records-----------------------------");
-     Serial2.write(0x1B);                         //emphasized on
-    Serial2.write('E');
-    Serial2.write('0x01');    
+    bold_on();
     Serial2.println("  ID  Name           T   A   S   L    Act      Adj   Place"); //print column titles
     Serial2.println("");
-   r=0;
-    Serial2.write(0x1B);                         //emphasized off
-    Serial2.write('E');
-    Serial2.write('0x00');   
+    r=0;
+    bold_off();
     
     while (r <= rec-1){                                                       //Print all records found in query
         if(results[r][0].length() == 1)                                      //insert padding 
@@ -141,7 +135,7 @@ void print_weigh_results(){
         r++;                                                                  //advance to next record
     }
    Serial2.println("");                                                       //line feed
-   Serial2.println("---------------- Report by Pro Tournament Scales ----------------");     
+   Serial2.println("---------------- Report by Pro Tournament Scales ---------------");     
     Serial2.println (current_time); 
  
    paper_cut();                                                               //cut paper
@@ -153,6 +147,20 @@ void print_weigh_results(){
         
   
 //--------------------------------------------------------------------------------------------
+void bold_on (void){ 
+  Serial2.write(0x1B);                         //emphasized on
+    Serial2.write('E');
+    Serial2.write('0x01');  
+}  
+void bold_off (void){ 
+  Serial2.write(0x1B);                         //emphasized off
+    Serial2.write('E');
+    Serial2.write('0x00');  
+}   
+ 
+ 
+ 
+ 
  void paper_cut(void)
      {Serial2.write(0x1D);                                        // "GS" cut paper
      Serial2.write('V');                                          //"V"
@@ -160,7 +168,12 @@ void print_weigh_results(){
      Serial2.write(0xB0);                                         //length to feed before cut (mm)
      }
 
-
+void set_text_size(unsigned int size)                           //set font size on printer
+      {
+      Serial2.write(0x1D);                                      // set text size to small size
+      Serial2.write(0x21);
+      Serial2.write(size);                                      // sizes - 00= 1,11 = 2x,22 = 3x,33 = 4x ,44= 5x
+      }
 
 
 #endif        
