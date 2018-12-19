@@ -134,9 +134,9 @@ void alert(WiFiClient client, String context, String contentTop, String heading 
 
 void stateBox(WiFiClient client) {
 client.println(R"(
-  <div class="form-group col-md-4">
+  <div class="form-group">
     <label for="inputState">State</label>
-    <select id="inputState" class="form-control">
+    <select id="inputState" class="form-control" name="inputState">
 	<option value="AL">Alabama</option>
 	<option value="AK">Alaska</option>
 	<option value="AZ">Arizona</option>

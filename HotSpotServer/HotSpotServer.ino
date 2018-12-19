@@ -51,6 +51,8 @@ pin assignment                                      5 volt----------------------
 #include <stdlib.h>
 #include <sqlite3.h>            //database engine https://github.com/siara-cc/esp32_arduino_sqlite3_lib
 #include <WiFi.h>               // Load Wi-Fi library
+#include "ESPAsyncWebServer.h"
+#include "SPIFFS.h"
 #include <EEPROM.h>             //driver for eeprom
 //------ files for sd card -----------------------------------------------------
 #include <Update.h>             //firmware uploader
@@ -103,7 +105,9 @@ const int VERSION_NUMBER[3] = {0,0,4};   // [MAJOR, MINOR, PATCH]
 const char* ssid     = "ProTournament";
 //char* password = "123456789";
 String passwordString = "123456789";
-WiFiServer server(80);          // Set web server port number to 80
+//WiFiServer server(80);          // Set web server port number to 80
+AsyncWebServer server(80);
+
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
@@ -243,7 +247,6 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
 void setup(){
     listDir(SD, "/", 2);                      //SD card directory listing, '2' = 2 levels deep
     sqlite3_initialize();                     //start the database engine
-    sqlite3 *db1;                            //declare varible as a sqlite3 file
     Wire.begin();                             //start i2c for RTC
 
     //---------- declare input buttons with pullup -----------------------------
@@ -492,7 +495,7 @@ void setup(){
      db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
      db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
      db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')");
-   
+
    // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
    // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
    // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
@@ -540,7 +543,8 @@ void setup(){
 //     db_exec(db3,sSQL);
 //      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);             //search database by WEighin id
 //     db_exec(db3,sSQL);
-    sqlite3_close(db3);                                                           //close database
+    sqlite3_close(db3);                                                         //close database
+
      int r = 0;
      Serial.printf("----array values -----  %d records ------\n\r",rec);
 
@@ -557,6 +561,66 @@ void setup(){
      Serial.printf("---------- end of array ---------------------");
 
 ///Serial2.print("\0x010\0x04\0x04");    //check paper roll status/ reply 0x6C = out of paper.....  0x0c low on paper
+
+
+
+// ASYNC Testing
+if(!SPIFFS.begin()){
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+}
+
+server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/index.html", "text/html");
+});
+
+server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/login.html", "text/html");
+});
+
+// Route to load style.css file
+server.on("/signin.css", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/signin.css", "text/css");
+});
+
+// Route to load bootstrap.css file
+server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/bootstrap.min.css", "text/css");
+});
+
+// Route to load logo file
+server.on("/pts.png", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/pts.png", "file");
+});
+
+// Route to load favicon.ico file
+server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/favicon.ico", "file");
+});
+
+// Route to load bootstrap.css file
+server.on("/jquery-3.3.1.slim.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/jquery-3.3.1.slim.min.js", "text/html");
+});
+
+// Route to load bootstrap.css file
+server.on("/popper.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/popper.min.js", "text/html");
+});
+
+// Route to load bootstrap.css file
+server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/bootstrap.min.js", "text/html");
+});
+
+server.begin();
+
+
+
+
+
+
+
 
 
 //---------------------------------------------------------------
@@ -642,6 +706,7 @@ if (read_keyboard_timer >= 2)                                             //read
          openDb("/sd/PTS.db", &db3);                                     //open the database
          db_exec(db3, "SELECT * FROM Angler ");   //query the angler list and sort by boat numb decending
          sqlite3_close(db3);                                             //close database
+
          print_results();                                                //send results to printer
          delay(1000);                                                    //delay, so 2 copies do not print
          if (diagnostic_flag)
@@ -661,6 +726,7 @@ if (read_keyboard_timer >= 2)                                             //read
          openDb("/sd/PTS.db", &db3);                                     //open the database
          db_exec(db3, "SELECT Angler.id,Angler.FirstName,Angler.LastName,weighin.totalFish,weighin.liveFish,weighin.shortFish,weighin.late,weighin.weight,weighin.adj_weight FROM angler INNER JOIN Weighin on Weighin.ID = Angler.ID ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
          sqlite3_close(db3);                                             //close database
+
         //Serial2.print("\x1b\x44\x08\x0C\x10\0x14\0x18\0x1C\x00"); // Set tab stops at 8, 12,16,20,24,28  characters
        print_weigh_results();
 
@@ -767,541 +833,540 @@ if (read_keyboard_timer >= 2)                                             //read
 
 //-------------- start client routine ----------------------------------------------------------------
 
-
-
-    WiFiClient client = server.available();           // Listen for incoming clients
-    String updateMessage = "";                        //create a varible string
-    if (client)                                       //if client is connected
-    {                                                 // If a new client connects (tablet or cell phone logs on)
-        Serial.println("New Client.");                // print a message out in the serial port monitor
-        String currentLine = "";                      // make a String to hold incoming data from the client
-        if (client.connected()){
-            if (diagnostic_flag){                     // ^^^ diagnostic code
-                Serial2.println(">>loop()- Client connected...");}
-            }
-        while (client.connected())
-        {                                             // loop while the client's connected
-
-
-            if (client.available())
-            {         // if there's bytes to read from the client,
-                char c = client.read();               // read a byte, then
-                Serial.write(c);                      // print it out the serial monitor
-                header += c;                          //add character to the header string
-                if (c == '\n')
-                //if (header.length() > 500)
-                {                                     // if the byte is a newline character
-                                                      // if the current line is blank, you got two newline characters in a row.
-                                                      // that's the end of the client HTTP request, so send a response:
-                    if (currentLine.length() == 0)
-                    {
-                        // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-                        // and a content-type so the client knows what's coming, then a blank line:
-                        client.println("HTTP/1.1 200 OK");
-                        client.println("Content-type:text/html");
-                        client.println("Connection: close");
-                        client.println();
-
-                        //-----read the returned information from form when submit button is pressed and save to memory--------
-                        String headerT = header.substring(0,header.indexOf("Host:")); //create substring from begining to the word 'Host:'
-                        Serial.print("running line 807");
-                        Serial.println("--------headerT:------------");            //print substring to serial monitor
-                        Serial.println(headerT);
-                        if (diagnostic_flag){
-                           Serial2.print(">>loop() - ");
-                           Serial2.println(headerT);
-                           }
-                        Serial.println("----------------------------");
-                        // TODO Delete this line before production
-                        Serial.println("password = " + passwordString);
-                        // Don't display date forms if not on HTML5
-                        if(!(header.indexOf("Mozilla/5.") >= 0)) {
-                          bool allowUserDefinedDate = false;
-                        }
-                        if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
-                        {
-                            if (headerT.indexOf("settings?") >= 0)      //if header contains "settings"
-                            {
-                                settingsPageFlag = true;
-                                printPageFlag = false;
-                                updatePageFlag = false;
-                                changePasswordPageFlag = false;
-                                setTimePageFlag = false;
-                                addAnglerPageFlag = false;
-                            }
-                            else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
-                                {
-                                print_ticket();                         //print weigh ticket
-                                Serial.println("PRINT BUTTON WAS PRESSED ON WEB PAGE");
-                                settingsPageFlag = false;
-                                printPageFlag = true;
-                                updatePageFlag = false;
-                                setTimePageFlag = false;
-                                changePasswordPageFlag = false;
-                                addAnglerPageFlag = false;
-                                }
-                             else if (headerT.indexOf("update?") >= 0)
-                                {
-                                settingsPageFlag = false;
-                                printPageFlag = false;
-                                updatePageFlag = true;
-                                changePasswordPageFlag = false;
-                                setTimePageFlag = false;
-                                addAnglerPageFlag = false;
-                                }
-                            else if (headerT.indexOf("checkForUpdate?") >= 0)
-                                {
-                                checkForUpdateFirmware(updateMessage);
-                                }
-                            else if (headerT.indexOf("doUpdate") >= 0)
-                            {
-                                String strIndex =  header.substring(header.indexOf("doUpdate")+8,header.indexOf("?"));//parse out the varible strings for the the 4 lines
-                                int index = strIndex.toInt();
-                                updateFirmware(updateMessage, arrayOfUpdateFiles[index]);
-                            }
-                            else if (headerT.indexOf("changePassword?") >= 0)
-                               {
-                               settingsPageFlag = false;
-                               printPageFlag = false;
-                               updatePageFlag = false;
-                               changePasswordPageFlag = true;
-                               setTimePageFlag = false;
-                               addAnglerPageFlag = false;
-                               }
-                            else if (headerT.indexOf("setDateTime?") >= 0)
-                                {
-                                settingsPageFlag = false;
-                                printPageFlag = false;
-                                updatePageFlag = false;
-                                changePasswordPageFlag = false;
-                                setTimePageFlag = true;
-                                addAnglerPageFlag = false;
-                                }
-                            else if (headerT.indexOf("addAngler?") >= 0)
-                                {
-                                settingsPageFlag = false;
-                                printPageFlag = false;
-                                updatePageFlag = false;
-                                changePasswordPageFlag = false;
-                                setTimePageFlag = false;
-                                addAnglerPageFlag = true;
-                                }
-                            else
-                                {
-                                settingsPageFlag = false;
-                                printPageFlag = false;
-                                updatePageFlag = false;
-                                changePasswordPageFlag = false;
-                                setTimePageFlag = false;
-                                addAnglerPageFlag = false;
-                                }
-                        }
-                        // Looks for Line1 in header and then processes the SETTINGS results if found
-                        if ((headerT.indexOf("Line1=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'Line1=' is found and text 'favicon' is not found
-                        {
-                            Serial.println("********found it (screen one) *********************************************");
-                            line1 =  header.substring(header.indexOf("Line1=")+6,header.indexOf("&Line2="));//parse out the varible strings for the the 4 lines
-                            line2 =  header.substring(header.indexOf("Line2=")+6,header.indexOf("&Line3="));
-                            line3 =  header.substring(header.indexOf("Line3=")+6,header.indexOf("&Line4="));
-                            // Check if line 4 is end of data or if checkbox info follows
-                            if (headerT.indexOf("&check") >= 0)
-                            {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf("&check"));}
-                            else
-                            {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf(" HTTP"));}
-
-                            // Check if checkbox is checked
-                            checkboxStatus(headerT, cb_print_2_copies, checkbox1_status, "1");
-                            checkboxStatus(headerT, cb_print_signature_line, checkbox2_status, "2");
-                            checkboxStatus(headerT, cb_serial_ticket, checkbox3_status, "3");
-                            checkboxStatus(headerT, cb_print_when_locked, checkbox4_status, "4");
-
-                            line1 = char_replace_http(line1); //remove and replace http characters with space
-                            line2 = char_replace_http(line2);
-                            line3 = char_replace_http(line3);
-                            line4 = char_replace_http(line4);
-                            //-----save varibles to eeprom---------------------------
-                            EEPROM.writeString(line1_eeprom_addr, line1.substring(0,40)); //save input box info after to trimming
-                            EEPROM.writeString(line2_eeprom_addr, line2.substring(0,40));
-                            EEPROM.writeString(line3_eeprom_addr, line3.substring(0,40));
-                            EEPROM.writeString(line4_eeprom_addr, line4.substring(0,40));
-
-                            EEPROM.writeBool(checkbox1_eeprom_addr,cb_print_2_copies); //boolean true if checked false if not checked
-                            EEPROM.writeBool(checkbox2_eeprom_addr,cb_print_signature_line);
-                            EEPROM.writeBool(checkbox3_eeprom_addr,cb_serial_ticket);
-                            EEPROM.writeBool(checkbox4_eeprom_addr,cb_print_when_locked);
-                            EEPROM.commit();                         ////save to eeprom
-
-                            // ATC: I don't think we need the next 4 lines anymore as I belive the checkboxStatus
-                            //      function 4 blocks above sets the indivudule status. both the bool variable and
-                            //      the string variable.  I leave this REMed out for now but should be deleted if no
-                            //      adverse effects are detected.
-                            // cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";
-                            // cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
-                            // cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
-                            // cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
-                            //-------------- display varibles on serial monitor  -----------------------------------
-                            Serial.println("********START HEADER*********************************************");
-                            Serial.println(header);
-                            Serial.println("********END HEADER*********************************************");
-                            Serial.println(line1);
-                            Serial.println(line2);
-                            Serial.println(line3);
-                            Serial.println(line4);
-                            Serial.println("Checkbox1: " + checkbox1_status);
-                            Serial.println("Checkbox2: " + checkbox2_status);
-                            Serial.println("Checkbox3: " + checkbox3_status);
-                            Serial.println("Checkbox4: " + checkbox4_status);
-
-                        }
-                        // Looks for pw in header and then processes the password results if found
-                        else if ((headerT.indexOf("pw=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
-                        {
-                            String pass1;
-                            String pass2;
-                            // Process password change logic
-                            pass1 =  header.substring(header.indexOf("pw=")+3,header.indexOf("&pw2="));//parse out the varible strings for the the 2 passwords
-                            pass2 =  header.substring(header.indexOf("pw2=")+4,header.indexOf(" HTTP"));
-
-                            // check passwords match and are long enough
-                            if (pass1 != pass2)
-                            {
-                                passwordMessage = "Passwords Don't Match";
-                                passSuccess = false;
-                                // Fail Banner Passwords don't match
-                            } else
-                            {
-                                if (pass1.length() < 8) {
-                                    passwordMessage = "Passwords needs to be 8 or more characters.";
-                                    passSuccess = false;
-                                    // Fail Banner Password too short
-                                } else if (pass1.length() > 20) {
-                                    passwordMessage = "Passwords needs to be 20 or less characters.";
-                                    passSuccess = false;
-                                    // Fail Banner Password too long
-                                } else {
-                                    passwordMessage = "Password was successfully changed.";
-                                    passSuccess = true;
-                                // success banner
-                                // Save password to password Variable
-                                //pass1.toCharArray(password,30);
-                                passwordString = pass1;
-                                // Save password to EEPROM
-                                EEPROM.writeString(password_addr, pass1.substring(0,20));            //save password to eeprom
-                                EEPROM.commit();                                                     //commit to eeprom
-                                }
-                            }
-
-                        }
-                        // Looks for date in header and then processes the date results if found
-                        else if ((headerT.indexOf("date=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
-                        {
-                            String date;
-                            // Parse EPCOH time from header
-                            date =  header.substring(header.indexOf("date=")+5,header.indexOf(" HTTP"));
-                            date = char_replace_http(date);
-                            Serial.println("date is: " + date);
-
-                            // Date in form Thu Nov 15 2018 15:54:19 GMT-0500 (EST)
-                            //              012345678901234567890123456789012345678
-                            //              Fri Aug 03 2018 02:57:46 GMT-0400 (EDT)
-                            int year = date.substring(11,15).toInt();
-                            String monthStr = date.substring(4,7);
-                            int month;
-                            if (monthStr == "Jan") {month = 1;}
-                            else if (monthStr == "Feb") {month = 2;}
-                            else if (monthStr == "Mar") {month = 3;}
-                            else if (monthStr == "Apr") {month = 4;}
-                            else if (monthStr == "May") {month = 5;}
-                            else if (monthStr == "Jun") {month = 6;}
-                            else if (monthStr == "Jul") {month = 7;}
-                            else if (monthStr == "Aug") {month = 8;}
-                            else if (monthStr == "Sep") {month = 9;}
-                            else if (monthStr == "Oct") {month = 10;}
-                            else if (monthStr == "Nov") {month = 11;}
-                            else {month = 12;}
-                            int day = date.substring(8,10).toInt();
-                            int hour = date.substring(16,18).toInt();
-                            int minute = date.substring(19,21).toInt();
-                            int second = date.substring(22,24).toInt();
-                            Serial.println("year is: " + String(year));
-                            Serial.println("month is: " + String(month));
-                            Serial.println("day is: " + String(day));
-                            Serial.println("hour is: " + String(hour));
-                            Serial.println("minute is: " + String(minute));
-                            Serial.println("second is: " + String(second));
-
-                            rtc.adjust(DateTime(year, month, day, hour, minute, second));
-                        }
-                        // Looks for userDate in header and then processes the date results if found
-                        else if ((headerT.indexOf("UserDate=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
-                        {
-                            String date;
-                            String time;
-                            // Parse user date and time from header
-                            date = header.substring(header.indexOf("UserDate=")+9,header.indexOf("&UserTime"));
-                            time = header.substring(header.indexOf("UserTime=")+9,header.indexOf(" HTTP"));
-                            date = char_replace_http(date);
-                            time = char_replace_http(time);
-                            int year = date.substring(0,4).toInt();
-                            int month = date.substring(5,7).toInt();
-                            int day = date.substring(8).toInt();
-                            Serial.println("date is: " + date);
-                            Serial.println("time is: " + time);
-                            Serial.println("year is: " + String(year));
-                            Serial.println("month is: " + String(month));
-                            Serial.println("day is: " + String(day));
-                            int hour = time.substring(0,2).toInt();
-                            int minute = time.substring(3).toInt();
-                            Serial.println("hour is: " + String(hour));
-                            Serial.println("minute is: " + String(minute));
-
-                            rtc.adjust(DateTime(year, month, day, hour, minute, 0));
-                        }
-                        else if ((headerT.indexOf("first_Name=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'first_name=' is found and text 'favicon' is not found
-                        {                            
-                            String first_Name =  header.substring(header.indexOf("first_Name=")+11,header.indexOf("&last_Name="));//parse out the varible strings for the the 4 lines
-                            String last_Name =  header.substring(header.indexOf("last_Name=")+10,header.indexOf("&middle_Name="));
-                            String middle_Name =  header.substring(header.indexOf("middle_Name=")+12,header.indexOf("&address1="));
-                            String address1 =  header.substring(header.indexOf("address1=")+9,header.indexOf("&address2="));
-                            String address2 =  header.substring(header.indexOf("address2=")+9,header.indexOf("&city="));
-                            String city =  header.substring(header.indexOf("city=")+5,header.indexOf("&zip="));
-                            String zip =  header.substring(header.indexOf("zip=")+4,header.indexOf("&cell_phone="));
-                            String cell_phone =  header.substring(header.indexOf("cell_phone=")+11,header.indexOf("&home_phone="));
-                            String home_phone =  header.substring(header.indexOf("home_phone=")+11,header.indexOf("&ssn="));
-                            String ssn =  header.substring(header.indexOf("ssn=")+4,header.indexOf("&dob="));
-                            String dob =  header.substring(header.indexOf("dob=")+4,header.indexOf("&email="));
-                            String email =  header.substring(header.indexOf("email=")+6,header.indexOf(" HTTP"));
-                            //TODO
-                            //FIX
-                            String inputState = "IN";  //  not working right now so everything gets IN for now
 //
-//                            String tempStr = "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,Email)Values('" +   first_Name + "','" + last_Name + "','" + middle_Name + "','" + address1 + "','" + address2 + "','" + city + "','" + inputState + "','" + zip + "','" + cell_phone + "','" + home_phone + "','" + ssn + "','" + dob + "','" + email + "')";
-//                            char* tempChar = string2char(tempStr);
-//                            Serial.println(first_Name);
-//                            Serial.println("Testing and stuff");
-//                            Serial.println(tempStr);
-//                            sqlite3 *db3;                                                                        //declare a pointer to the data base
-//                            openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
-//                            Serial.println("before db_exec");
-//                          db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Jones','Who')");
-//                            //db_exec(db3, tempChar);
 //
-//                            Serial.println("after db_exec");
-//                            sqlite3_close(db3);
-//                            Serial.println("after sqlite3_close");
-                                                 // Sample code to add to DB
-                        //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
-
-                           //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
-                        // ATC: This else statement is totally unnecessary and only
-                        //      serves as a place holder for future expansion
-                      }
-                        else    //if header did not contain text "line1" then run code in else statment below
-                        {
-                                // do some stuff
-                        }
-//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-//--RENDER HTML-----------------------------------------------------------------
-//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-                        htmlHead(client);
-                        // svg PTS logo
-                        printPTSLogo(client);
-//--RENDER SETTINGS PAGE--------------------------------------------------------
-                        if (settingsPageFlag) {
-                            pageTitle(client, "Settings");
-
-                            // Set date and time button
-                            startForm(client, "/setDateTime");
-                            button(client, "Set the Date and Time", "info");
-                            endForm(client);
-                            //startForm(client, "[action]")
-                            startForm(client, "/");
-                            //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
-                            inputBox(client, "Line1", line1, "Top Line", false, "Example: The Tournament Name");
-                            inputBox(client, "Line2", line2, "Second Line", true, "Example: The Tournament Location");
-                            inputBox(client, "Line3", line3, "Third Line", true, "Example: The Tournament Dates");
-                            inputBox(client, "Line4", line4, "Bottom Line", true, "Example: A sponsor message");
-                            //checkBox(client, "[String name of variable]", [actual variable], "[String label]")
-                            checkBox(client, "checkbox1", checkbox1_status, "Print 2 Copies");
-                            checkBox(client, "checkbox2", checkbox2_status, "Print signature line");
-                            checkBox(client, "checkbox3", checkbox3_status, "Serialized ticket");
-                            checkBox(client, "checkbox4", checkbox4_status, "Optional Parameter");
-                            // Submit Button
-                            button(client, "submit", "primary");
-                            endForm(client);
-
-                            // if the startup flag that determined if an SD card is present then display the update button
-                            if(isSDCardPresent)
-                            {
-                              // update button
-                              startForm(client, "/update");
-                              button(client, "Update Firmware", "success");
-                              endForm(client);
-                            }
-                            // change password button
-                            startForm(client, "/changePassword");
-                            button(client, "Change Password", "info");
-                            endForm(client);
-                        }
-//--SET TIME PAGE---------------------------------------------------------------
-                        else if (setTimePageFlag) {
-                            pageTitle(client, "Set Time and Date");
-                            //startForm(client, "[action]")
-                            startForm(client, "/settings");
-
-                            // Pull the date from the device and send through header
-                            client.println(R"###(
-                            <button style="margin-bottom:5px;" type="submit" value="Use Date/Time from this device" class="btn btn-success btn-lg btn-block" onclick="getElementById('date').value=Date()">Use Date/Time from this device</button>
-                            <input type="hidden" style="visibility: hidden;" class="form-control" name="date" id="date">
-                            )###");
-                            endForm(client);
-
-                            if(allowUserDefinedDate){
-                                // Allow user to enter date and time then send
-                                startForm(client, "/settings");
-                                //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
-                                inputBox(client, "UserDate", "", "Date", false, "", "date");
-                                inputBox(client, "UserTime", "", "Time", false, "", "time");
-                                button(client, "Update Date", "primary");
-                                endForm(client);
-                            }
-
-                            // Cancel button
-                            startForm(client, "/settings");
-                            button(client, "Cancel", "danger");
-                            endForm(client);
-                        }
-
-
-//--RENDER UPDATE PAGE----------------------------------------------------------
-                        else if (updatePageFlag) {
-                            pageTitle(client, "Update Firmware");
-                            //  Add breif instructions
-                            alert(client, "primary", "This will update the firmare on your device.<br>Insert an SD card with a version of the firmware loaded and click \"Check for Update\".", "" , "NOTE: you may need to reconnect to this wifi network after updating.");
-                            // Update now button
-                            if(updateMessage == ""){
-                              startForm(client, "/checkForUpdate");
-                              button(client, "Check for Update", "success");
-                              endForm(client);
-                            }
-                            // Print message to user dynamically
-                            if(updateMessage != ""){
-                                alert(client, "danger", updateMessage, "ERROR!", "Please make sure you have loaded the update software in the root directory of the SD card." );
-                                startForm(client, "checkForUpdate");
-                                button(client, "Retry", "success");
-                                endForm(client);
-                            }
-                            // Print table of update files
-                            if (arrayOfUpdateFiles[0] != ""){
-                                printTableOfUpdateFiles(client, arrayOfUpdateFiles);
-                            }
-                            // Cancel button
-                            startForm(client, "/settings");
-                            button(client, "Cancel", "danger");
-                            endForm(client);
-                        }
-//--CHANGE PASSWORD PAGE--------------------------------------------------------
-
-                        else if (changePasswordPageFlag) {
-                            pageTitle(client, "Change Password");
-                            if (passwordMessage != "") {
-                                if (passSuccess) {
-                                    // succes banner
-                                    alert(client, "success", passwordMessage, "SUCCESS!");
-
-                                } else {
-                                    // fail banner
-                                    alert(client, "danger", passwordMessage, "TRY AGAIN!");
-                                }
-                            }
-                            if(passSuccess)
-                            {
-                                alert(client, "info", "The next time you login to the this WiFi Hotspot you will be required to enter your new password.", "NOTICE!");
-
-                                // return home
-                                startForm(client, "/");
-                                button(client, "Return to Home Page", "success");
-                                endForm(client);
-                            } else
-                            {
-                                startForm(client, "/changePassword");
-                                inputBox(client, "pw", "", "Enter New Password", true, "Must be at least 8 characters and no more than 20", "password");
-                                inputBox(client, "pw2", "", "Please Reenter Password", true, "Passwords must match", "password");
-                                button(client, "submit", "primary");
-                                endForm(client);
-
-                                startForm(client, "/");
-                                button(client, "Cancel", "danger");
-                                endForm(client);
-                            }
-                            passwordMessage = "";
-                            passSuccess = false;
-                        }
-//--RENDER ADD ANGLER----------------------------------------------------------
-                         else if(addAnglerPageFlag) {
-                          pageTitle(client, "Add Angler");
-                          //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
-                          startForm(client, "/addAngler");
-                          inputBox(client, "first_Name", "", "First Name", false, "", "text");
-                          inputBox(client, "last_Name", "", "Last Name", false, "", "text");
-                          inputBox(client, "middle_Name", "", "Middle Name or Initial", false, "", "text");
-                          inputBox(client, "address1", "", "Address Line 1", false, "", "text");
-                          inputBox(client, "address2", "", "Address Line 2", false, "", "text");
-                          inputBox(client, "city", "", "City", false, "", "text");
-                          stateBox(client);
-                          inputBox(client, "zip", "", "Zip Code", false, "", "number");
-                          inputBox(client, "cell_phone", "", "Cell Phone", false, "", "tel");
-                          inputBox(client, "home_phone", "", "Home Phone", false, "", "tel");
-                          inputBox(client, "ssn", "", "Social Security Number", false, "", "number");
-                          inputBox(client, "dob", "", "Date of Birth", false, "", "date");
-                          inputBox(client, "email", "", "Email Address", false, "", "email");
-                          button(client, "submit", "primary");
-                          endForm(client);
-                          // Go back to home
-                          startForm(client, "/");
-                          button(client, "Exit", "danger");
-                          endForm(client);
-                        }
-//--RENDER HOME SCREEN----------------------------------------------------------
-                        else
-                        {
-                        pageTitle(client, "HotSpot Printer");
-                        startForm(client, "/print");
-                        // Big print button
-                        printButton(client);
-                        endForm(client);
-                        // Settings Button
-                        startForm(client, "/settings");
-                        button(client, "Settings", "secondary");
-                        endForm(client);
-
-                        // Add Angler Button
-                        startForm(client, "/addAngler");
-                        button(client, "Add Angler", "danger");
-                        endForm(client);
-                        }
-                        // Version number on bottom of all pages
-                        bottomNav(client, VERSION_NUMBER[0], VERSION_NUMBER[1], VERSION_NUMBER[2]);
-//--END RENDER HTML-------------------------------------------------------------
-                        client.println();       // The HTTP response ends with another blank line
-                        break;                  // Break out of the while loop
-                } else {                        // if you got a newline, then clear currentLine
-                        currentLine = "";
-                }
-            }
-                else if (c != '\r') {               // if you got anything else but a carriage return character,
-                    currentLine += c;               // add it to the end of the currentLine
-                }
-            } // END if (client.available())
-        } // END while (client.connected())
-
-        header = "";                            // Clear the header variable
-        save_header = "";
-        client.stop();                         // Close the connection
-        Serial.println("Client disconnected.");//send status message to serial debug window
-        Serial.println("");
-
-    }  //end of 'If (Client)'
+//     WiFiClient client = server.available();           // Listen for incoming clients
+//     String updateMessage = "";                        //create a varible string
+//     if (client)                                       //if client is connected
+//     {                                                 // If a new client connects (tablet or cell phone logs on)
+//         Serial.println("New Client.");                // print a message out in the serial port monitor
+//         String currentLine = "";                      // make a String to hold incoming data from the client
+//         if (client.connected()){
+//             if (diagnostic_flag){                     // ^^^ diagnostic code
+//                 Serial2.println(">>loop()- Client connected...");}
+//             }
+//         while (client.connected())
+//         {                                             // loop while the client's connected
+//
+//
+//             if (client.available())
+//             {         // if there's bytes to read from the client,
+//                 char c = client.read();               // read a byte, then
+//                 Serial.write(c);                      // print it out the serial monitor
+//                 header += c;                          //add character to the header string
+//                 if (c == '\n')
+//                 //if (header.length() > 500)
+//                 {                                     // if the byte is a newline character
+//                                                       // if the current line is blank, you got two newline characters in a row.
+//                                                       // that's the end of the client HTTP request, so send a response:
+//                     if (currentLine.length() == 0)
+//                     {
+//                         // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+//                         // and a content-type so the client knows what's coming, then a blank line:
+//                         client.println("HTTP/1.1 200 OK");
+//                         client.println("Content-type:text/html");
+//                         client.println("Connection: close");
+//                         client.println();
+//
+//                         //-----read the returned information from form when submit button is pressed and save to memory--------
+//                         String headerT = header.substring(0,header.indexOf("Host:")); //create substring from begining to the word 'Host:'
+//                         Serial.print("running line 807");
+//                         Serial.println("--------headerT:------------");            //print substring to serial monitor
+//                         Serial.println(headerT);
+//                         if (diagnostic_flag){
+//                            Serial2.print(">>loop() - ");
+//                            Serial2.println(headerT);
+//                            }
+//                         Serial.println("----------------------------");
+//                         // TODO Delete this line before production
+//                         Serial.println("password = " + passwordString);
+//                         // Don't display date forms if not on HTML5
+//                         if(!(header.indexOf("Mozilla/5.") >= 0)) {
+//                           bool allowUserDefinedDate = false;
+//                         }
+//                         if(!(header.indexOf("favicon") >= 0))            //id header does not contin "favicon"
+//                         {
+//                             if (headerT.indexOf("settings?") >= 0)      //if header contains "settings"
+//                             {
+//                                 settingsPageFlag = true;
+//                                 printPageFlag = false;
+//                                 updatePageFlag = false;
+//                                 changePasswordPageFlag = false;
+//                                 setTimePageFlag = false;
+//                                 addAnglerPageFlag = false;
+//                             }
+//                             else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
+//                                 {
+//                                 print_ticket();                         //print weigh ticket
+//                                 Serial.println("PRINT BUTTON WAS PRESSED ON WEB PAGE");
+//                                 settingsPageFlag = false;
+//                                 printPageFlag = true;
+//                                 updatePageFlag = false;
+//                                 setTimePageFlag = false;
+//                                 changePasswordPageFlag = false;
+//                                 addAnglerPageFlag = false;
+//                                 }
+//                              else if (headerT.indexOf("update?") >= 0)
+//                                 {
+//                                 settingsPageFlag = false;
+//                                 printPageFlag = false;
+//                                 updatePageFlag = true;
+//                                 changePasswordPageFlag = false;
+//                                 setTimePageFlag = false;
+//                                 addAnglerPageFlag = false;
+//                                 }
+//                             else if (headerT.indexOf("checkForUpdate?") >= 0)
+//                                 {
+//                                 checkForUpdateFirmware(updateMessage);
+//                                 }
+//                             else if (headerT.indexOf("doUpdate") >= 0)
+//                             {
+//                                 String strIndex =  header.substring(header.indexOf("doUpdate")+8,header.indexOf("?"));//parse out the varible strings for the the 4 lines
+//                                 int index = strIndex.toInt();
+//                                 updateFirmware(updateMessage, arrayOfUpdateFiles[index]);
+//                             }
+//                             else if (headerT.indexOf("changePassword?") >= 0)
+//                                {
+//                                settingsPageFlag = false;
+//                                printPageFlag = false;
+//                                updatePageFlag = false;
+//                                changePasswordPageFlag = true;
+//                                setTimePageFlag = false;
+//                                addAnglerPageFlag = false;
+//                                }
+//                             else if (headerT.indexOf("setDateTime?") >= 0)
+//                                 {
+//                                 settingsPageFlag = false;
+//                                 printPageFlag = false;
+//                                 updatePageFlag = false;
+//                                 changePasswordPageFlag = false;
+//                                 setTimePageFlag = true;
+//                                 addAnglerPageFlag = false;
+//                                 }
+//                             else if (headerT.indexOf("addAngler?") >= 0)
+//                                 {
+//                                 settingsPageFlag = false;
+//                                 printPageFlag = false;
+//                                 updatePageFlag = false;
+//                                 changePasswordPageFlag = false;
+//                                 setTimePageFlag = false;
+//                                 addAnglerPageFlag = true;
+//                                 }
+//                             else
+//                                 {
+//                                 settingsPageFlag = false;
+//                                 printPageFlag = false;
+//                                 updatePageFlag = false;
+//                                 changePasswordPageFlag = false;
+//                                 setTimePageFlag = false;
+//                                 addAnglerPageFlag = false;
+//                                 }
+//                         }
+//                         // Looks for Line1 in header and then processes the SETTINGS results if found
+//                         if ((headerT.indexOf("Line1=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'Line1=' is found and text 'favicon' is not found
+//                         {
+//                             Serial.println("********found it (screen one) *********************************************");
+//                             line1 =  header.substring(header.indexOf("Line1=")+6,header.indexOf("&Line2="));//parse out the varible strings for the the 4 lines
+//                             line2 =  header.substring(header.indexOf("Line2=")+6,header.indexOf("&Line3="));
+//                             line3 =  header.substring(header.indexOf("Line3=")+6,header.indexOf("&Line4="));
+//                             // Check if line 4 is end of data or if checkbox info follows
+//                             if (headerT.indexOf("&check") >= 0)
+//                             {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf("&check"));}
+//                             else
+//                             {line4 =  headerT.substring(headerT.indexOf("Line4=")+6,headerT.indexOf(" HTTP"));}
+//
+//                             // Check if checkbox is checked
+//                             checkboxStatus(headerT, cb_print_2_copies, checkbox1_status, "1");
+//                             checkboxStatus(headerT, cb_print_signature_line, checkbox2_status, "2");
+//                             checkboxStatus(headerT, cb_serial_ticket, checkbox3_status, "3");
+//                             checkboxStatus(headerT, cb_print_when_locked, checkbox4_status, "4");
+//
+//                             line1 = char_replace_http(line1); //remove and replace http characters with space
+//                             line2 = char_replace_http(line2);
+//                             line3 = char_replace_http(line3);
+//                             line4 = char_replace_http(line4);
+//                             //-----save varibles to eeprom---------------------------
+//                             EEPROM.writeString(line1_eeprom_addr, line1.substring(0,40)); //save input box info after to trimming
+//                             EEPROM.writeString(line2_eeprom_addr, line2.substring(0,40));
+//                             EEPROM.writeString(line3_eeprom_addr, line3.substring(0,40));
+//                             EEPROM.writeString(line4_eeprom_addr, line4.substring(0,40));
+//
+//                             EEPROM.writeBool(checkbox1_eeprom_addr,cb_print_2_copies); //boolean true if checked false if not checked
+//                             EEPROM.writeBool(checkbox2_eeprom_addr,cb_print_signature_line);
+//                             EEPROM.writeBool(checkbox3_eeprom_addr,cb_serial_ticket);
+//                             EEPROM.writeBool(checkbox4_eeprom_addr,cb_print_when_locked);
+//                             EEPROM.commit();                         ////save to eeprom
+//
+//                             // ATC: I don't think we need the next 4 lines anymore as I belive the checkboxStatus
+//                             //      function 4 blocks above sets the indivudule status. both the bool variable and
+//                             //      the string variable.  I leave this REMed out for now but should be deleted if no
+//                             //      adverse effects are detected.
+//                             // cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";
+//                             // cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
+//                             // cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
+//                             // cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
+//                             //-------------- display varibles on serial monitor  -----------------------------------
+//                             Serial.println("********START HEADER*********************************************");
+//                             Serial.println(header);
+//                             Serial.println("********END HEADER*********************************************");
+//                             Serial.println(line1);
+//                             Serial.println(line2);
+//                             Serial.println(line3);
+//                             Serial.println(line4);
+//                             Serial.println("Checkbox1: " + checkbox1_status);
+//                             Serial.println("Checkbox2: " + checkbox2_status);
+//                             Serial.println("Checkbox3: " + checkbox3_status);
+//                             Serial.println("Checkbox4: " + checkbox4_status);
+//
+//                         }
+//                         // Looks for pw in header and then processes the password results if found
+//                         else if ((headerT.indexOf("pw=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
+//                         {
+//                             String pass1;
+//                             String pass2;
+//                             // Process password change logic
+//                             pass1 =  header.substring(header.indexOf("pw=")+3,header.indexOf("&pw2="));//parse out the varible strings for the the 2 passwords
+//                             pass2 =  header.substring(header.indexOf("pw2=")+4,header.indexOf(" HTTP"));
+//
+//                             // check passwords match and are long enough
+//                             if (pass1 != pass2)
+//                             {
+//                                 passwordMessage = "Passwords Don't Match";
+//                                 passSuccess = false;
+//                                 // Fail Banner Passwords don't match
+//                             } else
+//                             {
+//                                 if (pass1.length() < 8) {
+//                                     passwordMessage = "Passwords needs to be 8 or more characters.";
+//                                     passSuccess = false;
+//                                     // Fail Banner Password too short
+//                                 } else if (pass1.length() > 20) {
+//                                     passwordMessage = "Passwords needs to be 20 or less characters.";
+//                                     passSuccess = false;
+//                                     // Fail Banner Password too long
+//                                 } else {
+//                                     passwordMessage = "Password was successfully changed.";
+//                                     passSuccess = true;
+//                                 // success banner
+//                                 // Save password to password Variable
+//                                 //pass1.toCharArray(password,30);
+//                                 passwordString = pass1;
+//                                 // Save password to EEPROM
+//                                 EEPROM.writeString(password_addr, pass1.substring(0,20));            //save password to eeprom
+//                                 EEPROM.commit();                                                     //commit to eeprom
+//                                 }
+//                             }
+//
+//                         }
+//                         // Looks for date in header and then processes the date results if found
+//                         else if ((headerT.indexOf("date=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
+//                         {
+//                             String date;
+//                             // Parse EPCOH time from header
+//                             date =  header.substring(header.indexOf("date=")+5,header.indexOf(" HTTP"));
+//                             date = char_replace_http(date);
+//                             Serial.println("date is: " + date);
+//
+//                             // Date in form Thu Nov 15 2018 15:54:19 GMT-0500 (EST)
+//                             //              012345678901234567890123456789012345678
+//                             //              Fri Aug 03 2018 02:57:46 GMT-0400 (EDT)
+//                             int year = date.substring(11,15).toInt();
+//                             String monthStr = date.substring(4,7);
+//                             int month;
+//                             if (monthStr == "Jan") {month = 1;}
+//                             else if (monthStr == "Feb") {month = 2;}
+//                             else if (monthStr == "Mar") {month = 3;}
+//                             else if (monthStr == "Apr") {month = 4;}
+//                             else if (monthStr == "May") {month = 5;}
+//                             else if (monthStr == "Jun") {month = 6;}
+//                             else if (monthStr == "Jul") {month = 7;}
+//                             else if (monthStr == "Aug") {month = 8;}
+//                             else if (monthStr == "Sep") {month = 9;}
+//                             else if (monthStr == "Oct") {month = 10;}
+//                             else if (monthStr == "Nov") {month = 11;}
+//                             else {month = 12;}
+//                             int day = date.substring(8,10).toInt();
+//                             int hour = date.substring(16,18).toInt();
+//                             int minute = date.substring(19,21).toInt();
+//                             int second = date.substring(22,24).toInt();
+//                             Serial.println("year is: " + String(year));
+//                             Serial.println("month is: " + String(month));
+//                             Serial.println("day is: " + String(day));
+//                             Serial.println("hour is: " + String(hour));
+//                             Serial.println("minute is: " + String(minute));
+//                             Serial.println("second is: " + String(second));
+//
+//                             rtc.adjust(DateTime(year, month, day, hour, minute, second));
+//                         }
+//                         // Looks for userDate in header and then processes the date results if found
+//                         else if ((headerT.indexOf("UserDate=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'pw=' is found and text 'favicon' is not found
+//                         {
+//                             String date;
+//                             String time;
+//                             // Parse user date and time from header
+//                             date = header.substring(header.indexOf("UserDate=")+9,header.indexOf("&UserTime"));
+//                             time = header.substring(header.indexOf("UserTime=")+9,header.indexOf(" HTTP"));
+//                             date = char_replace_http(date);
+//                             time = char_replace_http(time);
+//                             int year = date.substring(0,4).toInt();
+//                             int month = date.substring(5,7).toInt();
+//                             int day = date.substring(8).toInt();
+//                             Serial.println("date is: " + date);
+//                             Serial.println("time is: " + time);
+//                             Serial.println("year is: " + String(year));
+//                             Serial.println("month is: " + String(month));
+//                             Serial.println("day is: " + String(day));
+//                             int hour = time.substring(0,2).toInt();
+//                             int minute = time.substring(3).toInt();
+//                             Serial.println("hour is: " + String(hour));
+//                             Serial.println("minute is: " + String(minute));
+//
+//                             rtc.adjust(DateTime(year, month, day, hour, minute, 0));
+//                         }
+// //                         else if ((headerT.indexOf("firstName=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'first_name=' is found and text 'favicon' is not found
+// //                         {
+// //                             String firstName = header.substring(header.indexOf("firstName=")+11,header.indexOf("&lastName="));//parse out the varible strings for the the 4 lines
+// //                             String lastName =  header.substring(header.indexOf("lastName=")+10,header.indexOf("&middleName="));
+// //                             String middleName =  header.substring(header.indexOf("middleName=")+12,header.indexOf("&address1="));
+// //                             String address1 =  header.substring(header.indexOf("address1=")+9,header.indexOf("&address2="));
+// //                             String address2 =  header.substring(header.indexOf("address2=")+9,header.indexOf("&city="));
+// //                             String city =  header.substring(header.indexOf("city=")+5,header.indexOf("&inputState="));
+// //                             String inputState =  header.substring(header.indexOf("inputState=")+5,header.indexOf("&zip="));
+// //                             String zip =  header.substring(header.indexOf("zip=")+4,header.indexOf("&cellPhone="));
+// //                             String cellPhone =  header.substring(header.indexOf("cellPhone=")+11,header.indexOf("&homePhone="));
+// //                             String homePhone =  header.substring(header.indexOf("homePhone=")+11,header.indexOf("&ssn="));
+// //                             String ssn =  header.substring(header.indexOf("ssn=")+4,header.indexOf("&dob="));
+// //                             String dob =  header.substring(header.indexOf("dob=")+4,header.indexOf("&email="));
+// //                             String email =  header.substring(header.indexOf("email=")+6,header.indexOf(" HTTP"));
+// //
+// // //                            String tempStr = "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,Email)Values('" +   firstName + "','" + lastName + "','" + middleName + "','" + address1 + "','" + address2 + "','" + city + "','" + inputState + "','" + zip + "','" + cellPhone + "','" + homePhone + "','" + ssn + "','" + dob + "','" + email + "')";
+// // //                            char* tempChar = string2char(tempStr);
+// // //                            Serial.println(firstName);
+// // //                            Serial.println("Testing and stuff");
+// // //                            Serial.println(tempStr);
+// // //                            sqlite3 *db3;                                                                        //declare a pointer to the data base
+// // //                            openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
+// // //                            Serial.println("before db_exec");
+// // //                          db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Jones','Who')");
+// // //                            //db_exec(db3, tempChar);
+// // //
+// // //                            Serial.println("after db_exec");
+// // //                            sqlite3_close(db3);
+// //                             //
+// // //                            Serial.println("after sqlite3_close");
+// //                                                  // Sample code to add to DB
+// //                         //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
+// //
+// //                            //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
+// //                         // ATC: This else statement is totally unnecessary and only
+// //                         //      serves as a place holder for future expansion
+// //                       }
+//                         else    //if header did not contain text "line1" then run code in else statment below
+//                         {
+//                                 // do some stuff
+//                         }
+// //$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+// //--RENDER HTML-----------------------------------------------------------------
+// //$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+//                         htmlHead(client);
+//                         // svg PTS logo
+//                         printPTSLogo(client);
+// //--RENDER SETTINGS PAGE--------------------------------------------------------
+//                         if (settingsPageFlag) {
+//                             pageTitle(client, "Settings");
+//
+//                             // Set date and time button
+//                             startForm(client, "/setDateTime");
+//                             button(client, "Set the Date and Time", "info");
+//                             endForm(client);
+//                             //startForm(client, "[action]")
+//                             startForm(client, "/");
+//                             //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
+//                             inputBox(client, "Line1", line1, "Top Line", false, "Example: The Tournament Name");
+//                             inputBox(client, "Line2", line2, "Second Line", true, "Example: The Tournament Location");
+//                             inputBox(client, "Line3", line3, "Third Line", true, "Example: The Tournament Dates");
+//                             inputBox(client, "Line4", line4, "Bottom Line", true, "Example: A sponsor message");
+//                             //checkBox(client, "[String name of variable]", [actual variable], "[String label]")
+//                             checkBox(client, "checkbox1", checkbox1_status, "Print 2 Copies");
+//                             checkBox(client, "checkbox2", checkbox2_status, "Print signature line");
+//                             checkBox(client, "checkbox3", checkbox3_status, "Serialized ticket");
+//                             checkBox(client, "checkbox4", checkbox4_status, "Optional Parameter");
+//                             // Submit Button
+//                             button(client, "submit", "primary");
+//                             endForm(client);
+//
+//                             // if the startup flag that determined if an SD card is present then display the update button
+//                             if(isSDCardPresent)
+//                             {
+//                               // update button
+//                               startForm(client, "/update");
+//                               button(client, "Update Firmware", "success");
+//                               endForm(client);
+//                             }
+//                             // change password button
+//                             startForm(client, "/changePassword");
+//                             button(client, "Change Password", "info");
+//                             endForm(client);
+//                         }
+// //--SET TIME PAGE---------------------------------------------------------------
+//                         else if (setTimePageFlag) {
+//                             pageTitle(client, "Set Time and Date");
+//                             //startForm(client, "[action]")
+//                             startForm(client, "/settings");
+//
+//                             // Pull the date from the device and send through header
+//                             client.println(R"###(
+//                             <button style="margin-bottom:5px;" type="submit" value="Use Date/Time from this device" class="btn btn-success btn-lg btn-block" onclick="getElementById('date').value=Date()">Use Date/Time from this device</button>
+//                             <input type="hidden" style="visibility: hidden;" class="form-control" name="date" id="date">
+//                             )###");
+//                             endForm(client);
+//
+//                             if(allowUserDefinedDate){
+//                                 // Allow user to enter date and time then send
+//                                 startForm(client, "/settings");
+//                                 //inputBox(client, "[string name of variable]", [actual variable], "[label]", [smalltext? BOOL], "[small text string]")
+//                                 inputBox(client, "UserDate", "", "Date", false, "", "date");
+//                                 inputBox(client, "UserTime", "", "Time", false, "", "time");
+//                                 button(client, "Update Date", "primary");
+//                                 endForm(client);
+//                             }
+//
+//                             // Cancel button
+//                             startForm(client, "/settings");
+//                             button(client, "Cancel", "danger");
+//                             endForm(client);
+//                         }
+//
+//
+// //--RENDER UPDATE PAGE----------------------------------------------------------
+//                         else if (updatePageFlag) {
+//                             pageTitle(client, "Update Firmware");
+//                             //  Add breif instructions
+//                             alert(client, "primary", "This will update the firmare on your device.<br>Insert an SD card with a version of the firmware loaded and click \"Check for Update\".", "" , "NOTE: you may need to reconnect to this wifi network after updating.");
+//                             // Update now button
+//                             if(updateMessage == ""){
+//                               startForm(client, "/checkForUpdate");
+//                               button(client, "Check for Update", "success");
+//                               endForm(client);
+//                             }
+//                             // Print message to user dynamically
+//                             if(updateMessage != ""){
+//                                 alert(client, "danger", updateMessage, "ERROR!", "Please make sure you have loaded the update software in the root directory of the SD card." );
+//                                 startForm(client, "checkForUpdate");
+//                                 button(client, "Retry", "success");
+//                                 endForm(client);
+//                             }
+//                             // Print table of update files
+//                             if (arrayOfUpdateFiles[0] != ""){
+//                                 printTableOfUpdateFiles(client, arrayOfUpdateFiles);
+//                             }
+//                             // Cancel button
+//                             startForm(client, "/settings");
+//                             button(client, "Cancel", "danger");
+//                             endForm(client);
+//                         }
+// //--CHANGE PASSWORD PAGE--------------------------------------------------------
+//
+//                         else if (changePasswordPageFlag) {
+//                             pageTitle(client, "Change Password");
+//                             if (passwordMessage != "") {
+//                                 if (passSuccess) {
+//                                     // succes banner
+//                                     alert(client, "success", passwordMessage, "SUCCESS!");
+//
+//                                 } else {
+//                                     // fail banner
+//                                     alert(client, "danger", passwordMessage, "TRY AGAIN!");
+//                                 }
+//                             }
+//                             if(passSuccess)
+//                             {
+//                                 alert(client, "info", "The next time you login to the this WiFi Hotspot you will be required to enter your new password.", "NOTICE!");
+//
+//                                 // return home
+//                                 startForm(client, "/");
+//                                 button(client, "Return to Home Page", "success");
+//                                 endForm(client);
+//                             } else
+//                             {
+//                                 startForm(client, "/changePassword");
+//                                 inputBox(client, "pw", "", "Enter New Password", true, "Must be at least 8 characters and no more than 20", "password");
+//                                 inputBox(client, "pw2", "", "Please Reenter Password", true, "Passwords must match", "password");
+//                                 button(client, "submit", "primary");
+//                                 endForm(client);
+//
+//                                 startForm(client, "/");
+//                                 button(client, "Cancel", "danger");
+//                                 endForm(client);
+//                             }
+//                             passwordMessage = "";
+//                             passSuccess = false;
+//                         }
+// //--RENDER ADD ANGLER----------------------------------------------------------
+//                          else if(addAnglerPageFlag) {
+//                           pageTitle(client, "Add Angler");
+//                           //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
+//                           startForm(client, "/addAngler");
+//                           inputBox(client, "firstName", "", "First Name", false, "", "text");
+//                           inputBox(client, "lastName", "", "Last Name", false, "", "text");
+//                           inputBox(client, "middleName", "", "Middle Name or Initial", false, "", "text");
+//                           inputBox(client, "address1", "", "Address Line 1", false, "", "text");
+//                           inputBox(client, "address2", "", "Address Line 2", false, "", "text");
+//                           inputBox(client, "city", "", "City", false, "", "text");
+//                           stateBox(client);
+//                           inputBox(client, "zip", "", "Zip Code", false, "", "number");
+//                           inputBox(client, "cellPhone", "", "Cell Phone", false, "", "tel");
+//                           inputBox(client, "homePhone", "", "Home Phone", false, "", "tel");
+//                           inputBox(client, "ssn", "", "Social Security Number", false, "", "number");
+//                           inputBox(client, "dob", "", "Date of Birth", false, "", "date");
+//                           inputBox(client, "email", "", "Email Address", false, "", "email");
+//                           button(client, "submit", "primary");
+//                           endForm(client);
+//                           // Go back to home
+//                           startForm(client, "/");
+//                           button(client, "Exit", "danger");
+//                           endForm(client);
+//                         }
+// //--RENDER HOME SCREEN----------------------------------------------------------
+//                         else
+//                         {
+//                         pageTitle(client, "HotSpot Printer");
+//                         startForm(client, "/print");
+//                         // Big print button
+//                         printButton(client);
+//                         endForm(client);
+//                         // Settings Button
+//                         startForm(client, "/settings");
+//                         button(client, "Settings", "secondary");
+//                         endForm(client);
+//
+//                         // // Add Angler Button
+//                         // startForm(client, "/addAngler");
+//                         // button(client, "Add Angler", "danger");
+//                         // endForm(client);
+//                         }
+//                         // Version number on bottom of all pages
+//                         bottomNav(client, VERSION_NUMBER[0], VERSION_NUMBER[1], VERSION_NUMBER[2]);
+// //--END RENDER HTML-------------------------------------------------------------
+//                         client.println();       // The HTTP response ends with another blank line
+//                         break;                  // Break out of the while loop
+//                 } else {                        // if you got a newline, then clear currentLine
+//                         currentLine = "";
+//                 }
+//             }
+//                 else if (c != '\r') {               // if you got anything else but a carriage return character,
+//                     currentLine += c;               // add it to the end of the currentLine
+//                 }
+//             } // END if (client.available())
+//         } // END while (client.connected())
+//
+//         header = "";                            // Clear the header variable
+//         save_header = "";
+//         client.stop();                         // Close the connection
+//         Serial.println("Client disconnected.");//send status message to serial debug window
+//         Serial.println("");
+//
+//     }  //end of 'If (Client)'
 
 } //end of program 'loop()'
 

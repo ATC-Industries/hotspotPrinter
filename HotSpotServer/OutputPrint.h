@@ -15,7 +15,7 @@ void paper_cut(void);
 void set_text_size(unsigned int size);  // oled set text size routine
 void bold_on(void);
 void bold_off(void);
-void set_text_size(unsigned int size); 
+void set_text_size(unsigned int size);
 
 
 extern String current_time;
@@ -29,15 +29,15 @@ extern String tim;
 
 
 void print_results(){
-  
-    Serial2.write(0x1B);                          //A Font 
+
+    Serial2.write(0x1B);                          //A Font
     Serial2.write('M');
     Serial2.write('0x01');                        //(must be font 1 for pica print)
-       
+
     Serial2.write(0x1B);                         //upside down printing turn off
     Serial2.write('{');
     Serial2.write('0');
-    
+
     set_text_size(0X00);
 
 
@@ -46,13 +46,13 @@ void print_results(){
    Serial2.print(rec);
    Serial2.println(" records----------------------");
    while ( r <= rec-1){                                                //Print all records found
-        
+
         Serial2.print( results[r][0]+"  \t");                         // print the column names from array
         Serial2.println( results[r][1]);
         r++;
         }
    Serial2.println("");
-   Serial2.println("------------------- End of results -----------------------");     
+   Serial2.println("------------------- End of results -----------------------");
    paper_cut();
    Serial2.write(0x1B);                         //upside down printing on
    Serial2.write('{');
@@ -67,7 +67,7 @@ void print_results(){
 //============================ Print Weigh in Results =======================================
 void print_weigh_results(){
     int r = 0;
-    Serial2.write(0x1B);                          //B Font 
+    Serial2.write(0x1B);                          //B Font
     Serial2.write('M');
     Serial2.write('0x01');                       //(must be font 01 for pica print)
     Serial2.write(0x1B);                         //upside down printing turn off
@@ -87,8 +87,8 @@ void print_weigh_results(){
     Serial2.write(0x1B);                         //justification: left
     Serial2.write('a');
     Serial2.write('0');                           //0= left, 1 = center 2= right
-   
-    
+
+
     Serial2.print("--------------------------");
     Serial2.print(rec);
     Serial2.println(" records-----------------------------");
@@ -97,13 +97,13 @@ void print_weigh_results(){
     Serial2.println("");
     r=0;
     bold_off();
-    
+
     while (r <= rec-1){                                                       //Print all records found in query
-        if(results[r][0].length() == 1)                                      //insert padding 
+        if(results[r][0].length() == 1)                                      //insert padding
            {Serial2.print("   ");}
-        else if (results[r][0].length() == 2)   
+        else if (results[r][0].length() == 2)
            {Serial2.print("  ");}
-        else if (results[r][0].length() == 3)   
+        else if (results[r][0].length() == 3)
            {Serial2.print(" ");}
         Serial2.print( results[r][0]+"  ");                                //id numberdisplay all the column values (add tab)
         Serial2.print( results[r][1]+" ");                                    //first name
@@ -114,7 +114,7 @@ void print_weigh_results(){
         Serial2.print( results[r][6]+"   ");                                  //late
         if(results[r][7].length() == 2)                                       //add padding if needed
            {Serial2.print("  ");}
-        if(results[r][7].length() == 3)                                      //insert padding 
+        if(results[r][7].length() == 3)                                      //insert padding
            {Serial2.print(" ");}
         String tmpString;
         tmpString = results[r][7];
@@ -124,43 +124,43 @@ void print_weigh_results(){
         Serial2.print("   ");
         if(results[r][8].length() == 2)
            {Serial2.print("  ");}
-        if(results[r][8].length() == 3)                                      //insert padding 
+        if(results[r][8].length() == 3)                                      //insert padding
            {Serial2.print(" ");}
         tmpString = results[r][8];
         var = tmpString.toFloat();
         var = var/100;                                                       //divide by 100 to add decimal point
         Serial2.print( var);                                                //print actual wieght with decimal
         Serial2.print("  ");
-       Serial2.println(r+1);                                                     
+       Serial2.println(r+1);
         r++;                                                                  //advance to next record
     }
    Serial2.println("");                                                       //line feed
-   Serial2.println("---------------- Report by Pro Tournament Scales ---------------");     
-    Serial2.println (current_time); 
- 
+   Serial2.println("---------------- Report by Pro Tournament Scales ---------------");
+    Serial2.println (current_time);
+
    paper_cut();                                                               //cut paper
-   
-   Serial2.write(0x1B);                                                       //upside down printing on     
+
+   Serial2.write(0x1B);                                                       //upside down printing on
    Serial2.write('{');
    Serial2.write('1');
-   }   
-        
-  
+   }
+
+
 //--------------------------------------------------------------------------------------------
-void bold_on (void){ 
+void bold_on (void){
   Serial2.write(0x1B);                         //emphasized on
     Serial2.write('E');
-    Serial2.write('0x01');  
-}  
-void bold_off (void){ 
+    Serial2.write('0x01');
+}
+void bold_off (void){
   Serial2.write(0x1B);                         //emphasized off
     Serial2.write('E');
-    Serial2.write('0x00');  
-}   
- 
- 
- 
- 
+    Serial2.write('0x00');
+}
+
+
+
+
  void paper_cut(void)
      {Serial2.write(0x1D);                                        // "GS" cut paper
      Serial2.write('V');                                          //"V"
@@ -176,4 +176,4 @@ void set_text_size(unsigned int size)                           //set font size 
       }
 
 
-#endif        
+#endif
