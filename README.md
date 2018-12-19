@@ -22,7 +22,7 @@ The included libraries will install automatically from the board and standard se
 
 `#include <U8g2lib.h>`  In the library manager search for "U8g" and choose the library by oliver
 `https://github.com/olikraus/u8g2`
-`#include <sqlite3.h>` Library for the database engine TODO need link
+`#include <sqlite3.h>` Library for the database engine TODO need link  https://github.com/siara-cc/esp32_arduino_sqlite3_lib
 `#include <WiFi.h>` Wi-Fi library TODO need link
 `#include <EEPROM.h>` Driver for eeprom TODO need link
 `#include <Update.h>` Firmware uploader TODO need link

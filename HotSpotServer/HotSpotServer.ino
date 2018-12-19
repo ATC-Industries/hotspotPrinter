@@ -3,7 +3,7 @@
   Terry Clarkson & Adam Clarkson
   11/02/18
 ***************************************************************
-       
+
 
 This program uses a serial port to read an XBee radio board connected to UART 1
 and send the weight value recieved from a scale to a printer connected to UART 2
@@ -49,7 +49,7 @@ pin assignment                                      5 volt----------------------
 //------ Include files ---------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
-#include <sqlite3.h>            //database engine
+#include <sqlite3.h>            //database engine https://github.com/siara-cc/esp32_arduino_sqlite3_lib
 #include <WiFi.h>               // Load Wi-Fi library
 #include <EEPROM.h>             //driver for eeprom
 //------ files for sd card -----------------------------------------------------
@@ -108,7 +108,7 @@ WiFiServer server(80);          // Set web server port number to 80
 
 //-----------------Define varibles----------------------------------------------
 String current_date;
-String current_time; 
+String current_time;
  char* system_time;
  char sSQL[50];                 //varible that holds the sql string
 String results[100][9];          //array the holds sql data 251 results 6 columns
@@ -167,6 +167,7 @@ bool printPageFlag = false;     // True if on print page
 bool updatePageFlag = false;    // True if on update page
 bool changePasswordPageFlag = false; // True if on change password page
 bool setTimePageFlag = false;   // True if on set time and date page
+bool addAnglerPageFlag = false;  // True if on add angler page
 bool allowUserDefinedDate = true;  // set to false to turn off date entry form
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 byte UpArrow[8] = {
@@ -242,7 +243,7 @@ void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt
 void setup(){
     listDir(SD, "/", 2);                      //SD card directory listing, '2' = 2 levels deep
     sqlite3_initialize();                     //start the database engine
-    sqlite3 *db1;                            //declare varible as a sqlite3 file 
+    sqlite3 *db1;                            //declare varible as a sqlite3 file
     Wire.begin();                             //start i2c for RTC
 
     //---------- declare input buttons with pullup -----------------------------
@@ -314,8 +315,8 @@ void setup(){
     else{
          if (diagnostic_flag){
          Serial2.println("EEprom initized successfully");}
-        }  
-  
+        }
+
 //-----------------Hold Print button on cold start to bring in temporary password to log on ---------------------
  /* Remove the password parameter, if you want the AP (Access Point) to be open
        if 'button_PRINT' is pulled low,(print button pressed) a temporary password will
@@ -401,10 +402,10 @@ void setup(){
     if (diagnostic_flag == true)                                                  //^^^diagnostic mode
         { Serial2.print(">>Software ");
           Serial2.println(verString);}
-    
+
 
     delay(2000);                                                          //leave ssid and ip on oled sceen for this delay
-    recall_eeprom_values();  
+    recall_eeprom_values();
 
     cb_print_2_copies ? checkbox1_status = "checked" : checkbox1_status = "";    //set 'checkbox#_is_checked' to match 'checkbox#_status'
     cb_print_signature_line ? checkbox2_status = "checked" : checkbox2_status = "";
@@ -420,14 +421,14 @@ void setup(){
     lcd.print(line3);
     delay(3000);
     lcd.clear();
-  
+
 //-------- get the MAC address of the WiFi module ----------
     WiFi.macAddress(Imac);
     Serial.print("MAC");
     if (diagnostic_flag == true)
         {Serial2.print(">>MAC address");}
     for(int i=5;i>=0;i--){
-      
+
       Serial.print(":");
       Serial.print(Imac[i],HEX);                        //print the mac address to serial monitor
       if (diagnostic_flag == true)                      //^^^ print mac address to printer when in diagnostic mode
@@ -436,7 +437,7 @@ void setup(){
       }
     Serial.print("\n");
     Serial2.println("");
-    
+
     // Check if SD card is present
     isSDCardPresent = isSDCard();                          //set flag if sd card is present
     if (!isSDCardPresent)
@@ -445,19 +446,19 @@ void setup(){
         if (diagnostic_flag)                              //^^^ diagnostic message
           {Serial2.println(">>setup() -SD card not present");}
       }
-   
-     else if (diagnostic_flag){                                //^^^ diagnostic message 
+
+     else if (diagnostic_flag){                                //^^^ diagnostic message
            check_sd_mem();                            //send to printer, card memory statistics
           }
 
 ////-------------test code for data base---------------------
 
-//note - data base used for this was created with DB browser and loaded onto sd card 
+//note - data base used for this was created with DB browser and loaded onto sd card
    sqlite3 *db3;                                                                        //declare a pointer to the data base
    openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
- 
- 
- 
+
+
+
  //-- add table if they do not exist ----------
 /*
    // db_exec(db3, "DROP TABLE weighin");                        //unrem this line to erase old table and create new table
@@ -472,93 +473,93 @@ void setup(){
    "PRIMARY KEY (ID)");
  */
 
-  db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
-  // db_exec(db3, "DROP TABLE Id"); 
+//  db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
+  // db_exec(db3, "DROP TABLE Id");
    db_exec(db3, "CREATE TABLE Angler(ID INTEGER,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
+   //
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
+   //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')");
+   //
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('4','4','3','0','8','689','550')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('5','4','4','3','4','389','880')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('6','2','2','2','2','769','770')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('7','5','4','1','5','359','444')");     //add records
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('8','4','4','1','3','560','555')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('9','5','2','3','6','1686','1666')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('10','5','3','0','8','875','770')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('11','5','4','3','4','890','789')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('12','5','3','2','1','1012','912')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('13','5','4','0','5','359','570')");     //add records
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('14','4','4','1','3','790','650')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('15','5','5','3','6','1220','1098')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('16','4','3','0','8','689','567')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('17','4','4','3','4','389','879')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('18','2','2','2','2','769','789')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('19','5','4','1','5','359','456')");     //add records
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('20','4','4','1','3','560','567')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('21','5','2','3','6','1686','1678')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('22','5','3','0','8','875','789')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('23','5','4','3','4','900','897')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('24','4','3','2','1','1012','987')");
 
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')"); 
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
-    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')"); 
-  
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('4','4','3','0','8','689','550')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('5','4','4','3','4','389','880')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('6','2','2','2','2','769','770')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('7','5','4','1','5','359','444')");     //add records
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('8','4','4','1','3','560','555')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('9','5','2','3','6','1686','1666')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('10','5','3','0','8','875','770')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('11','5','4','3','4','890','789')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('12','5','3','2','1','1012','912')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('13','5','4','0','5','359','570')");     //add records
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('14','4','4','1','3','790','650')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('15','5','5','3','6','1220','1098')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('16','4','3','0','8','689','567')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('17','4','4','3','4','389','879')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('18','2','2','2','2','769','789')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('19','5','4','1','5','359','456')");     //add records
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('20','4','4','1','3','560','567')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('21','5','2','3','6','1686','1678')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('22','5','3','0','8','875','789')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('23','5','4','3','4','900','897')");
-   db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('24','4','3','2','1','1012','987')");
 
-  
-   Serial.printf("----List Tables ---------\n\r");   
+   Serial.printf("----List Tables ---------\n\r");
      db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
-    Serial.printf("----End of Tables ---------\n\r");  
+    Serial.printf("----End of Tables ---------\n\r");
 
 //     db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                  //list entire data base
      Serial.println("--- weighin results by adj_weight ------");
-     db_exec(db3, "SELECT * FROM weighin Order BY adj_weight DESC"); 
+     db_exec(db3, "SELECT * FROM weighin Order BY adj_weight DESC");
      db_exec(db3, "SELECT * FROM Angler");                                 //total number of records in table
 //     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
-     
- //-----  example to pass varibles to a sql query---------    
+
+ //-----  example to pass varibles to a sql query---------
      char *namev = "Mike Joes";
      char *IDv = "4";
-      
-     
+
+
 //     sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                  //search database by rowid
 //     db_exec(db3,sSQL);                                                          //this is theactual query to database
 //      sprintf(sSQL,"SELECT * FROM Angler WHERE name = '%s'",namev);              //search database by name
-//     db_exec(db3,sSQL); 
+//     db_exec(db3,sSQL);
 //      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);             //search database by WEighin id
-//     db_exec(db3,sSQL); 
+//     db_exec(db3,sSQL);
     sqlite3_close(db3);                                                           //close database
      int r = 0;
      Serial.printf("----array values -----  %d records ------\n\r",rec);
-     
+
      while (r <= rec-1){                                                          //Print all records found in query
         int i = 0;
         while (i <= 6)                                                            //display the 7 columns
-         {                
+         {
             Serial.print( results[r][i]+"\t");                                    //display all the column values (add tab)
            i++;
           }
-          Serial.println(" ");                                                     
+          Serial.println(" ");
         r++;                                                                      //advance to next record
         }
      Serial.printf("---------- end of array ---------------------");
 
 ///Serial2.print("\0x010\0x04\0x04");    //check paper roll status/ reply 0x6C = out of paper.....  0x0c low on paper
 
-   
-//---------------------------------------------------------------                               
+
+//---------------------------------------------------------------
 }//void setup() ending terminator
 
 
@@ -630,14 +631,14 @@ if (read_keyboard_timer >= 2)                                             //read
        lcd.clear();
       }
 
-//---- F1 button pressed? ----------------      
+//---- F1 button pressed? ----------------
      lcd.setCursor(1,3);
      if (!digitalRead(button_F1))                                        //F1 button
        { lcd.setCursor(2,3);
-        lcd.write(byte(1));                                             //show down arrow icon 
+        lcd.write(byte(1));                                             //show down arrow icon
         lcd.print("  ");
-       
-         sqlite3 *db3; 
+
+         sqlite3 *db3;
          openDb("/sd/PTS.db", &db3);                                     //open the database
          db_exec(db3, "SELECT * FROM Angler ORDER BY Id DESC");   //query the angler list and sort by boat numb decending
          sqlite3_close(db3);                                             //close database
@@ -656,13 +657,13 @@ if (read_keyboard_timer >= 2)                                             //read
      lcd.setCursor(6,3);
      if (!digitalRead(button_F2))                                         //F2 button
        {lcd.print("F2");
-        sqlite3 *db3; 
+        sqlite3 *db3;
          openDb("/sd/PTS.db", &db3);                                     //open the database
          db_exec(db3, "SELECT Angler.id,Angler.FirstName,Angler.LastName,weighin.totalFish,weighin.liveFish,weighin.shortFish,weighin.late,weighin.weight,weighin.adj_weight FROM angler INNER JOIN Weighin on Weighin.ID = Angler.ID ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
          sqlite3_close(db3);                                             //close database
         //Serial2.print("\x1b\x44\x08\x0C\x10\0x14\0x18\0x1C\x00"); // Set tab stops at 8, 12,16,20,24,28  characters
        print_weigh_results();
-       
+
        if (diagnostic_flag)
           {Serial.println(">>Button F2 pressed");
             Serial2.println(">>Button F2 pressed");}                      //^^^ send button press diag to printer
@@ -671,7 +672,7 @@ if (read_keyboard_timer >= 2)                                             //read
      else
        {
         lcd.setCursor(6,3);
-        lcd.write(byte(1)); 
+        lcd.write(byte(1));
         lcd.print("  ");}
 
 //--------- F3 button pressed? -------------------
@@ -685,10 +686,10 @@ if (read_keyboard_timer >= 2)                                             //read
      else
         {lcd.print("   ");}
 
-//-------- F4 button pressed? ---------------------    
+//-------- F4 button pressed? ---------------------
      lcd.setCursor(17,3);
      if (!digitalRead(button_F4))                                       //F4 button
-       { 
+       {
          lcd.print("F4");
          if (diagnostic_flag){
             Serial.println(">>Button F4 pressed");
@@ -707,21 +708,21 @@ if (read_keyboard_timer >= 2)                                             //read
             lcd.clear();
             lcd.setCursor(0,1);
             lcd.print("Rebooting");                                     //display 'rebooting'  on Lcd
-           
+
             for (int i = 0; i < 11; i++){                              // delay and print dots 11 times.
                 delay(100);
                 lcd.print(".");
                 }
              rebootEspWithReason("manual reboot");                      //reboot computer
             }
-        } 
+        }
     }//end if read_keyboard_timer = 0
 
 
 //--------------- radio uart recieve ---------------------------------------------------------------
       if (Serial2.available() > 0)                                   //feedback from the printer
            {char c;
-           c = (char)Serial1.read(); 
+           c = (char)Serial1.read();
            Serial.print(c);                                            //send to serial monitor
            if (c == 0x00)                                           //if null zero
              Serial.println("");
@@ -762,14 +763,14 @@ if (read_keyboard_timer >= 2)                                             //read
 
                processRadioString();
                }//if (c == 0x0D || c == 0x0A)
-          }// if (Serial1.available() > 0) 
+          }// if (Serial1.available() > 0)
 
 //-------------- start client routine ----------------------------------------------------------------
 
 
 
     WiFiClient client = server.available();           // Listen for incoming clients
-    String updateMessage = "";                        //create a varible string  
+    String updateMessage = "";                        //create a varible string
     if (client)                                       //if client is connected
     {                                                 // If a new client connects (tablet or cell phone logs on)
         Serial.println("New Client.");                // print a message out in the serial port monitor
@@ -780,8 +781,8 @@ if (read_keyboard_timer >= 2)                                             //read
             }
         while (client.connected())
         {                                             // loop while the client's connected
-          
-          
+
+
             if (client.available())
             {         // if there's bytes to read from the client,
                 char c = client.read();               // read a byte, then
@@ -826,7 +827,8 @@ if (read_keyboard_timer >= 2)                                             //read
                                 updatePageFlag = false;
                                 changePasswordPageFlag = false;
                                 setTimePageFlag = false;
-                            } 
+                                addAnglerPageFlag = false;
+                            }
                             else if (headerT.indexOf("print?") >= 0)  //if header contains "print?"
                                 {
                                 print_ticket();                         //print weigh ticket
@@ -836,6 +838,7 @@ if (read_keyboard_timer >= 2)                                             //read
                                 updatePageFlag = false;
                                 setTimePageFlag = false;
                                 changePasswordPageFlag = false;
+                                addAnglerPageFlag = false;
                                 }
                              else if (headerT.indexOf("update?") >= 0)
                                 {
@@ -844,6 +847,7 @@ if (read_keyboard_timer >= 2)                                             //read
                                 updatePageFlag = true;
                                 changePasswordPageFlag = false;
                                 setTimePageFlag = false;
+                                addAnglerPageFlag = false;
                                 }
                             else if (headerT.indexOf("checkForUpdate?") >= 0)
                                 {
@@ -862,6 +866,7 @@ if (read_keyboard_timer >= 2)                                             //read
                                updatePageFlag = false;
                                changePasswordPageFlag = true;
                                setTimePageFlag = false;
+                               addAnglerPageFlag = false;
                                }
                             else if (headerT.indexOf("setDateTime?") >= 0)
                                 {
@@ -870,6 +875,16 @@ if (read_keyboard_timer >= 2)                                             //read
                                 updatePageFlag = false;
                                 changePasswordPageFlag = false;
                                 setTimePageFlag = true;
+                                addAnglerPageFlag = false;
+                                }
+                            else if (headerT.indexOf("addAngler?") >= 0)
+                                {
+                                settingsPageFlag = false;
+                                printPageFlag = false;
+                                updatePageFlag = false;
+                                changePasswordPageFlag = false;
+                                setTimePageFlag = false;
+                                addAnglerPageFlag = true;
                                 }
                             else
                                 {
@@ -878,6 +893,7 @@ if (read_keyboard_timer >= 2)                                             //read
                                 updatePageFlag = false;
                                 changePasswordPageFlag = false;
                                 setTimePageFlag = false;
+                                addAnglerPageFlag = false;
                                 }
                         }
                         // Looks for Line1 in header and then processes the SETTINGS results if found
@@ -968,7 +984,7 @@ if (read_keyboard_timer >= 2)                                             //read
                                 // success banner
                                 // Save password to password Variable
                                 //pass1.toCharArray(password,30);
-                                passwordString = pass1;                           
+                                passwordString = pass1;
                                 // Save password to EEPROM
                                 EEPROM.writeString(password_addr, pass1.substring(0,20));            //save password to eeprom
                                 EEPROM.commit();                                                     //commit to eeprom
@@ -1041,13 +1057,52 @@ if (read_keyboard_timer >= 2)                                             //read
 
                             rtc.adjust(DateTime(year, month, day, hour, minute, 0));
                         }
+                        else if ((headerT.indexOf("first_Name=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'Line1=' is found and text 'favicon' is not found
+                        {
+                            String first_Name =  header.substring(header.indexOf("first_Name=")+11,header.indexOf("&last_Name="));//parse out the varible strings for the the 4 lines
+                            String last_Name =  header.substring(header.indexOf("last_Name=")+10,header.indexOf("&middle_Name="));
+                            String middle_Name =  header.substring(header.indexOf("middle_Name=")+12,header.indexOf("&address1="));
+                            String address1 =  header.substring(header.indexOf("address1=")+9,header.indexOf("&address2="));
+                            String address2 =  header.substring(header.indexOf("address2=")+9,header.indexOf("&city="));
+                            String city =  header.substring(header.indexOf("city=")+5,header.indexOf("&zip="));
+                            String zip =  header.substring(header.indexOf("zip=")+4,header.indexOf("&cell_phone="));
+                            String cell_phone =  header.substring(header.indexOf("cell_phone=")+11,header.indexOf("&home_phone="));
+                            String home_phone =  header.substring(header.indexOf("home_phone=")+11,header.indexOf("&ssn="));
+                            String ssn =  header.substring(header.indexOf("ssn=")+4,header.indexOf("&dob="));
+                            String dob =  header.substring(header.indexOf("dob=")+4,header.indexOf("&email="));
+                            String email =  header.substring(header.indexOf("email=")+6,header.indexOf(" HTTP"));
+                            //TODO
+                            //FIX
+                            String inputState = "IN";  //  not working right now so everything gets IN for now
+
+                            String tempStr = "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,Email)Values('" +   first_Name + "','" + last_Name + "','" + middle_Name + "','" + address1 + "','" + address2 + "','" + city + "','" + inputState + "','" + zip + "','" + cell_phone + "','" + home_phone + "','" + ssn + "','" + dob + "','" + email + "')";
+                            char* tempChar = string2char(tempStr);
+                            Serial.println(first_Name);
+                            Serial.println("Testing and stuff");
+                            Serial.println(tempStr);
+                            sqlite3 *db3;                                                                        //declare a pointer to the data base
+                            openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
+                            Serial.println("before db_exec");
+                          db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Jones','Who')");
+                            //db_exec(db3, tempChar);
+
+                            Serial.println("after db_exec");
+                            sqlite3_close(db3);
+                            Serial.println("after sqlite3_close");
+                                                 // Sample code to add to DB
+                        //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
+
+                           //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
                         // ATC: This else statement is totally unnecessary and only
                         //      serves as a place holder for future expansion
+                      }
                         else    //if header did not contain text "line1" then run code in else statment below
                         {
                                 // do some stuff
                         }
+//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 //--RENDER HTML-----------------------------------------------------------------
+//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
                         htmlHead(client);
                         // svg PTS logo
                         printPTSLogo(client);
@@ -1182,6 +1237,31 @@ if (read_keyboard_timer >= 2)                                             //read
                             passwordMessage = "";
                             passSuccess = false;
                         }
+//--RENDER ADD ANGLER----------------------------------------------------------
+                         else if(addAnglerPageFlag) {
+                          pageTitle(client, "Add Angler");
+                          //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
+                          startForm(client, "/addAngler");
+                          inputBox(client, "first_Name", "", "First Name", false, "", "text");
+                          inputBox(client, "last_Name", "", "Last Name", false, "", "text");
+                          inputBox(client, "middle_Name", "", "Middle Name or Initial", false, "", "text");
+                          inputBox(client, "address1", "", "Address Line 1", false, "", "text");
+                          inputBox(client, "address2", "", "Address Line 2", false, "", "text");
+                          inputBox(client, "city", "", "City", false, "", "text");
+                          stateBox(client);
+                          inputBox(client, "zip", "", "Zip Code", false, "", "number");
+                          inputBox(client, "cell_phone", "", "Cell Phone", false, "", "tel");
+                          inputBox(client, "home_phone", "", "Home Phone", false, "", "tel");
+                          inputBox(client, "ssn", "", "Social Security Number", false, "", "number");
+                          inputBox(client, "dob", "", "Date of Birth", false, "", "date");
+                          inputBox(client, "email", "", "Email Address", false, "", "email");
+                          button(client, "submit", "primary");
+                          endForm(client);
+                          // Go back to home
+                          startForm(client, "/");
+                          button(client, "Exit", "danger");
+                          endForm(client);
+                        }
 //--RENDER HOME SCREEN----------------------------------------------------------
                         else
                         {
@@ -1193,6 +1273,11 @@ if (read_keyboard_timer >= 2)                                             //read
                         // Settings Button
                         startForm(client, "/settings");
                         button(client, "Settings", "secondary");
+                        endForm(client);
+
+                        // Add Angler Button
+                        startForm(client, "/addAngler");
+                        button(client, "Add Angler", "danger");
                         endForm(client);
                         }
                         // Version number on bottom of all pages
@@ -1238,7 +1323,7 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
   }
 }
 //---------------- check availble size and memory left on SD card --------------------------
-void check_sd_mem(void){     
+void check_sd_mem(void){
            Serial2.println(">>setup() - SD card present");
            Serial2.printf(">>Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
            Serial2.printf(">>Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
@@ -1262,7 +1347,7 @@ void ReadTime(void){
     Serial.print(':');
     Serial.print(now.second(), DEC);
     Serial.println();
-    
+
 }
 //------------- display time on LCD upper left corner---------------------------------------------
 void lcd_display_time(void){
@@ -1270,7 +1355,7 @@ void lcd_display_time(void){
     lcd.print(current_time);
     }
 
-//--------------- get time from rtc -------------------------------------------------    
+//--------------- get time from rtc -------------------------------------------------
 void get_time(void){
     String h = "";
     String m = "";
@@ -1284,9 +1369,9 @@ void get_time(void){
       {s = "0";}
     current_time = h+String(now.hour()) + ":" + m+ String(now.minute()) + ":"+ s + String(now.second());
    // Serial.println(current_time);
- 
+
    }
-   
+
 //-------------display date on LCD upper right corner ----------------------------------------------
 void lcd_display_date(void){
     lcd.setCursor(10,0);
@@ -1623,7 +1708,7 @@ void clear_output_buffer(void)
 
 //----- set printer for reverse text ------------------------------------
 void set_text_reverse(bool on_off){                            //set or clear reverse text for printer epson command
-      
+
       Serial2.write(0x1D);
       Serial2.write('B');
       if (on_off)
@@ -1647,7 +1732,7 @@ void recall_eeprom_values(void){
     passwordString = (EEPROM.readString(password_addr));           //retrieve password stored in eeprom
 }
 
-      
+
 //-----------------------------------------------------------------------------
 void clear_radio_rx_array(void){                               //routine to clear radio rx buffer
      int i=0;
