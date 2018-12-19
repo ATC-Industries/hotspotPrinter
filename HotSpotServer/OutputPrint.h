@@ -19,12 +19,14 @@ void set_text_size(unsigned int size);
 
 
 extern String current_time;
-extern String results[100][9];          //array the holds sql data
+extern String current_date;
+extern String results[75][9];          //array the holds sql data
 extern String line1 = "";              // String to hold value of Line 1 input box
 extern String line2 = "";              // String to hold value of Line 2 input box
 extern String line3 = "";              // String to hold value of Line 3 input box
 extern String line4 = "";              // String to hold value of Line 4 input box
 extern String tim;
+
 
 
 
@@ -52,7 +54,7 @@ void print_results(){
         r++;
         }
    Serial2.println("");
-   Serial2.println("------------------- End of results -----------------------");     
+   Serial2.println(current_time + "-----  Report by Pro Tournament Scales -------"+ current_date);     
    paper_cut();
    Serial2.write(0x1B);                         //upside down printing on
    Serial2.write('{');
@@ -135,9 +137,7 @@ void print_weigh_results(){
         r++;                                                                  //advance to next record
     }
    Serial2.println("");                                                       //line feed
-   Serial2.println("---------------- Report by Pro Tournament Scales ---------------");     
-    Serial2.println (current_time); 
- 
+   Serial2.println(current_time + "-----  Report by Pro Tournament Scales -------"+ current_date);      
    paper_cut();                                                               //cut paper
    
    Serial2.write(0x1B);                                                       //upside down printing on     
@@ -148,26 +148,26 @@ void print_weigh_results(){
   
 //--------------------------------------------------------------------------------------------
 void bold_on (void){ 
-  Serial2.write(0x1B);                         //emphasized on
+    Serial2.write(0x1B);                         //emphasized on
     Serial2.write('E');
     Serial2.write('0x01');  
-}  
+} 
+//-------------------------------------------------------------- 
 void bold_off (void){ 
-  Serial2.write(0x1B);                         //emphasized off
+    Serial2.write(0x1B);                         //emphasized off
     Serial2.write('E');
     Serial2.write('0x00');  
 }   
+  
  
- 
- 
- 
+///---------------------------------------------------------- 
  void paper_cut(void)
      {Serial2.write(0x1D);                                        // "GS" cut paper
      Serial2.write('V');                                          //"V"
      Serial2.write(0x42);                                         //decimal 66
      Serial2.write(0xB0);                                         //length to feed before cut (mm)
      }
-
+//-----------------------------------------------------------
 void set_text_size(unsigned int size)                           //set font size on printer
       {
       Serial2.write(0x1D);                                      // set text size to small size

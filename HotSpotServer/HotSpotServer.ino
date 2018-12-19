@@ -107,11 +107,13 @@ WiFiServer server(80);          // Set web server port number to 80
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
+long start_micro;
+String old_time;
 String current_date;
 String current_time;
  char* system_time;
  char sSQL[50];                 //varible that holds the sql string
-String results[100][9];          //array the holds sql data 251 results 6 columns
+String results[75][9];          //array the holds sql data 251 results 6 columns
 int rec;                        //number of records in database
 String header;                  // Variable to store the HTTP request header
 String save_header;             //
@@ -131,7 +133,7 @@ char temp_str[31];              //
 int rc = 0;                     // use in SQL routines
 String temp_val = "";           //
 char weight[15];                //
-int ClockTimer = 0;             //
+volatile int ClockTimer = 0;             //
 bool no_sig_flag = 0;           // flag to prevent display from updating on no change of No Signal message
 bool cb_print_2_copies;         // If checkbox should show checked or not
 bool cb_print_signature_line;   // If checkbox should show checked or not
@@ -227,14 +229,14 @@ LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to
 RTC_DS3231 rtc;                                        //start an instance of the real time clock named 'rtc'
 
 //-------------Timer Interuput routines ----------------------------------------------
-void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt(place before void setup() code)
-  {
-  portENTER_CRITICAL_ISR(&timerMux);
-  interruptCounter++;                   //put code to perform during interrupt here
-  read_keyboard_timer++;                //timer to scan keyboard keys for press
-  ClockTimer++;                          //timer used to read clock every second
-  portEXIT_CRITICAL_ISR(&timerMux);
-  }
+//void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt(place before void setup() code)
+//  {
+//  portENTER_CRITICAL_ISR(&timerMux);
+//  interruptCounter++;                   //put code to perform during interrupt here
+//  read_keyboard_timer++;                //timer to scan keyboard keys for press
+//  ClockTimer++;                          //timer used to read clock every second
+//  portEXIT_CRITICAL_ISR(&timerMux);
+//  }
 
 
 //--------------------------------------------------------------------------
@@ -254,11 +256,11 @@ void setup(){
     pinMode(button_F4,INPUT_PULLUP);       // F4
 
     //----------- setup 1us counter --------------------------------------------
-    timer = timerBegin(0, 80, true);            // "0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
-    timerAttachInterrupt(timer,&onTimer,true);  // "&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
-    timerAlarmWrite(timer, 100000, true);       // interupt every 1000000 times
-    timerAlarmEnable(timer);                    // this line enables the timer declared 3 lines up and starts it
-    ticket = 0;
+//    timer = timerBegin(0, 80, true);            // "0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
+//    timerAttachInterrupt(timer,&onTimer,true);  // "&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
+//    timerAlarmWrite(timer, 100000, true);       // interupt every 1000000 times
+//    timerAlarmEnable(timer);                    // this line enables the timer declared 3 lines up and starts it
+//    ticket = 0;
 
     //-------------  declare serial ports and start up LCD module --------------------------------------
     /*   Note the format for setting a serial port is as follows:
@@ -419,7 +421,7 @@ void setup(){
     lcd.print(line2);
     lcd.setCursor(0,2);
     lcd.print(line3);
-    delay(3000);
+ //   delay(3000);
     lcd.clear();
 
 //-------- get the MAC address of the WiFi module ----------
@@ -473,25 +475,25 @@ void setup(){
    "PRIMARY KEY (ID)");
  */
 
-  db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
+ // db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
   // db_exec(db3, "DROP TABLE Id");
    db_exec(db3, "CREATE TABLE Angler(ID INTEGER UNIQUE NOT NULL,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
    //
    //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
-     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
+//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')");
    
    // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
    // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
@@ -542,24 +544,30 @@ void setup(){
 //     db_exec(db3,sSQL);
     sqlite3_close(db3);                                                           //close database
      int r = 0;
-     Serial.printf("----array values -----  %d records ------\n\r",rec);
-
-     while (r <= rec-1){                                                          //Print all records found in query
-        int i = 0;
-        while (i <= 6)                                                            //display the 7 columns
-         {
-            Serial.print( results[r][i]+"\t");                                    //display all the column values (add tab)
-           i++;
-          }
-          Serial.println(" ");
-        r++;                                                                      //advance to next record
-        }
-     Serial.printf("---------- end of array ---------------------");
+//     Serial.printf("----array values -----  %d records ------\n\r",rec);
+//
+//     while (r <= rec-1){                                                          //Print all records found in query
+//        int i = 0;
+//        while (i <= 6)                                                            //display the 7 columns
+//         {
+//            Serial.print( results[r][i]+"\t");                                    //display all the column values (add tab)
+//           i++;
+//          }
+//          Serial.println(" ");
+//        r++;                                                                      //advance to next record
+//        }
+//     Serial.printf("---------- end of array ---------------------");
 
 ///Serial2.print("\0x010\0x04\0x04");    //check paper roll status/ reply 0x6C = out of paper.....  0x0c low on paper
 
 
 //---------------------------------------------------------------
+
+int val = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+ Serial.println(val);
+
+
+ start_micro = micros();
 }//void setup() ending terminator
 
 
@@ -567,14 +575,21 @@ void setup(){
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
 
+if((micros() - start_micro) >= 100000) 
+    {
+    ++ClockTimer;
+    ++totalInterruptCounter;
+    ++read_keyboard_timer;
+    start_micro = micros();
+    }
 //--------- 100 ms timer-----------------------------
-   if (interruptCounter > 0)                            //every one second 100 msec int is generated
-      {
-      portENTER_CRITICAL(&timerMux);
-      interruptCounter--;                               //reset counter to zero
-      portEXIT_CRITICAL(&timerMux);
-      totalInterruptCounter++;                          //increment counter for ints generated every second
-      }
+//   if (interruptCounter > 0)                            //every one second 100 msec int is generated
+//      {
+//      portENTER_CRITICAL(&timerMux);
+//      interruptCounter--;                               //reset counter to zero
+//      portEXIT_CRITICAL(&timerMux);
+//      totalInterruptCounter++;                          //increment counter for ints generated every second
+//      }
 
 //-------- 1 second timer-----------------------------
   if (ClockTimer >=10)                                  //update clock every one second
@@ -582,7 +597,11 @@ void loop(){
        get_date();
        lcd_display_time();                              //display time upper left corner of lcd
        lcd_display_date();                              //display date upper right corner of lcd
+       
        ClockTimer = 0;                                  //reset one second timer used for clock updates
+      
+     // int val = heap_caps_get_free_size(MALLOC_CAP_8BIT); //diagnnostic to display available heap size
+     // Serial.println(val);
       }
 
 
@@ -602,11 +621,12 @@ void loop(){
            }
       }
 //--------------- read  button routines -------------------------------------------------------
-
-if (read_keyboard_timer >= 2)                                             //read keypad every 200 ms
-     {read_keyboard_timer = 0;                                            //reset key scan timer
+  
+if (read_keyboard_timer >= 5)                                             //read keypad every 200 ms
+     { 
+    
 //----  PRINT button pressed?  -------------
-   if (!digitalRead(button_PRINT))                                      //if pushbutton is pressed (low condition), print the ticket
+     if (!digitalRead(button_PRINT))                                      //if pushbutton is pressed (low condition), print the ticket
       { no_sig_flag = 0 ;                                                 //clear flag so that 'no signal' message can appear if needed
         if (diagnostic_flag)                                              //^^^ diagnostic message
           {Serial.println(">>Print button  pressed");
@@ -629,12 +649,14 @@ if (read_keyboard_timer >= 2)                                             //read
 //       delay(2000);
 
        lcd.clear();
+       read_keyboard_timer = 0;
       }
 
 //---- F1 button pressed? ----------------
      lcd.setCursor(1,3);
      if (!digitalRead(button_F1))                                        //F1 button
-       { lcd.setCursor(2,3);
+       { read_keyboard_timer = 0;
+        lcd.setCursor(2,3);
         lcd.write(byte(1));                                             //show down arrow icon
         lcd.print("  ");
 
@@ -656,13 +678,14 @@ if (read_keyboard_timer >= 2)                                             //read
 //----------F2 button press ---------------
      lcd.setCursor(6,3);
      if (!digitalRead(button_F2))                                         //F2 button
-       {lcd.print("F2");
+       {read_keyboard_timer = 0;
+        lcd.print("F2");
         sqlite3 *db3;
          openDb("/sd/PTS.db", &db3);                                     //open the database
          db_exec(db3, "SELECT Angler.id,Angler.FirstName,Angler.LastName,weighin.totalFish,weighin.liveFish,weighin.shortFish,weighin.late,weighin.weight,weighin.adj_weight FROM angler INNER JOIN Weighin on Weighin.ID = Angler.ID ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
          sqlite3_close(db3);                                             //close database
-        //Serial2.print("\x1b\x44\x08\x0C\x10\0x14\0x18\0x1C\x00"); // Set tab stops at 8, 12,16,20,24,28  characters
-       print_weigh_results();
+         Serial.println("Database closed at 669");
+        print_weigh_results();
 
        if (diagnostic_flag)
           {Serial.println(">>Button F2 pressed");
@@ -678,7 +701,13 @@ if (read_keyboard_timer >= 2)                                             //read
 //--------- F3 button pressed? -------------------
        lcd.setCursor(11,3);
      if (!digitalRead(button_F3))                                         //F3 button
-       {lcd.print("F3");
+       {read_keyboard_timer = 0;
+        sqlite3 *db3;
+         openDb("/sd/PTS.db", &db3);                                     //open the database
+       db_exec(db3, "UPDATE Angler SET DOB = '11/03/1962' Where firstName = 'Bill'");
+       db_exec(db3, "SELECT * from Angler WHERE DOB IS NOT NULL");
+         sqlite3_close(db3);    
+        lcd.print("F3");
         if (diagnostic_flag)
            {Serial.println(">>Button F3 pressed");
             Serial2.println(">>Button F3 pressed");}                      //^^^ send button press diag to printer
@@ -689,7 +718,7 @@ if (read_keyboard_timer >= 2)                                             //read
 //-------- F4 button pressed? ---------------------
      lcd.setCursor(17,3);
      if (!digitalRead(button_F4))                                       //F4 button
-       {
+       {read_keyboard_timer = 0;
          lcd.print("F4");
          if (diagnostic_flag){
             Serial.println(">>Button F4 pressed");
@@ -701,7 +730,7 @@ if (read_keyboard_timer >= 2)                                             //read
 
 //-------------- F1 + F4 key press will reboot computer ---------------------------
   if (!digitalRead(button_F1) &&  !digitalRead(button_F4))              // If button 1 and 4 are pressed at same time reboot
-       {
+       {read_keyboard_timer = 0;
         delay(2000);
         if (!digitalRead(button_F1) &&  !digitalRead(button_F4))        //if still holding after 2 seconds
             {
@@ -1059,18 +1088,18 @@ if (read_keyboard_timer >= 2)                                             //read
                         }
                         else if ((headerT.indexOf("first_Name=") >= 0)&& !(header.indexOf("favicon") >= 0)) //if text 'first_name=' is found and text 'favicon' is not found
                         {                            
-                            String first_Name =  header.substring(header.indexOf("first_Name=")+11,header.indexOf("&last_Name="));//parse out the varible strings for the the 4 lines
-                            String last_Name =  header.substring(header.indexOf("last_Name=")+10,header.indexOf("&middle_Name="));
-                            String middle_Name =  header.substring(header.indexOf("middle_Name=")+12,header.indexOf("&address1="));
-                            String address1 =  header.substring(header.indexOf("address1=")+9,header.indexOf("&address2="));
-                            String address2 =  header.substring(header.indexOf("address2=")+9,header.indexOf("&city="));
-                            String city =  header.substring(header.indexOf("city=")+5,header.indexOf("&zip="));
-                            String zip =  header.substring(header.indexOf("zip=")+4,header.indexOf("&cell_phone="));
-                            String cell_phone =  header.substring(header.indexOf("cell_phone=")+11,header.indexOf("&home_phone="));
-                            String home_phone =  header.substring(header.indexOf("home_phone=")+11,header.indexOf("&ssn="));
-                            String ssn =  header.substring(header.indexOf("ssn=")+4,header.indexOf("&dob="));
-                            String dob =  header.substring(header.indexOf("dob=")+4,header.indexOf("&email="));
-                            String email =  header.substring(header.indexOf("email=")+6,header.indexOf(" HTTP"));
+//                            String first_Name =  header.substring(header.indexOf("first_Name=")+11,header.indexOf("&last_Name="));//parse out the varible strings for the the 4 lines
+//                            String last_Name =  header.substring(header.indexOf("last_Name=")+10,header.indexOf("&middle_Name="));
+//                            String middle_Name =  header.substring(header.indexOf("middle_Name=")+12,header.indexOf("&address1="));
+//                            String address1 =  header.substring(header.indexOf("address1=")+9,header.indexOf("&address2="));
+//                            String address2 =  header.substring(header.indexOf("address2=")+9,header.indexOf("&city="));
+//                            String city =  header.substring(header.indexOf("city=")+5,header.indexOf("&zip="));
+//                            String zip =  header.substring(header.indexOf("zip=")+4,header.indexOf("&cell_phone="));
+//                            String cell_phone =  header.substring(header.indexOf("cell_phone=")+11,header.indexOf("&home_phone="));
+//                            String home_phone =  header.substring(header.indexOf("home_phone=")+11,header.indexOf("&ssn="));
+//                            String ssn =  header.substring(header.indexOf("ssn=")+4,header.indexOf("&dob="));
+//                            String dob =  header.substring(header.indexOf("dob=")+4,header.indexOf("&email="));
+//                            String email =  header.substring(header.indexOf("email=")+6,header.indexOf(" HTTP"));
                             //TODO
                             //FIX
                             String inputState = "IN";  //  not working right now so everything gets IN for now
@@ -1305,6 +1334,13 @@ if (read_keyboard_timer >= 2)                                             //read
 
 } //end of program 'loop()'
 
+
+
+
+
+
+
+
 //%%%%%%%%%%%%%%%%%%%%%% functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /**
  * Checks the status of the checkbox in the header and changes the flag and status string
@@ -1503,17 +1539,18 @@ void print_ticket(void)
                Serial2.write(0x0A);                        //line feed
 
                set_text_size(0x00);                        //set text to 1x
-               Serial2.print (current_time + "\0x09\0x09\0x09" + current_date);
+               bold_off();
+             //  Serial2.print (current_time + "\0x09\0x09\0x09" + current_date);
 //------------ print serial number --------------------------------------------------
-               if (checkbox3_status == "checked"){          //is serialized ticket check box checked
-                   Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
-                   Serial2.write(0x0A);
-                    if (checkbox3_status == "checked")
-                    lcd.setCursor(0,0);
-                   // lcd.print("Ticket# "+ String(serial_number));
-                    lcd.printf("S/N # %08d       ",serial_number);
-                    Serial.printf("S/N # %08d       ",serial_number);
-                   }
+//               if (checkbox3_status == "checked"){          //is serialized ticket check box checked
+//                   Serial2.printf("S/N # %08d",serial_number);  //print ticket sequence number
+//                   Serial2.write(0x0A);
+//                    if (checkbox3_status == "checked")
+//                    lcd.setCursor(0,0);
+//                   // lcd.print("Ticket# "+ String(serial_number));
+//                    lcd.printf("S/N # %08d       ",serial_number);
+//                    Serial.printf("S/N # %08d       ",serial_number);
+//                   }
 
                set_text_size(0x11);                       //character size(horiz x2   vertical x2)
 
@@ -1548,26 +1585,27 @@ void print_ticket(void)
                Serial2.write(0x0A);            //line feeds
 
 //--------------print time date stamp on ticket -------------
-                set_text_size(0x00);            //normal text size
-                DateTime now = rtc.now();
-
-                if (now.hour()<10)                               //add leading zero
-                  {Serial2.print("0");}
-                Serial2.print(now.hour(), DEC);
-                Serial2.print(':');
-                if (now.minute()<10)                               //add leading zero
-                  {Serial2.print("0");}
-                Serial2.print(now.minute(), DEC);
-                Serial2.print(':');
-                if (now.second()<10)                               //add leading zero
-                  {Serial2.print("0");}
-                Serial2.print(now.second(), DEC);
-                Serial2.print("       ");
-                Serial2.print(now.month(), DEC);
-                Serial2.print('/');
-                Serial2.print(now.day(), DEC);
-                Serial2.print('/');
-                Serial2.print(now.year(), DEC);
+               set_text_size(0x00);            //normal text size
+               Serial2.print (current_time + "            " + current_date);
+//                DateTime now = rtc.now();
+//
+//                if (now.hour()<10)                               //add leading zero
+//                  {Serial2.print("0");}
+//                Serial2.print(now.hour(), DEC);
+//                Serial2.print(':');
+//                if (now.minute()<10)                               //add leading zero
+//                  {Serial2.print("0");}
+//                Serial2.print(now.minute(), DEC);
+//                Serial2.print(':');
+//                if (now.second()<10)                               //add leading zero
+//                  {Serial2.print("0");}
+//                Serial2.print(now.second(), DEC);
+//                Serial2.print("       ");
+//                Serial2.print(now.month(), DEC);
+//                Serial2.print('/');
+//                Serial2.print(now.day(), DEC);
+//                Serial2.print('/');
+//                Serial2.print(now.year(), DEC);
 
 
 //--------------area to insert tournament name and address and date--------------
@@ -1606,81 +1644,81 @@ void print_ticket(void)
                Serial2.write('0');
 
 //-------- print ticket to LCD screen --------------------------------
-           lcd.clear();
-           lcd.setCursor((20-(line1.length()))/2,0);                //print line 1 and center
-           lcd.print(line1);
-           lcd.setCursor((20-(line2.length()))/2,1);                //print line 1 and center
-           lcd.print(line2);
-           lcd.setCursor((20-(line3.length()))/2,2);                //print line 1 and center
-           lcd.print(line3);
-           lcd.setCursor((20-(String(weight).length()))/2,3);
-
-           lcd.setCursor(0,3);
-             if (now.hour()<10)                                     //add leading zero
-              {lcd.print("0");}
-           lcd.print(now.hour(), DEC);
-           lcd.print(':');
-           if (now.minute()<10)                                     //add leading zero
-              {lcd.print("0");}
-           lcd.print(now.minute(), DEC);
-           lcd.print(':');
-           if (now.second()<10)                                     //add leading zero
-              {lcd.print("0");}
-           lcd.print(now.second(), DEC);
-           lcd.print("  ");
-
-           lcd.setCursor(10,3);
-           if (now.month() <10)                                     //leading zero for months
-               {lcd.print("0");}
-           lcd.print(now.month(), DEC);
-           lcd.print('/');
-           if (now.day() <10)                                       //leading zero for days
-               {lcd.print("0");}
-           lcd.print(now.day(), DEC);
-           lcd.print('/');
-           lcd.print(now.year(), DEC);
-           delay(2000);
+//           lcd.clear();
+//           lcd.setCursor((20-(line1.length()))/2,0);                //print line 1 and center
+//           lcd.print(line1);
+//           lcd.setCursor((20-(line2.length()))/2,1);                //print line 1 and center
+//           lcd.print(line2);
+//           lcd.setCursor((20-(line3.length()))/2,2);                //print line 1 and center
+//           lcd.print(line3);
+//           lcd.setCursor((20-(String(weight).length()))/2,3);
+//
+//           lcd.setCursor(0,3);
+//             if (now.hour()<10)                                     //add leading zero
+//              {lcd.print("0");}
+//           lcd.print(now.hour(), DEC);
+//           lcd.print(':');
+//           if (now.minute()<10)                                     //add leading zero
+//              {lcd.print("0");}
+//           lcd.print(now.minute(), DEC);
+//           lcd.print(':');
+//           if (now.second()<10)                                     //add leading zero
+//              {lcd.print("0");}
+//           lcd.print(now.second(), DEC);
+//           lcd.print("  ");
+//
+//           lcd.setCursor(10,3);
+//           if (now.month() <10)                                     //leading zero for months
+//               {lcd.print("0");}
+//           lcd.print(now.month(), DEC);
+//           lcd.print('/');
+//           if (now.day() <10)                                       //leading zero for days
+//               {lcd.print("0");}
+//           lcd.print(now.day(), DEC);
+//           lcd.print('/');
+//           lcd.print(now.year(), DEC);
+//           delay(2000);
  //--------- 2nd lcd screen of weigh ticket info ----------------------------------
-           lcd.clear();
-           lcd.setCursor((20-(line4.length()))/2,0);                //print line 4 and center
-           lcd.print(line4);
-           if (statt == 0)                                          //no signal
-                  {
-                  lcd.setCursor(0,2);
-                  lcd.print("     No Signal");
-                  }
-           else if (statt == 1)                                     //if H2 mode
-              {
-                lcd.setCursor(0,2);                                 //center text on 3rd line
-                lcd.print(output_string);
-              }
-          else if (statt ==2)
-              {
-               lcd.write(output_string[1]);                       //send out string one byte at a time.
-               lcd.write(output_string[2]);                       //print lb value
-               lcd.write(output_string[3]);
-               lcd.printf("Lb");
-               lcd.write(output_string[5]);                       //print oz value
-               lcd.write(output_string[6]);
-               lcd.write(output_string[7]);
-               lcd.write(output_string[8]);
-               lcd.print("oz");                                   //print the oz label with return
-              }
-         else if (statt == 3)
-              {
-               lcd.write(output_string[0]);                       //send weight
-               lcd.write(output_string[1]);
-               lcd.write(output_string[2]);
-               lcd.write(output_string[3]);                       //decimal point
-               lcd.write(output_string[4]);
-               lcd.write(output_string[5]);
-               lcd.print("Lbs");
-              }
-
-             delay(2000);
-             // ticket = ticket + 1;                              //pointer for weigh tickets
-          clear_output_buffer();                                  //clear the output string
-
+//           lcd.clear();
+//           lcd.setCursor((20-(line4.length()))/2,0);                //print line 4 and center
+//           lcd.print(line4);
+//           if (statt == 0)                                          //no signal
+//                  {
+//                  lcd.setCursor(0,2);
+//                  lcd.print("     No Signal");
+//                  }
+//           else if (statt == 1)                                     //if H2 mode
+//              {
+//                lcd.setCursor(0,2);                                 //center text on 3rd line
+//                lcd.print(output_string);
+//              }
+//          else if (statt ==2)
+//              {
+//               lcd.write(output_string[1]);                       //send out string one byte at a time.
+//               lcd.write(output_string[2]);                       //print lb value
+//               lcd.write(output_string[3]);
+//               lcd.printf("Lb");
+//               lcd.write(output_string[5]);                       //print oz value
+//               lcd.write(output_string[6]);
+//               lcd.write(output_string[7]);
+//               lcd.write(output_string[8]);
+//               lcd.print("oz");                                   //print the oz label with return
+//              }
+//         else if (statt == 3)
+//              {
+//               lcd.write(output_string[0]);                       //send weight
+//               lcd.write(output_string[1]);
+//               lcd.write(output_string[2]);
+//               lcd.write(output_string[3]);                       //decimal point
+//               lcd.write(output_string[4]);
+//               lcd.write(output_string[5]);
+//               lcd.print("Lbs");
+//              }
+//
+//             delay(2000);
+//             // ticket = ticket + 1;                              //pointer for weigh tickets
+//          clear_output_buffer();                                  //clear the output string
+//
            } //end of routine
 //--------- cut paper on printer-----------------------------------------------------------------------
  void cut_paper(void)

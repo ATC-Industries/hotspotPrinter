@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <sqlite3.h>
 
-extern  String results[100][9];      //array the holds sql data
+extern String results[75][9];      //array the holds sql data
 extern int rec;                     //must be declared here and in main program so values xfer
 const char* data = "SQL reply";     //text to be printed when sql commands are processed
 
