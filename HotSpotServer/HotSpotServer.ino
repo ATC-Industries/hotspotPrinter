@@ -578,9 +578,14 @@ server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
   request->send(SPIFFS, "/login.html", "text/html");
 });
 
-// Route to load style.css file
+// Route to load signin.css file
 server.on("/signin.css", HTTP_GET, [](AsyncWebServerRequest *request){
   request->send(SPIFFS, "/signin.css", "text/css");
+});
+
+// Route to load style.css file
+server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/style.css", "text/css");
 });
 
 // Route to load bootstrap.css file
@@ -590,28 +595,39 @@ server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
 
 // Route to load logo file
 server.on("/pts.png", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/pts.png", "file");
+  request->send(SPIFFS, "/pts.png", "image/png");
+});
+
+// Route to load logo file
+server.on("/pts.svg", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/pts.svg", "image/svg+xml");
 });
 
 // Route to load favicon.ico file
 server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/favicon.ico", "file");
+  request->send(SPIFFS, "/favicon.ico", "image/x-icon");
 });
 
-// Route to load bootstrap.css file
+// Route to load jQuery js file
 server.on("/jquery-3.3.1.slim.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/jquery-3.3.1.slim.min.js", "text/html");
+  request->send(SPIFFS, "/jquery-3.3.1.slim.min.js", "application/javascript");
 });
 
-// Route to load bootstrap.css file
+// Route to load popper js file
 server.on("/popper.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/popper.min.js", "text/html");
+  request->send(SPIFFS, "/popper.min.js", "application/javascript");
 });
 
-// Route to load bootstrap.css file
+// Route to load bootstrap.js file
 server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/bootstrap.min.js", "text/html");
+  request->send(SPIFFS, "/bootstrap.min.js", "application/javascript");
 });
+
+// Route to load jquery js file
+server.on("/jquery-slim.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/jquery-slim.min.js", "application/javascript");
+});
+
 
 server.begin();
 
