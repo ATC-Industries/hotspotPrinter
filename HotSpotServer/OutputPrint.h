@@ -93,7 +93,7 @@ void print_weigh_results(){
 
     Serial2.print("--------------------------");
     Serial2.print(rec);
-    Serial2.println(" records-----------------------------");
+    Serial2.println(" records----------------------------");
     bold_on();
     Serial2.println("  ID  Name           T   A   S   L    Act      Adj   Place"); //print column titles
     Serial2.println("");
@@ -108,8 +108,8 @@ void print_weigh_results(){
         else if (results[r][0].length() == 3)
            {Serial2.print(" ");}
         Serial2.print( results[r][0]+"  ");                                //id numberdisplay all the column values (add tab)
-        Serial2.print( results[r][1]+" ");                                    //first name
-        Serial2.print( results[r][2]+" \x09");                                //last name
+        Serial2.print( results[r][2]+" ");                                    //last name
+        Serial2.print( results[r][1]+" \x09");                                //first name
         Serial2.print( results[r][3]+"   ");                                  //total fish
         Serial2.print( results[r][4]+"   ");                                  //live fish
         Serial2.print( results[r][5]+"   ");                                  //short fish
