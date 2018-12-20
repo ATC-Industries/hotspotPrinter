@@ -83,6 +83,8 @@ pin assignment                                      5 volt----------------------
 #include "html.h"               // refrence to HTML generation functions
 #include "sqlite.h"             // sqlite3 database functions
 #include "OutputPrint.h"        //routines to print data results to printer
+#include <ArduinoJson.h>        // https://arduinojson.org/v5/example/generator/
+
 
 #define EEPROM_SIZE 1024        //rom reserved for eeprom storage
 
@@ -489,7 +491,7 @@ void setup(){
    db_exec(db3, "CREATE TABLE weighin(ID INTEGER NOT NULL UNIQUE,TotalFish INTEGER NOT NULL DEFAULT 0,LiveFish INTEGER DEFAULT 0,ShortFish INTEGER DEFAULT 0,Late INTEGER DEFAULT 0,weight INTEGER DEFAULT 0,adj_weight INTEGER DEFAULT 0,PRIMARY KEY (ID))");
 
 
- // db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
+  db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
   // db_exec(db3, "DROP TABLE Id");
    db_exec(db3, "CREATE TABLE Angler(ID INTEGER UNIQUE NOT NULL,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
    //
@@ -577,6 +579,11 @@ void setup(){
 
 
 // ASYNC Testing
+
+
+
+
+
 if(!SPIFFS.begin()){
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
@@ -605,20 +612,31 @@ server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
 
   //  Take in add angler form data and do stuff with it
   server.on("/add", HTTP_POST, [](AsyncWebServerRequest *request){
+      // Memory pool for JSON object tree.
+      //
+      // Inside the brackets, 200 is the size of the pool in bytes.
+      // Don't forget to change this value to match your JSON document.
+      // Use arduinojson.org/assistant to compute the capacity.
+      StaticJsonBuffer<400> jsonBuffer;
+      // It's a reference to the JsonObject, the actual bytes are inside the
+      // JsonBuffer with all the other nodes of the object tree.
+      // Memory is freed when jsonBuffer goes out of scope.
+      JsonObject& root = jsonBuffer.createObject();
     if(request->method() == HTTP_POST){
-        Serial.printf("POST");
+        Serial.printf("POST\n");
     }
     int params = request->params();
     for(int i=0;i<params;i++){
       AsyncWebParameter* p = request->getParam(i);
-      if(p->isFile()){
-        Serial.printf("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
-      } else if(p->isPost()){
-        Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-      } else {
-        Serial.printf("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
-      }
+      // Add values in the object
+        //
+        // Most of the time, you can rely on the implicit casts.
+        // In other case, you can do root.set<long>("time", 1351824120);
+        root[p->name().c_str()] = p->value().c_str();
+
+        //Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
     }
+    root.prettyPrintTo(Serial);
     request->send(SPIFFS, "/addangler.html", "text/html");
   });
 
@@ -710,48 +728,48 @@ server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
 
 
 server.onNotFound([](AsyncWebServerRequest *request){
-    Serial.printf("NOT_FOUND: ");
-    if(request->method() == HTTP_GET)
-        Serial.printf("GET");
-    else if(request->method() == HTTP_POST)
-        Serial.printf("POST");
-    else if(request->method() == HTTP_DELETE)
-        Serial.printf("DELETE");
-    else if(request->method() == HTTP_PUT)
-        Serial.printf("PUT");
-    else if(request->method() == HTTP_PATCH)
-        Serial.printf("PATCH");
-    else if(request->method() == HTTP_HEAD)
-        Serial.printf("HEAD");
-    else if(request->method() == HTTP_OPTIONS)
-        Serial.printf("OPTIONS");
-    else
-        Serial.printf("UNKNOWN");
-    Serial.printf(" http://%s%s\n", request->host().c_str(), request->url().c_str());
-
-    if(request->contentLength()) {
-        Serial.printf("_CONTENT_TYPE: %s\n", request->contentType().c_str());
-        Serial.printf("_CONTENT_LENGTH: %u\n", request->contentLength());
-    }
-
-    int headers = request->headers();
-    int i;
-    for(i=0; i<headers; i++) {
-        AsyncWebHeader* h = request->getHeader(i);
-        Serial.printf("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
-    }
-
-    int params = request->params();
-    for(i=0; i<params; i++) {
-        AsyncWebParameter* p = request->getParam(i);
-        if(p->isFile()) {
-            Serial.printf("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
-            } else if(p->isPost()) {
-                Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-            } else {
-                Serial.printf("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
-            }
-        }
+    // Serial.printf("NOT_FOUND: ");
+    // if(request->method() == HTTP_GET)
+    //     Serial.printf("GET");
+    // else if(request->method() == HTTP_POST)
+    //     Serial.printf("POST");
+    // else if(request->method() == HTTP_DELETE)
+    //     Serial.printf("DELETE");
+    // else if(request->method() == HTTP_PUT)
+    //     Serial.printf("PUT");
+    // else if(request->method() == HTTP_PATCH)
+    //     Serial.printf("PATCH");
+    // else if(request->method() == HTTP_HEAD)
+    //     Serial.printf("HEAD");
+    // else if(request->method() == HTTP_OPTIONS)
+    //     Serial.printf("OPTIONS");
+    // else
+    //     Serial.printf("UNKNOWN");
+    // Serial.printf(" http://%s%s\n", request->host().c_str(), request->url().c_str());
+    //
+    // if(request->contentLength()) {
+    //     Serial.printf("_CONTENT_TYPE: %s\n", request->contentType().c_str());
+    //     Serial.printf("_CONTENT_LENGTH: %u\n", request->contentLength());
+    // }
+    //
+    // int headers = request->headers();
+    // int i;
+    // for(i=0; i<headers; i++) {
+    //     AsyncWebHeader* h = request->getHeader(i);
+    //     Serial.printf("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
+    // }
+    //
+    // int params = request->params();
+    // for(i=0; i<params; i++) {
+    //     AsyncWebParameter* p = request->getParam(i);
+    //     if(p->isFile()) {
+    //         Serial.printf("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
+    //         } else if(p->isPost()) {
+    //             Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+    //         } else {
+    //             Serial.printf("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
+    //         }
+    //     }
 
         request->send(404);
 });
