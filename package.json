@@ -1,0 +1,25 @@
+{
+  "name": "hotspotprinter",
+  "version": "1.0.0",
+  "description": "Serial printer connected to ESP32 WiFi module to and Pro line scale systems from Pro Tournament Scales.   Prints tickets with weight of scale.  Programable via any web browser including mobile devices Wifi network is created via  local hotspot.",
+  "main": "index.js",
+  "dependencies": {
+    "gulp-nunjucks-render": "^2.2.2"
+  },
+  "devDependencies": {
+    "gulp": "^4.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ATC-Industries/hotspotPrinter.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ATC-Industries/hotspotPrinter/issues"
+  },
+  "homepage": "https://github.com/ATC-Industries/hotspotPrinter#readme"
+}

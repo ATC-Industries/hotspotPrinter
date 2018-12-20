@@ -1,0 +1,21 @@
+<!-- index.njk -->
+{% extends "layout.njk" %}
+
+{% block content %}
+
+<!-- Importing Nunjucks Macro -->
+{% import 'macros/nav-macro.njk' as nav %}
+<!-- Creating the navigation with activePage = 'home' -->
+{{ nav.active('home') }}
+
+<main role="main" class="container">
+
+    <div class="starter-template">
+        <h1 class="">Welcome to the PTS Weigh-In Manager</h1>
+        <p class="lead">This is just the first step.<br>This thing will only grow from here!</p>
+    </div>
+
+
+
+</main><!-- /.container -->
+{% endblock %}

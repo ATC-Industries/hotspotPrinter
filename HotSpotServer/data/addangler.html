@@ -1,0 +1,151 @@
+<!-- layout.njk -->
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="/favicon.ico">
+
+    <title>Weigh-In Manager</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- You write code for this content block in another file -->
+    
+
+<!-- Importing Nunjucks Macro -->
+
+<!-- Creating the navigation with activePage = 'home' -->
+
+<nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+    <a class="navbar-brand" href="#">
+        <img src="pts-white.svg" width="40" height="30" alt="">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="mainNavbar">
+        <ul class="navbar-nav mr-auto">
+<li class="nav-item ">
+    <a class="nav-link" href="/">Home </a>
+</li>
+<li class="nav-item ">
+    <a class="nav-link" href="/weighin">Weigh-In </a>
+</li>
+<li class="nav-item ">
+    <a class="nav-link" href="/registration">Registration </a>
+</li>
+<li class="nav-item ">
+    <a class="nav-link" href="/bumpsink">Bump Sink </a>
+</li>
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="https://example.com" id="dropdown01" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Setup</a>
+    <div class="dropdown-menu" aria-labelledby="dropdown01">
+        <a class="dropdown-item" href="/addangler">Add Anglers<span class="sr-only">(current)</span></a>
+        <a class="dropdown-item" href="/setuptournament">Setup a Tournament</a>
+        <a class="dropdown-item" href="/systemsettings">System Settings</a>
+    </div>
+</li>
+</ul>
+</div>
+</nav>
+
+
+<main role="main" class="container">
+
+
+    <form action="/add" method="post">
+      <fieldset>
+        <legend>Personal information:</legend>
+        First name:<br>
+        <input type="text" class="form-control" name="firstname" placeholder="First Name"><br>
+        Last name:<br>
+        <input type="text" class="form-control" name="lastname" placeholder="Last Name"><br>
+        Middle name:<br>
+        <input type="text" class="form-control" name="middlename" placeholder="Middle Name"><br>
+        State:<br>
+        <select id="inputState" class="form-control" name="state">
+        <option value="AL">Alabama (AL)</option>
+        <option value="AK">Alaska (AK)</option>
+        <option value="AZ">Arizona (AZ)</option>
+        <option value="AR">Arkansas (AR)</option>
+        <option value="CA">California (CA)</option>
+        <option value="CO">Colorado (CO)</option>
+        <option value="CT">Connecticut (CT)</option>
+        <option value="DE">Delaware (DE)</option>
+        <option value="DC">District Of Columbia (DC)</option>
+        <option value="FL">Florida (FL)</option>
+        <option value="GA">Georgia (GA)</option>
+        <option value="HI">Hawaii (HI)</option>
+        <option value="ID">Idaho (ID)</option>
+        <option value="IL">Illinois (IL)</option>
+        <option value="IN">Indiana (IN)</option>
+        <option value="IA">Iowa (IA)</option>
+        <option value="KS">Kansas (KS)</option>
+        <option value="KY">Kentucky (KY)</option>
+        <option value="LA">Louisiana (LA)</option>
+        <option value="ME">Maine (ME)</option>
+        <option value="MD">Maryland (MD)</option>
+        <option value="MA">Massachusetts (MA)</option>
+        <option value="MI">Michigan (MI)</option>
+        <option value="MN">Minnesota (MN)</option>
+        <option value="MS">Mississippi (MS)</option>
+        <option value="MO">Missouri (MO)</option>
+        <option value="MT">Montana (MT)</option>
+        <option value="NE">Nebraska (NE)</option>
+        <option value="NV">Nevada (NV)</option>
+        <option value="NH">New Hampshire (NH)</option>
+        <option value="NJ">New Jersey (NJ)</option>
+        <option value="NM">New Mexico (NM)</option>
+        <option value="NY">New York (NY)</option>
+        <option value="NC">North Carolina (NC)</option>
+        <option value="ND">North Dakota (ND)</option>
+        <option value="OH">Ohio (OH)</option>
+        <option value="OK">Oklahoma (OK)</option>
+        <option value="OR">Oregon (OR)</option>
+        <option value="PA">Pennsylvania (PA)</option>
+        <option value="RI">Rhode Island (RI)</option>
+        <option value="SC">South Carolina (SC)</option>
+        <option value="SD">South Dakota (SD)</option>
+        <option value="TN">Tennessee (TN)</option>
+        <option value="TX">Texas (TX)</option>
+        <option value="UT">Utah (UT)</option>
+        <option value="VT">Vermont</option>
+        <option value="VA">Virginia</option>
+        <option value="WA">Washington</option>
+        <option value="WV">West Virginia</option>
+        <option value="WI">Wisconsin</option>
+        <option value="WY">Wyoming</option>
+        </select>
+        <input class="form-check-input" type="checkbox" name="check" id="gridCheck">
+        Check me out
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </fieldset>
+    </form>
+
+</main><!-- /.container -->
+
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="jquery-3.3.1.slim.min.js"></script>
+    <script>
+        window.jQuery || document.write('<script src="jquery-slim.min.js"><\/script>')
+    </script>
+    <script src="popper.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+  </body>
+</html>

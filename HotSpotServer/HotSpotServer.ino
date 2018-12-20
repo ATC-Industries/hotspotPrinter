@@ -121,6 +121,9 @@ const char* ssid     = "ProTournament";
 String passwordString = "123456789";
 //WiFiServer server(80);          // Set web server port number to 80
 AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
+AsyncEventSource events("/events");
+
 
 //------------------------------------------------------------------------------
 
@@ -233,6 +236,7 @@ void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minut
 // Checks status of checkbox and sets flags for proper HTML display
 void checkboxStatus(String h, bool& is_checked, String& status, String number);
 //int openDb(const char *filename, sqlite3 **db);
+void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
 char* string2char(String str)
 {
     if(str.length()!= 0)
@@ -577,92 +581,179 @@ if(!SPIFFS.begin()){
     return;
 }
 
-server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/index.html", "text/html");
+ws.onEvent(onWsEvent);
+server.addHandler(&ws);
+
+events.onConnect([](AsyncEventSourceClient *client){
+  client->send("hello!",NULL,millis(),1000);
+});
+server.addHandler(&events);
+
+//server.addHandler(new SPIFFSEditor(http_username,http_password));
+
+server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(200, "text/plain", String(ESP.getFreeHeap()));
 });
 
-server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/login.html", "text/html");
-});
+server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
 
-// Route to load signin.css file
-server.on("/signin.css", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/signin.css", "text/css");
-});
+  server.on("/addangler", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/addangler.html", "text/html");
+  });
 
-// Route to load style.css file
-server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/style.css", "text/css");
-});
 
-// Route to load bootstrap.css file
-server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/bootstrap.min.css", "text/css");
-});
-
-// Route to load logo file
-server.on("/pts.png", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/pts.png", "image/png");
-});
-
-// Route to load logo file
-server.on("/pts.svg", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/pts.svg", "image/svg+xml");
-});
-server.on("/pts-white.svg", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/pts-white.svg", "image/svg+xml");
-});
-
-// Route to load favicon.ico file
-server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/favicon.ico", "image/x-icon");
-});
-
-// Route to load jQuery js file
-server.on("/jquery-3.3.1.slim.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/jquery-3.3.1.slim.min.js", "application/javascript");
-});
-
-// Route to load popper js file
-server.on("/popper.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/popper.min.js", "application/javascript");
-});
-
-// Route to load bootstrap.js file
-server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/bootstrap.min.js", "application/javascript");
-});
-
-// Route to load jquery js file
-server.on("/jquery-slim.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(SPIFFS, "/jquery-slim.min.js", "application/javascript");
-});
-
-//List all parameters
-server.on("/submit", HTTP_POST, [](AsyncWebServerRequest *request){
+  //  Take in add angler form data and do stuff with it
+  server.on("/add", HTTP_POST, [](AsyncWebServerRequest *request){
+    if(request->method() == HTTP_POST){
+        Serial.printf("POST");
+    }
     int params = request->params();
     for(int i=0;i<params;i++){
       AsyncWebParameter* p = request->getParam(i);
-      if(p->isPost()){
-        Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-      } 
+      if(p->isFile()){
+        Serial.printf("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
+      } else if(p->isPost()){
+        Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+      } else {
+        Serial.printf("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
+      }
     }
-    request->send(SPIFFS, "/index.html", "text/html");
-});
+    request->send(SPIFFS, "/addangler.html", "text/html");
+  });
 
-// Send a POST request to <IP>/post with a form field message set to <message>
-server.on("/post", HTTP_POST, [](AsyncWebServerRequest *request){
-    String message;
-    if (request->hasParam(PARAM_MESSAGE, true)) {
-        message = request->getParam(PARAM_MESSAGE, true)->value();
-    } else {
-        message = "No message sent";
+
+  // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  //   request->send(SPIFFS, "/index.html", "text/html");
+  // });
+
+  server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/login.html", "text/html");
+  });
+
+  // Route to load signin.css file
+  server.on("/signin.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/signin.css", "text/css");
+  });
+
+  // Route to load style.css file
+  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/style.css", "text/css");
+  });
+
+  // Route to load bootstrap.css file
+  server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/bootstrap.min.css", "text/css");
+  });
+
+  // Route to load logo file
+  server.on("/pts.png", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/pts.png", "image/png");
+  });
+
+  // Route to load logo file
+  server.on("/pts.svg", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/pts.svg", "image/svg+xml");
+  });
+  server.on("/pts-white.svg", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/pts-white.svg", "image/svg+xml");
+  });
+
+  // Route to load favicon.ico file
+  server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/favicon.ico", "image/x-icon");
+  });
+
+  // Route to load jQuery js file
+  server.on("/jquery-3.3.1.slim.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/jquery-3.3.1.slim.min.js", "application/javascript");
+  });
+
+  // Route to load popper js file
+  server.on("/popper.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/popper.min.js", "application/javascript");
+  });
+
+  // Route to load bootstrap.js file
+  server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/bootstrap.min.js", "application/javascript");
+  });
+
+  // Route to load jquery js file
+  server.on("/jquery-slim.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/jquery-slim.min.js", "application/javascript");
+  });
+  //
+  // //List all parameters
+  // server.on("/submit", HTTP_POST, [](AsyncWebServerRequest *request){
+  //     int params = request->params();
+  //     for(int i=0;i<params;i++){
+  //       AsyncWebParameter* p = request->getParam(i);
+  //       if(p->isPost()){
+  //         Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+  //       }
+  //     }
+  //     request->send(SPIFFS, "/index.html", "text/html");
+  // });
+  //
+  // // Send a POST request to <IP>/post with a form field message set to <message>
+  // server.on("/post", HTTP_POST, [](AsyncWebServerRequest *request){
+  //     String message;
+  //     if (request->hasParam(PARAM_MESSAGE, true)) {
+  //         message = request->getParam(PARAM_MESSAGE, true)->value();
+  //     } else {
+  //         message = "No message sent";
+  //     }
+  //     request->send(200, "text/plain", "Hello, POST: " + message);
+  // });
+
+
+
+server.onNotFound([](AsyncWebServerRequest *request){
+    Serial.printf("NOT_FOUND: ");
+    if(request->method() == HTTP_GET)
+        Serial.printf("GET");
+    else if(request->method() == HTTP_POST)
+        Serial.printf("POST");
+    else if(request->method() == HTTP_DELETE)
+        Serial.printf("DELETE");
+    else if(request->method() == HTTP_PUT)
+        Serial.printf("PUT");
+    else if(request->method() == HTTP_PATCH)
+        Serial.printf("PATCH");
+    else if(request->method() == HTTP_HEAD)
+        Serial.printf("HEAD");
+    else if(request->method() == HTTP_OPTIONS)
+        Serial.printf("OPTIONS");
+    else
+        Serial.printf("UNKNOWN");
+    Serial.printf(" http://%s%s\n", request->host().c_str(), request->url().c_str());
+
+    if(request->contentLength()) {
+        Serial.printf("_CONTENT_TYPE: %s\n", request->contentType().c_str());
+        Serial.printf("_CONTENT_LENGTH: %u\n", request->contentLength());
     }
-    request->send(200, "text/plain", "Hello, POST: " + message);
+
+    int headers = request->headers();
+    int i;
+    for(i=0; i<headers; i++) {
+        AsyncWebHeader* h = request->getHeader(i);
+        Serial.printf("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
+    }
+
+    int params = request->params();
+    for(i=0; i<params; i++) {
+        AsyncWebParameter* p = request->getParam(i);
+        if(p->isFile()) {
+            Serial.printf("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
+            } else if(p->isPost()) {
+                Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+            } else {
+                Serial.printf("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
+            }
+        }
+
+        request->send(404);
 });
-
-
-
 server.begin();
 
 
@@ -2022,3 +2113,76 @@ void processRadioString(){
 //    </ul>
 
 //add code to read radio serial number
+
+
+void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
+  if(type == WS_EVT_CONNECT){
+    Serial.printf("ws[%s][%u] connect\n", server->url(), client->id());
+    client->printf("Hello Client %u :)", client->id());
+    client->ping();
+  } else if(type == WS_EVT_DISCONNECT){
+    Serial.printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
+  } else if(type == WS_EVT_ERROR){
+    Serial.printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
+  } else if(type == WS_EVT_PONG){
+    Serial.printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
+  } else if(type == WS_EVT_DATA){
+    AwsFrameInfo * info = (AwsFrameInfo*)arg;
+    String msg = "";
+    if(info->final && info->index == 0 && info->len == len){
+      //the whole message is in a single frame and we got all of it's data
+      Serial.printf("ws[%s][%u] %s-message[%llu]: ", server->url(), client->id(), (info->opcode == WS_TEXT)?"text":"binary", info->len);
+
+      if(info->opcode == WS_TEXT){
+        for(size_t i=0; i < info->len; i++) {
+          msg += (char) data[i];
+        }
+      } else {
+        char buff[3];
+        for(size_t i=0; i < info->len; i++) {
+          sprintf(buff, "%02x ", (uint8_t) data[i]);
+          msg += buff ;
+        }
+      }
+      Serial.printf("%s\n",msg.c_str());
+
+      if(info->opcode == WS_TEXT)
+        client->text("I got your text message");
+      else
+        client->binary("I got your binary message");
+    } else {
+      //message is comprised of multiple frames or the frame is split into multiple packets
+      if(info->index == 0){
+        if(info->num == 0)
+          Serial.printf("ws[%s][%u] %s-message start\n", server->url(), client->id(), (info->message_opcode == WS_TEXT)?"text":"binary");
+        Serial.printf("ws[%s][%u] frame[%u] start[%llu]\n", server->url(), client->id(), info->num, info->len);
+      }
+
+      Serial.printf("ws[%s][%u] frame[%u] %s[%llu - %llu]: ", server->url(), client->id(), info->num, (info->message_opcode == WS_TEXT)?"text":"binary", info->index, info->index + len);
+
+      if(info->opcode == WS_TEXT){
+        for(size_t i=0; i < info->len; i++) {
+          msg += (char) data[i];
+        }
+      } else {
+        char buff[3];
+        for(size_t i=0; i < info->len; i++) {
+          sprintf(buff, "%02x ", (uint8_t) data[i]);
+          msg += buff ;
+        }
+      }
+      Serial.printf("%s\n",msg.c_str());
+
+      if((info->index + len) == info->len){
+        Serial.printf("ws[%s][%u] frame[%u] end[%llu]\n", server->url(), client->id(), info->num, info->len);
+        if(info->final){
+          Serial.printf("ws[%s][%u] %s-message end\n", server->url(), client->id(), (info->message_opcode == WS_TEXT)?"text":"binary");
+          if(info->message_opcode == WS_TEXT)
+            client->text("I got your text message");
+          else
+            client->binary("I got your binary message");
+        }
+      }
+    }
+  }
+}
