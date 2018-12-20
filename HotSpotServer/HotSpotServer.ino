@@ -1,15 +1,3 @@
-#include <AsyncTCP.h>
-
-#include <AsyncEventSource.h>
-#include <AsyncJson.h>
-#include <AsyncWebSocket.h>
-#include <ESPAsyncWebServer.h>
-#include <SPIFFSEditor.h>
-#include <StringArray.h>
-#include <WebAuthentication.h>
-#include <WebHandlerImpl.h>
-#include <WebResponseImpl.h>
-
 
 
 
@@ -485,77 +473,86 @@ void setup(){
 
 
  //-- add table if they do not exist ----------
-
+/*
    // db_exec(db3, "DROP TABLE weighin");                        //unrem this line to erase old table and create new table
-   db_exec(db3, "CREATE TABLE weighin(ID INTEGER NOT NULL UNIQUE,TotalFish INTEGER NOT NULL DEFAULT 0,LiveFish INTEGER DEFAULT 0,ShortFish INTEGER DEFAULT 0,Late INTEGER DEFAULT 0,weight INTEGER DEFAULT 0,adj_weight INTEGER DEFAULT 0,PRIMARY KEY (ID))");
-
+   db_exec(db3, "CREATE TABLE weighin"
+   "(ID        INTEGER NOT NULL UNIQUE,"
+   "TotalFish  INTEGER NOT NULL DEFAULT 0,"
+   "LiveFish   INTEGER DEFAULT 0,"
+   "ShortFish  INTEGER DEFAULT 0,"
+   "Late       INTEGER DEFAULT 0,"
+   "weight     INTEGER DEFAULT 0,"
+   "adj_weight INTEGER DEFAULT 0,"
+   "PRIMARY KEY (ID)");
+ */
 
   db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
   // db_exec(db3, "DROP TABLE Id");
    db_exec(db3, "CREATE TABLE Angler(ID INTEGER UNIQUE NOT NULL,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
    //
    //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
-//     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
+     db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')");
 
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('4','4','3','0','8','689','550')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('5','4','4','3','4','389','880')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('6','2','2','2','2','769','770')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('7','5','4','1','5','359','444')");     //add records
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('8','4','4','1','3','560','555')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('9','5','2','3','6','1686','1666')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('10','5','3','0','8','875','770')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('11','5','4','3','4','890','789')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('12','5','3','2','1','1012','912')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('13','5','4','0','5','359','570')");     //add records
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('14','4','4','1','3','790','650')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('15','5','5','3','6','1220','1098')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('16','4','3','0','8','689','567')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('17','4','4','3','4','389','879')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('18','2','2','2','2','769','789')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('19','5','4','1','5','359','456')");     //add records
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('20','4','4','1','3','560','567')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('21','5','2','3','6','1686','1678')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('22','5','3','0','8','875','789')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('23','5','4','3','4','900','897')");
-    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('24','4','3','2','1','1012','987')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('4','4','3','0','8','689','550')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('5','4','4','3','4','389','880')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('6','2','2','2','2','769','770')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('7','5','4','1','5','359','444')");     //add records
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('8','4','4','1','3','560','555')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('9','5','2','3','6','1686','1666')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('10','5','3','0','8','875','770')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('11','5','4','3','4','890','789')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('12','5','3','2','1','1012','912')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('13','5','4','0','5','359','570')");     //add records
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('14','4','4','1','3','790','650')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('15','5','5','3','6','1220','1098')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('16','4','3','0','8','689','567')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('17','4','4','3','4','389','879')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('18','2','2','2','2','769','789')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('19','5','4','1','5','359','456')");     //add records
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('20','4','4','1','3','560','567')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('21','5','2','3','6','1686','1678')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('22','5','3','0','8','875','789')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('23','5','4','3','4','900','897')");
+   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('24','4','3','2','1','1012','987')");
 
 
-    Serial.printf("----List Tables ---------\n\r");
-    db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
+   Serial.printf("----List Tables ---------\n\r");
+     db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
     Serial.printf("----End of Tables ---------\n\r");
 
-//   db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                  //list entire data base
+//     db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                  //list entire data base
      Serial.println("--- weighin results by adj_weight ------");
      db_exec(db3, "SELECT * FROM weighin Order BY adj_weight DESC");
      db_exec(db3, "SELECT * FROM Angler");                                 //total number of records in table
-//   db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
+//     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
 
  //-----  example to pass varibles to a sql query---------
-       char *namev = "Mike Joes";
-       char *IDv = "4";
+     char *namev = "Mike Joes";
+     char *IDv = "4";
+
+
 //     sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                  //search database by rowid
-//     db_exec(db3,sSQL);                                                          //this is the actual query to database
+//     db_exec(db3,sSQL);                                                          //this is theactual query to database
 //      sprintf(sSQL,"SELECT * FROM Angler WHERE name = '%s'",namev);              //search database by name
 //     db_exec(db3,sSQL);
 //      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);             //search database by WEighin id
 //     db_exec(db3,sSQL);
-      
     sqlite3_close(db3);                                                         //close database
 
      int r = 0;
@@ -611,16 +608,9 @@ server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
 
   //  Take in add angler form data and do stuff with it
   server.on("/add", HTTP_POST, [](AsyncWebServerRequest *request){
-      // Memory pool for JSON object tree.
-      //
-      // Inside the brackets, 200 is the size of the pool in bytes.
-      // Don't forget to change this value to match your JSON document.
-      // Use arduinojson.org/assistant to compute the capacity.
-      StaticJsonBuffer<400> jsonBuffer;
-      // It's a reference to the JsonObject, the actual bytes are inside the
-      // JsonBuffer with all the other nodes of the object tree.
-      // Memory is freed when jsonBuffer goes out of scope.
-      JsonObject& root = jsonBuffer.createObject();
+    // Memory pool for JSON object tree.
+    StaticJsonBuffer<400> jsonBuffer;
+    JsonObject& angler = jsonBuffer.createObject();
     if(request->method() == HTTP_POST){
         Serial.printf("POST\n");
     }
@@ -631,11 +621,11 @@ server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
         //
         // Most of the time, you can rely on the implicit casts.
         // In other case, you can do root.set<long>("time", 1351824120);
-        root[p->name().c_str()] = p->value().c_str();
+        angler[p->name().c_str()] = p->value().c_str();
 
         //Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
     }
-    root.prettyPrintTo(Serial);
+    angler.prettyPrintTo(Serial);
     request->send(SPIFFS, "/addangler.html", "text/html");
   });
 
@@ -973,7 +963,7 @@ if (read_keyboard_timer >= 5)                                             //read
 //--------------- radio uart recieve ---------------------------------------------------------------
       if (Serial2.available() > 0)                                   //feedback from the printer
            {char c;
-           c = (char)Serial2.read();
+           c = (char)Serial1.read();
            Serial.print(c);                                            //send to serial monitor
            if (c == 0x00)                                           //if null zero
              Serial.println("");
