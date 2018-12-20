@@ -18,18 +18,32 @@ Flash Frequency is 40mhz
 
 The included libraries will install automatically from the board and standard set of libraries
 
+You will need to install the Data upload plugin to upload all the files in the `data` fold to the ESP32 SPIFFS
+https://github.com/me-no-dev/arduino-esp32fs-plugin
+
 ### Dependencies
 
 `#include <U8g2lib.h>`  In the library manager search for "U8g" and choose the library by oliver
+
 `https://github.com/olikraus/u8g2`
+
 `#include <sqlite3.h>` Library for the database engine TODO need link  https://github.com/siara-cc/esp32_arduino_sqlite3_lib
+
 `#include <WiFi.h>` Wi-Fi library TODO need link
+
 `#include <EEPROM.h>` Driver for eeprom TODO need link
+
 `#include <Update.h>` Firmware uploader TODO need link
+
 `#include <Wire.h>` i2C function TODO need link
+
 `#include <LiquidCrystal_I2C.h>` 4x20 lcd display TODO need link
+
 `#include <NetBIOS.h>` Unknown TODO need link
+
 `#include <RTClib.h>` library for  RTC routines TODO need link
+
+`#include <ESPAsyncWebServer>`  https://techtutorialsx.com/2017/12/01/esp32-arduino-asynchronous-http-webserver/
 
 
 ## Authors
