@@ -128,6 +128,7 @@ AsyncEventSource events("/events");
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
+int pnt;
 long start_micro;
 String old_time;
 String current_date;
@@ -571,7 +572,7 @@ void setup(){
 //        }
 //     Serial.printf("---------- end of array ---------------------");
 
-///Serial2.print("\0x010\0x04\0x04");    //check paper roll status/ reply 0x6C = out of paper.....  0x0c low on paper
+ //Serial2.print("\0x1D\0x49\0x01");    //respond with printer model number
 
 
 
@@ -798,8 +799,8 @@ if((micros() - start_micro) >= 100000)
   if (ClockTimer >=10)                                  //update clock every one second
       {get_time();
        get_date();
-       lcd_display_time();                              //display time upper left corner of lcd
-       lcd_display_date();                              //display date upper right corner of lcd
+       //lcd_display_time();                              //display time upper left corner of lcd
+      // lcd_display_date();                              //display date upper right corner of lcd
 
        ClockTimer = 0;                                  //reset one second timer used for clock updates
 
@@ -825,7 +826,7 @@ if((micros() - start_micro) >= 100000)
       }
 //--------------- read  button routines -------------------------------------------------------
 
-if (read_keyboard_timer >= 5)                                             //read keypad every 200 ms
+if (read_keyboard_timer >= 2)                                             //read keypad every 200 ms
      {
 
 //----  PRINT button pressed?  -------------
@@ -905,13 +906,21 @@ if (read_keyboard_timer >= 5)                                             //read
 //--------- F3 button pressed? -------------------
        lcd.setCursor(11,3);
      if (!digitalRead(button_F3))                                         //F3 button
-       {read_keyboard_timer = 0;
+       {
+        read_keyboard_timer = 0;
         sqlite3 *db3;
          openDb("/sd/PTS.db", &db3);                                     //open the database
-       db_exec(db3, "UPDATE Angler SET DOB = '11/03/1962' Where firstName = 'Bill'");
-       db_exec(db3, "SELECT * from Angler WHERE DOB IS NOT NULL");
+       
+       pnt = pnt+1;
+       sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
+         db_exec(db3,sSQL);  
          sqlite3_close(db3);
-        lcd.print("F3");
+         lcd.setCursor(0,0);
+         lcd.print("                    ");
+         lcd.setCursor(0,0);
+        lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);
+         if (rec == 0)
+            {pnt = pnt-1;}
         if (diagnostic_flag)
            {Serial.println(">>Button F3 pressed");
             Serial2.println(">>Button F3 pressed");}                      //^^^ send button press diag to printer
@@ -920,10 +929,23 @@ if (read_keyboard_timer >= 5)                                             //read
         {lcd.print("   ");}
 
 //-------- F4 button pressed? ---------------------
-     lcd.setCursor(17,3);
+     
      if (!digitalRead(button_F4))                                       //F4 button
-       {read_keyboard_timer = 0;
-         lcd.print("F4");
+       {
+        if (pnt >1)
+            {pnt = pnt-1;}
+         sqlite3 *db3;
+         openDb("/sd/PTS.db", &db3); 
+       sprintf(sSQL,"SELECT ID, LastName,FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
+         db_exec(db3,sSQL);  
+         sqlite3_close(db3);
+        lcd.setCursor(0,0);
+        lcd.print("                    ");
+        lcd.setCursor(0,0);
+        lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);
+        
+        read_keyboard_timer = 0;
+       //  lcd.print("F4");
          if (diagnostic_flag){
             Serial.println(">>Button F4 pressed");
             Serial2.println(">>Button F4 pressed");}                    //^^^ send button press diag to printer
@@ -952,7 +974,7 @@ if (read_keyboard_timer >= 5)                                             //read
     }//end if read_keyboard_timer = 0
 
 
-//--------------- radio uart recieve ---------------------------------------------------------------
+//--------------- radio and printer uart recieve ---------------------------------------------------------------
       if (Serial2.available() > 0)                                   //feedback from the printer
            {char c;
            c = (char)Serial2.read();
@@ -962,7 +984,7 @@ if (read_keyboard_timer >= 5)                                             //read
            }
 
 
-      if (Serial1.available() > 0)                                  //if data in recieve buffer, send to serial monitor
+      if (Serial1.available() > 0)                                  //if data in radio recieve buffer, send to serial monitor
           {char c;
            c = (char)Serial1.read();                                //get byte from uart buffer
            radio_rx_array[radio_rx_pointer] += c;                   //add character to radio rx buffer
@@ -1992,7 +2014,7 @@ void processRadioString(){
   lock_flag = false;                                  //preset lock flag to false
   while(i >= 3)                                       //search from  the 7 to the 15th character in array
       { if (radio_rx_array[i] == 'H')                 //check for locked value in string
-           {Serial.println("**Locked**");             //send locked value to serial monitor
+           {//Serial.println("**Locked**");             //send locked value to serial monitor
             lock_flag = true;                         //an 'H' was found so set lock flag
             break;                                    //exit the while loop
            }
