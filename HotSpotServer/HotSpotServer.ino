@@ -97,7 +97,7 @@ const int checkbox4_eeprom_addr = 203;  // checkbox4   -   203
 const int serial_number_addr = 204;     // checkbox5   -   204
 const int password_addr = 215;          // password    -   215
 
-
+const char* PARAM_MESSAGE = "message";
 //------------- an integer array to hold the version number---------------------
 const int VERSION_NUMBER[3] = {0,0,4};   // [MAJOR, MINOR, PATCH]
 
@@ -602,6 +602,9 @@ server.on("/pts.png", HTTP_GET, [](AsyncWebServerRequest *request){
 server.on("/pts.svg", HTTP_GET, [](AsyncWebServerRequest *request){
   request->send(SPIFFS, "/pts.svg", "image/svg+xml");
 });
+server.on("/pts-white.svg", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(SPIFFS, "/pts-white.svg", "image/svg+xml");
+});
 
 // Route to load favicon.ico file
 server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -627,6 +630,30 @@ server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
 server.on("/jquery-slim.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
   request->send(SPIFFS, "/jquery-slim.min.js", "application/javascript");
 });
+
+//List all parameters
+server.on("/submit", HTTP_POST, [](AsyncWebServerRequest *request){
+    int params = request->params();
+    for(int i=0;i<params;i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isPost()){
+        Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+      } 
+    }
+    request->send(SPIFFS, "/index.html", "text/html");
+});
+
+// Send a POST request to <IP>/post with a form field message set to <message>
+server.on("/post", HTTP_POST, [](AsyncWebServerRequest *request){
+    String message;
+    if (request->hasParam(PARAM_MESSAGE, true)) {
+        message = request->getParam(PARAM_MESSAGE, true)->value();
+    } else {
+        message = "No message sent";
+    }
+    request->send(200, "text/plain", "Hello, POST: " + message);
+});
+
 
 
 server.begin();
