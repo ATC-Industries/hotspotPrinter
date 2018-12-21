@@ -56,7 +56,7 @@ pin assignment                                      5 volt----------------------
 #include "ESPAsyncWebServer.h"
 #include "SPIFFS.h"
 #include <EEPROM.h>             //driver for eeprom
-//------ files for sd card -----------------------------------------------------
+//------ files for SD card -----------------------------------------------------
 #include <Update.h>             //firmware uploader
 #include <FS.h>
 #include <SD.h>                 //routines for SD card reader/writer
@@ -627,6 +627,45 @@ server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
         //Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
     }
     angler.prettyPrintTo(Serial);
+    // TODO
+    // Send angler JSON to function to add angler to DB
+    // JsonObject& angler = jsonBuffer.parseObject(json);
+
+    // // Test if parsing succeeds.
+    // if (!angler.success()) {
+    //     Serial.println("parseObject() failed");
+    //     return;
+    // }
+    String firstName = angler["firstName="];
+    String lastName =  angler["lastName="];
+    String middleName =  angler["middleInit="];
+    String address1 =  angler["address1="];
+    String address2 =  angler["address2="];
+    String city =  angler["city="];
+    String inputState =  angler["state="];
+    String zip =  angler["zip="];
+    String cellPhone =  angler["cellPhone="];
+    String homePhone =  angler["homePhone="];
+    String ssn =  angler["ssn="];
+    String dob =  angler["dob="];
+    String email =  angler["email="];
+
+    String tempStr = "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,DOB,Email)Values('" +   firstName + "','" + lastName + "','" + middleName + "','" + address1 + "','" + address2 + "','" + city + "','" + inputState + "','" + zip + "','" + cellPhone + "','" + homePhone + "','" + dob + "','" + email + "')";
+
+    //String tempStr = "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,Email)Values('" +   angler["firstName"] + "','" + angler["lastName"] + "','" + angler["middleName"] + "','" + angler["address1"] + "','" + angler["address2"] + "','" + angler["city"] + "','" + angler["state"] + "','" + angler["zip"] + "','" + angler["cellPhone"] + "','" + angler["homePhone"] + "','" + angler["dob"] + "','" + angler["email"] + "')";
+    char* tempChar = string2char(tempStr);
+    Serial.println(firstName);
+    Serial.println("Testing and stuff");
+    Serial.println(tempStr);
+    sqlite3 *db3;                                                                        //declare a pointer to the data base
+    openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
+    Serial.println("before db_exec");
+    //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Jones','Who')");
+    db_exec(db3, tempChar);
+
+    Serial.println("after db_exec");
+    sqlite3_close(db3);
+    // TODO  figure out a way to check for angler duplicates
     request->send(SPIFFS, "/addangler.html", "text/html");
   });
 
@@ -918,10 +957,10 @@ if (read_keyboard_timer >= 2)                                             //read
         read_keyboard_timer = 0;
         sqlite3 *db3;
          openDb("/sd/PTS.db", &db3);                                     //open the database
-       
+
        pnt = pnt+1;
        sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
-         db_exec(db3,sSQL);  
+         db_exec(db3,sSQL);
          sqlite3_close(db3);
          lcd.setCursor(0,0);
          lcd.print("                    ");
@@ -937,21 +976,21 @@ if (read_keyboard_timer >= 2)                                             //read
         {lcd.print("   ");}
 
 //-------- F4 button pressed? ---------------------
-     
+
      if (!digitalRead(button_F4))                                       //F4 button
        {
         if (pnt >1)
             {pnt = pnt-1;}
          sqlite3 *db3;
-         openDb("/sd/PTS.db", &db3); 
+         openDb("/sd/PTS.db", &db3);
        sprintf(sSQL,"SELECT ID, LastName,FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
-         db_exec(db3,sSQL);  
+         db_exec(db3,sSQL);
          sqlite3_close(db3);
         lcd.setCursor(0,0);
         lcd.print("                    ");
         lcd.setCursor(0,0);
         lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);
-        
+
         read_keyboard_timer = 0;
        //  lcd.print("F4");
          if (diagnostic_flag){

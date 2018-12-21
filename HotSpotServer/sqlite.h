@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sqlite3.h>
+#include <ArduinoJson.h>        // https://arduinojson.org/v5/example/generator/
+
 
 extern String results[75][9];      //array the holds sql data
 extern int rec;                     //must be declared here and in main program so values xfer
@@ -67,6 +69,7 @@ int db_exec(sqlite3 *db, const char *sql) {                                //thi
   Serial.println(micros() - start);                                      //show how long it took to process this command
   return rc;
 }
+
 
 #endif
 //create_member_table{
