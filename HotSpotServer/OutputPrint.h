@@ -54,7 +54,13 @@ void print_results(){
         r++;
         }
    Serial2.println("");
+   Serial2.write(0x1B);                         //justification: center text
+   Serial2.write('a');
+   Serial2.write('1');                           //0= left, 1 = center 2= right
    Serial2.println(current_time + "-----  Report by Pro Tournament Scales -------"+ current_date);
+   Serial2.write(0x1B);                         //justification: center text
+   Serial2.write('a');
+   Serial2.write('0');                           //0= left, 1 = center 2= right
    paper_cut();
    Serial2.write(0x1B);                         //upside down printing on
    Serial2.write('{');

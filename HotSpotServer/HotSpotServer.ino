@@ -118,6 +118,7 @@ AsyncEventSource events("/events");
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
+String verString;
 int pnt;
 long start_micro;
 String old_time;
@@ -207,6 +208,7 @@ byte DownArrow[8] = {
 };
 
 //----------funtion prototypes -------------------------------------------------
+void get_date(void);
 void get_time(void);
 void cut_paper(void);
 void check_sd_mem(void);
@@ -371,7 +373,6 @@ void setup(){
         Serial.println("password = " + passwordString);
         }
 
-    //.softAP(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connection)
 
     IPAddress IP = WiFi.softAPIP();                               //get the ip address
     Serial.print("AP IP address: ");                              //print ip address to SM
@@ -381,7 +382,7 @@ void setup(){
     lcd.setCursor(0,0);
     lcd.print("WiFi network:");
     lcd.setCursor(0,1);
-    lcd.print("ProTournament");
+    lcd.print(ssid);                                             //the ssid is declared at top of code on this page
     char ip_string[30];                                          //declare a character array to hold ip address
     sprintf(ip_string,"IP = %d.%d.%d.%d",WiFi.softAPIP()[0],WiFi.softAPIP()[1],WiFi.softAPIP()[2],WiFi.softAPIP()[3]);   //this creates the ip address format to print (192.169.4.1)
     set_text_size(0X00);                                         //set printer font size to small
@@ -397,7 +398,7 @@ void setup(){
     Serial2.println("---------------------------------------------------------");
 
     set_text_size(0X11);
-    Serial2.println("WiFi network = ProTournament");
+    Serial2.println("WiFi network = " + String(ssid));                                 //ssid declared at top of this form
     Serial2.write(0x0A);
     set_text_size(0X00);
     Serial2.println("Use phone or tablet to log onto the following network site");
@@ -405,17 +406,19 @@ void setup(){
     lcd.print(ip_string);
 
     Serial2.write(0x0A);
-    Serial2.println("----------------------------------------------------------");
+    //sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
+   // Serial2.println("------- Software "+ verString +" --------");
     if (!diagnostic_flag)
        {cut_paper();}
 
-    char verString[10];
-    sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
+
+   // sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
     lcd.setCursor(0,3);
-    lcd.print(verString);                                                 //print software version
+  //  lcd.print(verString);                                                 //print software version
     if (diagnostic_flag == true)                                                  //^^^diagnostic mode
         { Serial2.print(">>Software ");
-          Serial2.println(verString);}
+         // Serial2.println(verString);
+         }
 
 
     delay(2000);                                                          //leave ssid and ip on oled sceen for this delay
@@ -442,7 +445,6 @@ void setup(){
     if (diagnostic_flag == true)
         {Serial2.print(">>MAC address");}
     for(int i=5;i>=0;i--){
-
       Serial.print(":");
       Serial.print(Imac[i],HEX);                        //print the mac address to serial monitor
       if (diagnostic_flag == true)                      //^^^ print mac address to printer when in diagnostic mode
@@ -451,7 +453,7 @@ void setup(){
       }
     Serial.print("\n");
     Serial2.println("");
-
+    get_date();                                        //get date on startup
     // Check if SD card is present
     isSDCardPresent = isSDCard();                          //set flag if sd card is present
     if (!isSDCardPresent)
@@ -805,17 +807,10 @@ server.onNotFound([](AsyncWebServerRequest *request){
 server.begin();
 
 
-
-
-
-
-
-
-
 //---------------------------------------------------------------
 
-int val = heap_caps_get_free_size(MALLOC_CAP_8BIT);
- Serial.println(val);
+int val = heap_caps_get_free_size(MALLOC_CAP_8BIT);                            //get available stack size
+ Serial.println("Available stack" + val);
 
 
  start_micro = micros();
@@ -845,7 +840,7 @@ if((micros() - start_micro) >= 100000)
 //-------- 1 second timer-----------------------------
   if (ClockTimer >=10)                                  //update clock every one second
       {get_time();
-       get_date();
+      // get_date();
        //lcd_display_time();                              //display time upper left corner of lcd
       // lcd_display_date();                              //display date upper right corner of lcd
 
@@ -946,9 +941,10 @@ if (read_keyboard_timer >= 2)                                             //read
        }
      else
        {
-        lcd.setCursor(6,3);
-        lcd.write(byte(1));
-        lcd.print("  ");}
+//        lcd.setCursor(6,3);
+//        lcd.write(byte(1));                                              // down arrow key
+//        lcd.print("  ");
+        }
 
 //--------- F3 button pressed? -------------------
        lcd.setCursor(11,3);
@@ -960,34 +956,42 @@ if (read_keyboard_timer >= 2)                                             //read
 
        pnt = pnt+1;
        sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
-         db_exec(db3,sSQL);
-         sqlite3_close(db3);
-         lcd.setCursor(0,0);
-         lcd.print("                    ");
-         lcd.setCursor(0,0);
-        lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);
-         if (rec == 0)
-            {pnt = pnt-1;}
-        if (diagnostic_flag)
+       db_exec(db3,sSQL);
+       sqlite3_close(db3);
+       lcd.setCursor(0,0);
+       lcd.print("                    ");
+       lcd.setCursor(0,0);
+       lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);
+       if (rec == 0)                                                    // 'rec' is the number of records returned from query
+            {pnt = pnt-1;
+            lcd.setCursor(0,0);
+            lcd.print("  -- End of file -- ");
+            }
+       if (diagnostic_flag)
            {Serial.println(">>Button F3 pressed");
             Serial2.println(">>Button F3 pressed");}                      //^^^ send button press diag to printer
-       }
+           }
      else
-        {lcd.print("   ");}
+        {lcd.setCursor(13,3);
+        lcd.write(byte(0));                                               //up arrow key
+       // lcd.print("  ");
+       }
 
 //-------- F4 button pressed? ---------------------
 
      if (!digitalRead(button_F4))                                       //F4 button
        {
         if (pnt >1)
-            {pnt = pnt-1;}
+            {pnt = pnt-1;
+
+            }
          sqlite3 *db3;
          openDb("/sd/PTS.db", &db3);
        sprintf(sSQL,"SELECT ID, LastName,FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
          db_exec(db3,sSQL);
          sqlite3_close(db3);
         lcd.setCursor(0,0);
-        lcd.print("                    ");
+        lcd.print("                    ");                                       //clear line
         lcd.setCursor(0,0);
         lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);
 
@@ -998,7 +1002,10 @@ if (read_keyboard_timer >= 2)                                             //read
             Serial2.println(">>Button F4 pressed");}                    //^^^ send button press diag to printer
        }
      else
-       {lcd.print("   ");}
+       {lcd.setCursor(18,3);
+        lcd.write(byte(1));                                               //down arrow key
+        //lcd.print("  ");
+        }
 
 
 //-------------- F1 + F4 key press will reboot computer ---------------------------
@@ -1665,19 +1672,17 @@ void lcd_display_time(void){
 
 //--------------- get time from rtc -------------------------------------------------
 void get_time(void){
-    String h = "";
+    String h = "";                                   //varibles to hold leading zero
     String m = "";
     String s = "";
     DateTime now = rtc.now();
-    if (now.hour()<10)                               //add leading zero
+    if (now.hour()<10)                                //add leading zero
       {h= "0";}
     if (now.minute()<10)                               //add leading zero
       {m = "0";}
     if (now.second()<10)                               //add leading zero
       {s = "0";}
     current_time = h+String(now.hour()) + ":" + m+ String(now.minute()) + ":"+ s + String(now.second());
-   // Serial.println(current_time);
-
    }
 
 //-------------display date on LCD upper right corner ----------------------------------------------
