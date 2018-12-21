@@ -106,7 +106,7 @@ const char* PARAM_MESSAGE = "message";
 const int VERSION_NUMBER[3] = {0,0,4};   // [MAJOR, MINOR, PATCH]
 
 //----------------- Replace with network credentials ---------------------------
-const char* ssid     = "ProTournament";
+const char* ssid     = "ProTournament2";
 //char* password = "123456789";
 String passwordString = "123456789";
 //WiFiServer server(80);          // Set web server port number to 80
@@ -610,44 +610,17 @@ server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
 
 
   //  Take in add angler form data and do stuff with it
-  server.on("/add", HTTP_POST, [](AsyncWebServerRequest *request){
-      // Allocate JsonBuffer
-      // Use arduinojson.org/assistant to compute the capacity.
-      const size_t capacity = JSON_OBJECT_SIZE(12) + 200;
-      DynamicJsonBuffer jsonBuffer(capacity);
-
-    JsonObject& angler = jsonBuffer.createObject();
-    if(request->method() == HTTP_POST){
-        Serial.printf("POST\n");
-    }
-    int params = request->params();
-    for(int i=0;i<params;i++){
-      AsyncWebParameter* p = request->getParam(i);
-      angler[p->name().c_str()] = p->value().c_str();
-    }
-    angler.prettyPrintTo(Serial);
-
-    String firstName = angler["firstName"];
-    String lastName =  angler["lastName"];
-    String middleName =  angler["middleInit"];
-    String address1 =  angler["address1"];
-    String address2 =  angler["address2"];
-    String city =  angler["city"];
-    String inputState =  angler["state"];
-    String zip =  angler["zip"];
-    String cellPhone =  angler["cellPhone"];
-    String homePhone =  angler["homePhone"];
-    String ssn =  angler["ssn"];
-    String dob =  angler["dob"];
-    String email =  angler["email"];
-
-    sqlite3 *db3;                                                                        //declare a pointer to the data base
-    openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
-    sprintf(sSQL,"INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,DOB,Email)Values('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",firstName.c_str(),lastName.c_str(),middleName.c_str(),address1.c_str(),address2.c_str(),city.c_str(),inputState.c_str(),zip.c_str(),cellPhone.c_str(),homePhone.c_str(),dob.c_str(),email.c_str());
-    db_exec(db3,sSQL);
-    sqlite3_close(db3);
-    // TODO  figure out a way to check for angler duplicates
-    request->send(SPIFFS, "/addangler.html", "text/html");
+  server.on("/addangler", HTTP_POST, [](AsyncWebServerRequest *request){
+    sqlite3 *db3;                           //declare a pointer to the data base
+    openDb("/sd/PTS.db", &db3);             //open database on SD card, assign to 'db3'
+    // Build sql insertion string
+    sprintf(sSQL,"INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,DOB,Email)Values('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
+    request->getParam(0)->value().c_str(),request->getParam(1)->value().c_str(),request->getParam(2)->value().c_str(),request->getParam(3)->value().c_str(),request->getParam(4)->value().c_str(),
+    request->getParam(5)->value().c_str(),request->getParam(6)->value().c_str(),request->getParam(7)->value().c_str(),request->getParam(8)->value().c_str(),request->getParam(9)->value().c_str(),
+    request->getParam(10)->value().c_str(),request->getParam(11)->value().c_str());
+    db_exec(db3,sSQL);                      // Exectute the insertion
+    sqlite3_close(db3);                     // Close the database
+    //request->send(200, "text/plain", "Hello, POST: ");
   });
 
 

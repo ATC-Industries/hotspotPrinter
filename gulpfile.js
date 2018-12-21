@@ -1,7 +1,7 @@
 var gulp = require('gulp');
 var nunjucksRender = require('gulp-nunjucks-render');
 
-gulp.task('nunjucks', function() {
+gulp.task('njk', function() {
   // Gets .html and .nunjucks files in pages
   return gulp.src('HotSpotServer/app/pages/**/*.+(html|nunjucks|njk)')
   // Renders template with nunjucks
