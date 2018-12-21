@@ -102,8 +102,8 @@ const int serial_number_addr = 204;     // checkbox5   -   204
 const int password_addr = 215;          // password    -   215
 
 const char* PARAM_MESSAGE = "message";
-//------------- an integer array to hold the version number---------------------
-const int VERSION_NUMBER[3] = {0,0,4};   // [MAJOR, MINOR, PATCH]
+//------------- a string to hold the version numbe r---------------------
+String VERSION_NUMBER = "0.0.5";   // [MAJOR, MINOR, PATCH]
 
 //----------------- Replace with network credentials ---------------------------
 const char* ssid     = "ProTournament";
@@ -191,16 +191,16 @@ byte UpArrow[8] = {
   0b00100,
   0b01110,
   0b11111,
-  0b11111,
-  0b11111,
-  0b00010
+  0b00000,
+  0b00000,
+  0b00000
 };
 
 byte DownArrow[8] = {
   0b00000,
   0b00000,
-  0b11111,
-  0b11111,
+  0b00000,
+  0b00000,
   0b11111,
   0b01110,
   0b00100,
@@ -288,8 +288,7 @@ void setup(){
     lcd.createChar(0, UpArrow);               //assign custom character to location 0
     lcd.createChar(1, DownArrow);             //assign custom character to location 1
 
-   // Serial.print(results[0][0]);        //print name
-   // Serial.println(results[0][1]);
+   
 //--------------Initialize printer for upside down print -----------------------------
      Serial2.write(0x1B);                //initialize pos2 printer
      Serial2.write('@');
@@ -406,18 +405,17 @@ void setup(){
     lcd.print(ip_string);
 
     Serial2.write(0x0A);
-    //sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
-   // Serial2.println("------- Software "+ verString +" --------");
+    
+   // Serial2.println("------- Software "+ VERSION_NUMBER +" --------");
     if (!diagnostic_flag)
        {cut_paper();}
 
 
-   // sprintf(verString,"Ver. = %d.%d.%d", VERSION_NUMBER[0],VERSION_NUMBER[1],VERSION_NUMBER[2]);
     lcd.setCursor(0,3);
-  //  lcd.print(verString);                                                 //print software version
+    lcd.print(VERSION_NUMBER);                                                 //print software version
     if (diagnostic_flag == true)                                                  //^^^diagnostic mode
         { Serial2.print(">>Software ");
-         // Serial2.println(verString);
+          Serial2.println(VERSION_NUMBER);
          }
 
 
@@ -1007,7 +1005,7 @@ if (read_keyboard_timer >= 2)                                             //read
     }//end if read_keyboard_timer = 0
 
 
-//--------------- radio and printer uart recieve ---------------------------------------------------------------
+//--------------- printer uart recieve ---------------------------------------------------------------
       if (Serial2.available() > 0)                                   //feedback from the printer
            {char c;
            c = (char)Serial1.read();
@@ -1016,7 +1014,7 @@ if (read_keyboard_timer >= 2)                                             //read
              Serial.println("");
            }
 
-
+//------------ radio uart -----------------------------------------------------------------------------
       if (Serial1.available() > 0)                                  //if data in radio recieve buffer, send to serial monitor
           {char c;
            c = (char)Serial1.read();                                //get byte from uart buffer
@@ -2041,6 +2039,7 @@ void clear_radio_rx_array(void){                               //routine to clea
 //----------------------Process radio string if flag is set--------------------------------
 void processRadioString(){
   int i = 25;
+  Serial.println(radio_rx_array);
   no_signal_timer = 0;                                //reset the no signal timer since a reading was sensed
   lock_flag = false;                                  //preset lock flag to false
   while(i >= 3)                                       //search from  the 7 to the 15th character in array
@@ -2086,7 +2085,7 @@ void processRadioString(){
   }
   else                                                //send error to SM (serial monitor)
   {
-   Serial.println("unable to process radio rx string");
+   Serial.println("Unable to process radio rx string");
    clear_radio_rx_array();
   // Serial.println("if(radio_rx_array[radio_buff_pointer-1]==0x0D && ((radio_rx_array[0] == 0x02) || radio_rx_array[0] == 0x0A))");
 
