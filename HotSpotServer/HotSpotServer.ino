@@ -117,6 +117,14 @@ AsyncEventSource events("/events");
 //------------------------------------------------------------------------------
 
 //-----------------Define varibles----------------------------------------------
+bool bump_mode;
+int Total_fish;         //bump sink values for screen entry
+int Total_alive;
+int Total_short;
+int Total_late;
+
+
+
 String verString;
 int pnt;
 long start_micro;
@@ -125,6 +133,8 @@ String current_date;
 String current_time;
  char* system_time;
  char sSQL[200];                 //varible that holds the sql string
+char lcd_buffer[25];
+ 
 String results[75][9];          //array the holds sql data 251 results 6 columns
 int rec;                        //number of records in database
 String header;                  // Variable to store the HTTP request header
@@ -187,12 +197,13 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 byte UpArrow[8] = {
   0b00000,
   0b00000,
+  0b00000,
+  0b00000,
+  0b00000,
   0b00100,
   0b01110,
-  0b11111,
-  0b00000,
-  0b00000,
-  0b00000
+  0b11111
+  
 };
 
 byte DownArrow[8] = {
@@ -200,10 +211,11 @@ byte DownArrow[8] = {
   0b00000,
   0b00000,
   0b00000,
+  0b00000,
   0b11111,
   0b01110,
-  0b00100,
-  0b00000
+  0b00100
+  
 };
 
 //----------funtion prototypes -------------------------------------------------
@@ -311,7 +323,6 @@ void setup(){
          lcd.setCursor(2,1);
          lcd.print("  Diagnostic  Mode");                           //display message on LCD screen
          Serial2.println("Turn printer 'OFF' and then 'ON' to exit diagnostic mode");
-
          Serial2.println("------------- Entering Diagnostic Mode ----------------");                             //^^^ send message to printer
          Serial2.write(0x0A);                                       //line feed
          while (!digitalRead(button_F1))                           //loop while F1 is held down
@@ -680,6 +691,10 @@ int val = heap_caps_get_free_size(MALLOC_CAP_8BIT);                            /
 
 
  start_micro = micros();
+ Total_fish = 0;
+ Total_alive = 0;
+ Total_short = 0;
+ Total_late = 0;
 }//void setup() ending terminator
 
 
@@ -725,10 +740,11 @@ if((micros() - start_micro) >= 100000)
            { statt = 0;                                   //set display mode to 0 so "No Signal" will be displayed
              if (!no_sig_flag)                            //if flag is not set
                {
-               lcd.clear();                                //clear lcd screen
-               lcd.setCursor(2,1);
-               lcd.print("** No  Signal **");
-               }
+                if (bump_mode == false)
+                   {lcd.clear();                                //clear lcd screen
+                    lcd.setCursor(2,1);
+                    lcd.print("** No  Signal **");}       //only display if not in bump sink mode
+                   }
              no_sig_flag = 1;                             //set flag so display will not update every loop
            }
       }
@@ -743,37 +759,77 @@ if (read_keyboard_timer >= 2)                                             //read
         if (diagnostic_flag)                                              //^^^ diagnostic message
           {Serial.println(">>Print button  pressed");
             Serial2.println(">>Print button pressed");}
-        print_ticket();                                                   //print the weight ticket
-        delay(300);
-        if (checkbox1_status == "checked")                                //if checkbox "print 2 tickets" is checked
-            {print_ticket();}                                             //print second ticket if print 2 copies is selected
-        while (!digitalRead(button_PRINT))                                //loop while button is held down
-            {delay(30);}
+       if ((Total_fish != 0) ) ///print ticket if bump sink info has been entered
+           {print_ticket();                                                   //print the weight ticket
+            bump_mode = false;                                              //get out of bump mode after ticket is printed
+            delay(300);
+            if (checkbox1_status == "checked")                                //if checkbox "print 2 tickets" is checked
+               {print_ticket();}                                             //print second ticket if print 2 copies is selected
+            while (!digitalRead(button_PRINT))                                //loop while button is held down
+               {delay(30);}
+            lcd.setCursor(3,1);
+            lcd.print("PRINTING...         ");                                       //display 'Printing' message to lcd
+            delay(2000);
+            lcd.clear();
+            Total_fish = 0;
+            Total_alive = 0;
+            Total_short = 0;
+            Total_late = 0;
+           }
+      else           //else code if all bump sink info has not been entered
+         {
+          if (bump_mode == false)                                         //toggle bump mode on or off
+             { bump_mode = true;
+             Total_fish = 0;
+             Total_alive = 0;
+             Total_short = 0;
+             Total_late = 0;
+             lcd.setCursor(0,1);
+             lcd.print("                    ");
+             lcd.setCursor(0,2);
+             lcd.print("Tot Alive Short Late");
+             lcd.setCursor(0,3);
+             sprintf(lcd_buffer,"  %d    %d    %d    %d",Total_fish,Total_alive,Total_short,Total_late);
+             lcd.print(lcd_buffer);
+             
+             Serial.println("bump_mode = true");
+             }
+          else
+             {bump_mode = false;   
+              lcd.setCursor(0,1);
+              lcd.print("                    ");                            //clear lines 2,3,4
+              lcd.setCursor(0,2);
+              lcd.print("                    ");
+              lcd.setCursor(0,3);
+              lcd.print("                    ");
+              Serial.println("bump_mode = false");
 
-       if (checkbox3_status == "checked")                                 //if check box 'print serial number' is checked
-          {serial_number++;                                              //increment serial number
-            EEPROM.writeInt(serial_number_addr,serial_number);           //save serial number to eeprom
-            Serial.println(EEPROM.readInt(serial_number_addr));          //*** diagnostic
-          }
-       lcd.clear();                                                      //clear lcd display
-//       lcd.setCursor(3,1);
-//       lcd.print("PRINTING...");                                       //display 'Printing' message to lcd
-//       delay(2000);
-
-       lcd.clear();
-       read_keyboard_timer = 0;
+             }
+        }
+        read_keyboard_timer = 0;
       }
 
 //---- F1 button pressed? ----------------
      lcd.setCursor(1,3);
      if (!digitalRead(button_F1))                                        //F1 button
        { read_keyboard_timer = 0;
+        if (bump_mode == true)
+           {
+            if(++Total_fish > 5)                                     //increment and hold at 5 max
+               {Total_fish = 0;}
+            lcd.setCursor(2,3);
+            lcd.print(Total_fish);
+            delay(150);
+           }
+        else
+        {
         lcd.setCursor(2,3);
         lcd.write(byte(1));                                             //show down arrow icon
         lcd.print("  ");
 
          sqlite3 *db3;
          openDb("/sd/PTS.db", &db3);                                     //open the database
+      // db_exec(db3, "DELETE FROM Angler WHERE lastName = ''");       //delete records with no last name
          db_exec(db3, "SELECT * FROM Angler ");   //query the angler list and sort by boat numb decending
          sqlite3_close(db3);                                             //close database
 
@@ -784,17 +840,29 @@ if (read_keyboard_timer >= 2)                                             //read
            Serial.println(">>Button F1 pressed");
           }
        }
-     else{
-         lcd.setCursor(0,3);
-          lcd.print("Res");
-        }
+//     else{
+//         lcd.setCursor(0,3);
+//         lcd.print("Res");
+//        }
+       }
 //----------F2 button press ---------------
      lcd.setCursor(6,3);
      if (!digitalRead(button_F2))                                         //F2 button
        {read_keyboard_timer = 0;
+         if (bump_mode == true)
+           {
+            if(++Total_alive > Total_fish)                                     //increment and hold at 5 max
+               {Total_alive = 0;}
+            lcd.setCursor(7,3);
+            lcd.print(Total_alive);
+           delay(150);
+           }
+        else
+        {
         lcd.print("F2");
         sqlite3 *db3;
          openDb("/sd/PTS.db", &db3);                                     //open the database
+         
          db_exec(db3, "SELECT Angler.id,Angler.FirstName,Angler.LastName,weighin.totalFish,weighin.liveFish,weighin.shortFish,weighin.late,weighin.weight,weighin.adj_weight FROM angler INNER JOIN Weighin on Weighin.ID = Angler.ID ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
          sqlite3_close(db3);                                             //close database
          Serial.println("Database closed at 669");
@@ -805,74 +873,92 @@ if (read_keyboard_timer >= 2)                                             //read
             Serial2.println(">>Button F2 pressed");}                      //^^^ send button press diag to printer
        delay(1000);                                                        //switch debounce
        }
-     else
-       {
-//        lcd.setCursor(6,3);
-//        lcd.write(byte(1));                                              // down arrow key
-//        lcd.print("  ");
-        }
+       }
+    
 
 //--------- F3 button pressed? -------------------
        lcd.setCursor(11,3);
      if (!digitalRead(button_F3))                                         //F3 button
        {
-        read_keyboard_timer = 0;
-        sqlite3 *db3;
-         openDb("/sd/PTS.db", &db3);                                     //open the database
-
-       pnt = pnt+1;
-       sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
-       db_exec(db3,sSQL);
-       sqlite3_close(db3);
-       lcd.setCursor(0,0);
-       lcd.print("                    ");
-       lcd.setCursor(0,0);
-       lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);
-       if (rec == 0)                                                    // 'rec' is the number of records returned from query
-            {pnt = pnt-1;
-            lcd.setCursor(0,0);
-            lcd.print("  -- End of file -- ");
-            }
-       if (diagnostic_flag)
-           {Serial.println(">>Button F3 pressed");
-            Serial2.println(">>Button F3 pressed");}                      //^^^ send button press diag to printer
+        if (bump_mode == true)
+           {
+            if(++Total_short > Total_fish)                                     //increment and hold at total fish max
+               {Total_short = 0;}
+            lcd.setCursor(12,3);
+            lcd.print(Total_short);
+            delay(150);
            }
-     else
-        {lcd.setCursor(13,3);
-        lcd.write(byte(0));                                               //up arrow key
-       // lcd.print("  ");
-       }
+        else
+          {
+           pnt = pnt+1;                                                      //increment pointer 
+           read_keyboard_timer = 0;
+           sqlite3 *db3;
+           openDb("/sd/PTS.db", &db3);                                      //open the database
+           sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
+           db_exec(db3,sSQL);
+           sqlite3_close(db3);
+           lcd.setCursor(0,0);
+           lcd.print("                    ");
+           lcd.setCursor(0,0);
+           lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);  //print column 1,2,3 to lcd screen
+           bump_mode = false;                                                   //reset mode to non bump mode when new angler is selected
+           if (rec == 0)                                                        // 'rec' is the number of records returned from query
+                {pnt = pnt-1;
+                lcd.setCursor(0,0);
+                lcd.print("  -- End of file -- ");                              //if last record then display end of file
+                }
+           if (diagnostic_flag)
+             {Serial.println(">>Button F3 pressed");
+              Serial2.println(">>Button F3 pressed");                        //^^^ send button press diag to printer
+             }
+           
+          lcd.setCursor(13,3);
+          lcd.write(byte(0));                                               //up arrow key
+              
+           }
+     }// if (!digitalRead(button_F3))
+      
 
 //-------- F4 button pressed? ---------------------
 
      if (!digitalRead(button_F4))                                       //F4 button
        {
-        if (pnt >1)
-            {pnt = pnt-1;
-
-            }
+        if (bump_mode == true)
+           {
+            if(++Total_late > 15)                                     //increment and hold at total fish max
+               {Total_late = 0;}
+            lcd.setCursor(17,3);
+            lcd.print(Total_late);
+            lcd.print(" ");
+            delay(150);
+           }
+        else
+          {
+           if (pnt >1)
+               {pnt = pnt-1;}
          sqlite3 *db3;
          openDb("/sd/PTS.db", &db3);
-       sprintf(sSQL,"SELECT ID, LastName,FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
+         sprintf(sSQL,"SELECT ID, LastName,FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
          db_exec(db3,sSQL);
          sqlite3_close(db3);
-        lcd.setCursor(0,0);
-        lcd.print("                    ");                                       //clear line
-        lcd.setCursor(0,0);
-        lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);
-
-        read_keyboard_timer = 0;
-       //  lcd.print("F4");
+         lcd.setCursor(0,0);
+         lcd.print("                    ");                                       //clear line
+         lcd.setCursor(0,0);
+         lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);
+         bump_mode = false;                                                   //unset bump mode when new angler is selected
+         read_keyboard_timer = 0;
+      
          if (diagnostic_flag){
             Serial.println(">>Button F4 pressed");
-            Serial2.println(">>Button F4 pressed");}                    //^^^ send button press diag to printer
-       }
-     else
-       {lcd.setCursor(18,3);
-        lcd.write(byte(1));                                               //down arrow key
-        //lcd.print("  ");
-        }
-
+            Serial2.println(">>Button F4 pressed");                    //^^^ send button press diag to printer
+            }
+       else
+         {lcd.setCursor(18,3);
+          lcd.write(byte(1));                                               //down arrow key
+          //lcd.print("  ");
+          }
+       }//else
+     }// if (!digitalRead(button_F4)) 
 
 //-------------- F1 + F4 key press will reboot computer ---------------------------
   if (!digitalRead(button_F1) &&  !digitalRead(button_F4))              // If button 1 and 4 are pressed at same time reboot

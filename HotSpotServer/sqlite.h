@@ -13,7 +13,6 @@
 
 
 extern String results[75][9];      //array the holds sql data
-//extern String recordArray[10][20];      //array the holds sql data
 extern int rec;                     //must be declared here and in main program so values xfer
 const char* data = "SQL reply";     //text to be printed when sql commands are processed
 
@@ -33,7 +32,7 @@ static int callback(void *data, int argc, char **argv, char **azColName) {  //fu
   for (i = 0; i < argc; i++) {                                             //display all the columns selected in query
       Serial.printf("%s\t", argv[i] ? argv[i] : "NULL");                   //print the field values
     //Serial.printf("%s = %s\t", azColName[i], argv[i] ? argv[i] : "NULL");  //print column name and value then tab
-   // results[rec][i] = argv[i];
+    results[rec][i] = argv[i];                                             //save data to array
    // if (rec < 10){
    //     recordArray[rec][i] = argv[i];
    // }                                         //save to array
