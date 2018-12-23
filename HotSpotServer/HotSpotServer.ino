@@ -168,8 +168,8 @@ long start_micro;
 String old_time;
 String current_date;
 String current_time;
- char* system_time;
- char sSQL[200];                 //varible that holds the sql string
+char* system_time;
+char sSQL[200];                 //character array that holds the sql string
 char lcd_buffer[25];
  
 String results[75][9];          //array the holds sql data 251 results 6 columns
@@ -548,30 +548,30 @@ void setup(){
   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')");
 
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('4','4','3','0','8','689','550')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('5','4','4','3','4','389','880')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('6','2','2','2','2','769','770')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('7','5','4','1','5','359','444')");     //add records
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('8','4','4','1','3','560','555')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('9','5','2','3','6','1686','1666')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('10','5','3','0','8','875','770')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('11','5','4','3','4','890','789')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('12','5','3','2','1','1012','912')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('13','5','4','0','5','359','570')");     //add records
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('14','4','4','1','3','790','650')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('15','5','5','3','6','1220','1098')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('16','4','3','0','8','689','567')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('17','4','4','3','4','389','879')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('18','2','2','2','2','769','789')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('19','5','4','1','5','359','456')");     //add records
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('20','4','4','1','3','560','567')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('21','5','2','3','6','1686','1678')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('22','5','3','0','8','875','789')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('23','5','4','3','4','900','897')");
-   // db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('24','4','3','2','1','1012','987')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('4','4','3','0','8','689','550')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('5','4','4','3','4','389','880')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('6','2','2','2','2','769','770')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('7','5','4','1','5','359','444')");     //add records
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('8','4','4','1','3','560','555')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('9','5','2','3','6','1686','1666')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('10','5','3','0','8','875','770')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('11','5','4','3','4','890','789')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('12','5','3','2','1','1012','912')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('13','5','4','0','5','359','570')");     //add records
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('14','4','4','1','3','790','650')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('15','5','5','3','6','1220','1098')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('16','4','3','0','8','689','567')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('17','4','4','3','4','389','879')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('18','2','2','2','2','769','789')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('19','5','4','1','5','359','456')");     //add records
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('20','4','4','1','3','560','567')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('21','5','2','3','6','1686','1678')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('22','5','3','0','8','875','789')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('23','5','4','3','4','900','897')");
+//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('24','4','3','2','1','1012','987')");
 
 
    Serial.printf("----List Tables ---------\n\r");
@@ -923,6 +923,8 @@ if (read_keyboard_timer >= 2)                                             //read
            }
         else
           {
+           if (pnt > 100)                                                    //tempoary if statement in case pointer gets out of wack
+              {pnt = 1;}
            pnt = pnt+1;                                                      //increment pointer 
            read_keyboard_timer = 0;
            sqlite3 *db3;
@@ -967,6 +969,8 @@ if (read_keyboard_timer >= 2)                                             //read
            }
         else
           {
+           if (pnt > 100)                               //temporary code in case pointer gets out of wack
+              {pnt = 1;}
            if (pnt >1)
                {pnt = pnt-1;}
          sqlite3 *db3;
@@ -1627,7 +1631,10 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
 void save_weighin_to_database(){
        sqlite3 *db3;                                                              //create an instance of the data base
        openDb("/sd/PTS.db", &db3);                                                //open the database
-       sprintf(sSQL,"Update WEIGHIN SET TotalFish = %d,LiveFish = %d,ShortFish = %d,Late = %d,TimeStamp = %s,DateStamp = %S WHERE ID = %d",Total_fish,Total_alive,Total_short,Total_late,current_time.c_str(),current_date.c_str(),pnt);             //build the sql command
+       char time_char[9];
+       char date_char[11];
+       sprintf(sSQL,"Update WEIGHIN SET TotalFish = %d,LiveFish = %d,ShortFish = %d,Late = %d,TimeStamp = '%s',DateStamp = '%S' WHERE ID = %d",Total_fish,Total_alive,Total_short,Total_late,current_time.c_str(),current_date.c_str(),pnt);             //build the sql command
+       Serial.println(sSQL);
        db_exec(db3,sSQL);                                                         //execute the command
        sqlite3_close(db3);                                                        //close the database
 
@@ -1699,7 +1706,7 @@ void get_date(void){
        {m = "0";}
     if (now.day() <10)                                    //leading zero for days
        {d= "0";}
-    current_date = m + String(now.month()) + ":" + d+ String(now.day()) + ":" + String(now.year());
+    current_date = String(now.year()+ "/" + m + String(now.month()) + "/" + d+ String(now.day()));
    }
 
 //-------------------------- Print Ticket ----------------------------------------------
