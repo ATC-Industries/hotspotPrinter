@@ -46,8 +46,45 @@ pin assignment                                      5 volt----------------------
 
 
                     IO 34 & 35 do not have internal pullups
-*/
 
+Database tables
+//---------------------------------------------
+db_exec(db3, "CREATE TABLE weighin(ID INTEGER NOT NULL UNIQUE,TotalFish INTEGER NOT NULL DEFAULT 0,LiveFish INTEGER DEFAULT 0,ShortFish INTEGER DEFAULT 0,Late INTEGER DEFAULT 0,weight INTEGER DEFAULT 0,adj_weight INTEGER DEFAULT 0,TimeStamp TEXT,DateStamp TEXT, PRIMARY KEY (ID)");
+
+weighin
+      ID         Int not null unique Primary Key
+      TotalFish  Int not null
+      LiveFish   Int Default 0
+      ShortFish  Int Default 0
+      Late       Int Defalut 0
+      weight     Int Default 0
+      adj_weight Int Default 0
+      TimeStamp  text
+      DateStamp  text
+//-----------------------------------------------
+db_exec(db3, "CREATE TABLE Angler(ID INTEGER UNIQUE NOT NULL,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
+
+Angler
+      ID          int unique not null (primary key)
+      FirstName   text
+      LastName    text 
+      MiddleInit  text
+      Address1    text
+      Address2    text
+      City        text
+      State       text
+      Zip         int
+      Cellphone   int
+      Telephone   int
+      SSN         int
+      DOB         int
+      DateStamp   int
+      ISW9filed   int
+      Email       text
+      
+
+
+*/
 //------ Include files ---------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
@@ -226,7 +263,7 @@ void check_sd_mem(void);
 void checkboxStatus(String h, bool& is_checked, String& status, String number);
 void lcd_display_date(void);
 void lcd_display_time(void);
-
+void save_weighin_to_database();
 void recall_eeprom_values(void);
 void clear_output_buffer(void);
 void recall_eeprom_values(void);
@@ -350,7 +387,6 @@ void setup(){
 
     if (!digitalRead(button_PRINT))                               // if print button is held down during power up
         {
-        // TODO All this `if` needs to be deleted and maybe replaced with enter diagnostic mode
         Serial.println("password = 987654321");                   //display temp password to serial monitor
         lcd.clear();
         lcd.setCursor(0,0);
@@ -483,19 +519,14 @@ void setup(){
 
 
 
- //-- add table if they do not exist ----------
-/*
-   // db_exec(db3, "DROP TABLE weighin");                        //unrem this line to erase old table and create new table
-   db_exec(db3, "CREATE TABLE weighin"
-   "(ID        INTEGER NOT NULL UNIQUE,"
-   "TotalFish  INTEGER NOT NULL DEFAULT 0,"
-   "LiveFish   INTEGER DEFAULT 0,"
-   "ShortFish  INTEGER DEFAULT 0,"
-   "Late       INTEGER DEFAULT 0,"
-   "weight     INTEGER DEFAULT 0,"
-   "adj_weight INTEGER DEFAULT 0,"
-   "PRIMARY KEY (ID)");
- */
+ //-- add tables if they do not exist ----------
+
+  // db_exec(db3, "DROP TABLE weighin");                        //unrem this line to erase old table and create new table
+   db_exec(db3, "CREATE TABLE weighin(ID INTEGER NOT NULL UNIQUE,TotalFish INTEGER NOT NULL DEFAULT 0,LiveFish INTEGER DEFAULT 0,ShortFish INTEGER DEFAULT 0,Late INTEGER DEFAULT 0,weight INTEGER DEFAULT 0,adj_weight INTEGER DEFAULT 0,TimeStamp TEXT,DateStamp TEXT, PRIMARY KEY (ID))");
+  // db_exec(db3, "DROP TABLE Angler");                              //unrem this line to erase old table and create new table
+   db_exec(db3, "CREATE TABLE Angler(ID INTEGER UNIQUE NOT NULL,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
+
+ 
 
   // db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
   // // db_exec(db3, "DROP TABLE Id");
@@ -761,12 +792,14 @@ if (read_keyboard_timer >= 2)                                             //read
             Serial2.println(">>Print button pressed");}
        if ((Total_fish != 0) ) ///print ticket if bump sink info has been entered
            {print_ticket();                                                   //print the weight ticket
+            save_weighin_to_database();                                      //save bumbsink infor weight and adj weight to database
             bump_mode = false;                                              //get out of bump mode after ticket is printed
             delay(300);
             if (checkbox1_status == "checked")                                //if checkbox "print 2 tickets" is checked
                {print_ticket();}                                             //print second ticket if print 2 copies is selected
             while (!digitalRead(button_PRINT))                                //loop while button is held down
                {delay(30);}
+            lcd.clear();
             lcd.setCursor(3,1);
             lcd.print("PRINTING...         ");                                       //display 'Printing' message to lcd
             delay(2000);
@@ -894,7 +927,7 @@ if (read_keyboard_timer >= 2)                                             //read
            read_keyboard_timer = 0;
            sqlite3 *db3;
            openDb("/sd/PTS.db", &db3);                                      //open the database
-           sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
+           sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE id = %d",pnt);                  //search database by rowid
            db_exec(db3,sSQL);
            sqlite3_close(db3);
            lcd.setCursor(0,0);
@@ -938,7 +971,7 @@ if (read_keyboard_timer >= 2)                                             //read
                {pnt = pnt-1;}
          sqlite3 *db3;
          openDb("/sd/PTS.db", &db3);
-         sprintf(sSQL,"SELECT ID, LastName,FirstName FROM Angler WHERE rowid = %d",pnt);                  //search database by rowid
+         sprintf(sSQL,"SELECT ID, LastName,FirstName FROM Angler WHERE id = %d",pnt);                  //search database by rowid
          db_exec(db3,sSQL);
          sqlite3_close(db3);
          lcd.setCursor(0,0);
@@ -1025,7 +1058,7 @@ if (read_keyboard_timer >= 2)                                             //read
                processRadioString();
                }//if (c == 0x0D || c == 0x0A)
           }// if (Serial1.available() > 0)
-
+/*
 //-------------- start client routine ----------------------------------------------------------------
 
 //
@@ -1562,7 +1595,7 @@ if (read_keyboard_timer >= 2)                                             //read
 //         Serial.println("");
 //
 //     }  //end of 'If (Client)'
-
+*/
 } //end of program 'loop()'
 
 
@@ -1588,6 +1621,20 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
    is_checked = false;
    status = "";                                    //set to null value if not checked
   }
+}
+
+//---------------save bumpsink info and weight to database -------------------------
+void save_weighin_to_database(){
+       sqlite3 *db3;                                                              //create an instance of the data base
+       openDb("/sd/PTS.db", &db3);                                                //open the database
+       sprintf(sSQL,"Update WEIGHIN SET TotalFish = %d,LiveFish = %d,ShortFish = %d,Late = %d,TimeStamp = %s,DateStamp = %S WHERE ID = %d",Total_fish,Total_alive,Total_short,Total_late,current_time.c_str(),current_date.c_str(),pnt);             //build the sql command
+       db_exec(db3,sSQL);                                                         //execute the command
+       sqlite3_close(db3);                                                        //close the database
+
+//  int Total_fish;         //bump sink values for screen entry
+//int Total_alive;
+//int Total_short;
+//int Total_late;
 }
 //---------------- check availble size and memory left on SD card --------------------------
 void check_sd_mem(void){
