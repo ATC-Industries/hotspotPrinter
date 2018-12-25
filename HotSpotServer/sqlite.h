@@ -36,11 +36,11 @@ static int callback(void *data, int argc, char **argv, char **azColName) {  //fu
       //Serial.printf("%s = %s\t", azColName[i], argv[i] ? argv[i] : "NULL");  //print column name and value then tab
       results[rec][i] = argv[i];
   }
-
-  JsonArray& jsonRecord = root.createNestedArray(String(rec));
-  for (int i = 0; i < COL; i++) {
-      jsonRecord.add(results[rec][i]);
-    }
+//**** Adam I remmed this out while I was working  on my code,this echos a lot of extra text to my serial monitor that I didnt want to wade through
+            JsonArray& jsonRecord = root.createNestedArray(String(rec));
+            for (int i = 0; i < COL; i++) {
+                jsonRecord.add(results[rec][i]);
+              }
   //root[String(rec)] = results[rec][0];
   Serial.printf("\n");                                                     //print a space between records
   rec++;                                                                   //increment record counter
@@ -70,7 +70,7 @@ int db_exec(sqlite3 *db, const char *sql) {                                //thi
     sqlite3_free(zErrMsg);
   } else {
       // Print out the JSON
-    root.prettyPrintTo(Serial);
+   // root.prettyPrintTo(Serial);
     Serial.printf("\n");
     Serial.printf("Operation done successfully\n");
   }

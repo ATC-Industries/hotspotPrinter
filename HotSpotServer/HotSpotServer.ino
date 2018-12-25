@@ -1,3 +1,6 @@
+#include <Time.h>
+#include <TimeLib.h>
+
 
 
 
@@ -109,6 +112,8 @@ Angler
 #include "sqlite.h"             // sqlite3 database functions
 #include "OutputPrint.h"        //routines to print data results to printer
 #include <ArduinoJson.h>        // https://arduinojson.org/v5/example/generator/
+#include <Time.h>
+#include <TimeLib.h>
 
 #define EEPROM_SIZE 1024        //rom reserved for eeprom storage
 
@@ -792,7 +797,7 @@ if (read_keyboard_timer >= 2)                                             //read
             Serial2.println(">>Print button pressed");}
        if ((Total_fish != 0) ) ///print ticket if bump sink info has been entered
            {print_ticket();                                                   //print the weight ticket
-            save_weighin_to_database();                                      //save bumbsink infor weight and adj weight to database
+            save_weighin_to_database();                                      //save bumpsink info weight and adj weight to database
             bump_mode = false;                                              //get out of bump mode after ticket is printed
             delay(300);
             if (checkbox1_status == "checked")                                //if checkbox "print 2 tickets" is checked
@@ -898,7 +903,7 @@ if (read_keyboard_timer >= 2)                                             //read
          
          db_exec(db3, "SELECT Angler.id,Angler.FirstName,Angler.LastName,weighin.totalFish,weighin.liveFish,weighin.shortFish,weighin.late,weighin.weight,weighin.adj_weight FROM angler INNER JOIN Weighin on Weighin.ID = Angler.ID ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
          sqlite3_close(db3);                                             //close database
-         Serial.println("Database closed at 669");
+         Serial.println("*** DIAGNOSTIC  -  Database closed at line 901");
         print_weigh_results();
 
        if (diagnostic_flag)
@@ -1633,16 +1638,10 @@ void save_weighin_to_database(){
        openDb("/sd/PTS.db", &db3);                                                //open the database
        char time_char[9];
        char date_char[11];
-       sprintf(sSQL,"Update WEIGHIN SET TotalFish = %d,LiveFish = %d,ShortFish = %d,Late = %d,TimeStamp = '%s',DateStamp = '%S' WHERE ID = %d",Total_fish,Total_alive,Total_short,Total_late,current_time.c_str(),current_date.c_str(),pnt);             //build the sql command
-       Serial.println(sSQL);
+       sprintf(sSQL,"Update WEIGHIN SET TotalFish = %d,LiveFish = %d,ShortFish = %d,Late = %d,TimeStamp = '%s',DateStamp = '%s' WHERE ID = %d",Total_fish,Total_alive,Total_short,Total_late,current_time.c_str(),current_date.c_str(),pnt);             //build the sql command
        db_exec(db3,sSQL);                                                         //execute the command
        sqlite3_close(db3);                                                        //close the database
-
-//  int Total_fish;         //bump sink values for screen entry
-//int Total_alive;
-//int Total_short;
-//int Total_late;
-}
+       }
 //---------------- check availble size and memory left on SD card --------------------------
 void check_sd_mem(void){
            Serial2.println(">>setup() - SD card present");
@@ -1689,6 +1688,9 @@ void get_time(void){
     if (now.second()<10)                               //add leading zero
       {s = "0";}
     current_time = h+String(now.hour()) + ":" + m+ String(now.minute()) + ":"+ s + String(now.second());
+    Serial.println(now.unixtime());                   //prints datestamp as unix time
+   // breakTime(now.unixtime(),tm);
+   // Serial.println(tm);
    }
 
 //-------------display date on LCD upper right corner ----------------------------------------------
@@ -1706,7 +1708,7 @@ void get_date(void){
        {m = "0";}
     if (now.day() <10)                                    //leading zero for days
        {d= "0";}
-    current_date = String(now.year()+ "/" + m + String(now.month()) + "/" + d+ String(now.day()));
+    current_date = String(now.year())+ "-" + m + String(now.month()) + "-" + d+ String(now.day());
    }
 
 //-------------------------- Print Ticket ----------------------------------------------
@@ -1926,82 +1928,7 @@ void print_ticket(void)
                Serial2.write('a');
                Serial2.write('0');
 
-//-------- print ticket to LCD screen --------------------------------
-//           lcd.clear();
-//           lcd.setCursor((20-(line1.length()))/2,0);                //print line 1 and center
-//           lcd.print(line1);
-//           lcd.setCursor((20-(line2.length()))/2,1);                //print line 1 and center
-//           lcd.print(line2);
-//           lcd.setCursor((20-(line3.length()))/2,2);                //print line 1 and center
-//           lcd.print(line3);
-//           lcd.setCursor((20-(String(weight).length()))/2,3);
-//
-//           lcd.setCursor(0,3);
-//             if (now.hour()<10)                                     //add leading zero
-//              {lcd.print("0");}
-//           lcd.print(now.hour(), DEC);
-//           lcd.print(':');
-//           if (now.minute()<10)                                     //add leading zero
-//              {lcd.print("0");}
-//           lcd.print(now.minute(), DEC);
-//           lcd.print(':');
-//           if (now.second()<10)                                     //add leading zero
-//              {lcd.print("0");}
-//           lcd.print(now.second(), DEC);
-//           lcd.print("  ");
-//
-//           lcd.setCursor(10,3);
-//           if (now.month() <10)                                     //leading zero for months
-//               {lcd.print("0");}
-//           lcd.print(now.month(), DEC);
-//           lcd.print('/');
-//           if (now.day() <10)                                       //leading zero for days
-//               {lcd.print("0");}
-//           lcd.print(now.day(), DEC);
-//           lcd.print('/');
-//           lcd.print(now.year(), DEC);
-//           delay(2000);
- //--------- 2nd lcd screen of weigh ticket info ----------------------------------
-//           lcd.clear();
-//           lcd.setCursor((20-(line4.length()))/2,0);                //print line 4 and center
-//           lcd.print(line4);
-//           if (statt == 0)                                          //no signal
-//                  {
-//                  lcd.setCursor(0,2);
-//                  lcd.print("     No Signal");
-//                  }
-//           else if (statt == 1)                                     //if H2 mode
-//              {
-//                lcd.setCursor(0,2);                                 //center text on 3rd line
-//                lcd.print(output_string);
-//              }
-//          else if (statt ==2)
-//              {
-//               lcd.write(output_string[1]);                       //send out string one byte at a time.
-//               lcd.write(output_string[2]);                       //print lb value
-//               lcd.write(output_string[3]);
-//               lcd.printf("Lb");
-//               lcd.write(output_string[5]);                       //print oz value
-//               lcd.write(output_string[6]);
-//               lcd.write(output_string[7]);
-//               lcd.write(output_string[8]);
-//               lcd.print("oz");                                   //print the oz label with return
-//              }
-//         else if (statt == 3)
-//              {
-//               lcd.write(output_string[0]);                       //send weight
-//               lcd.write(output_string[1]);
-//               lcd.write(output_string[2]);
-//               lcd.write(output_string[3]);                       //decimal point
-//               lcd.write(output_string[4]);
-//               lcd.write(output_string[5]);
-//               lcd.print("Lbs");
-//              }
-//
-//             delay(2000);
-//             // ticket = ticket + 1;                              //pointer for weigh tickets
-//          clear_output_buffer();                                  //clear the output string
-//
+
            } //end of routine
 //--------- cut paper on printer-----------------------------------------------------------------------
  void cut_paper(void)
