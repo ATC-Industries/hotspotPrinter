@@ -936,13 +936,16 @@ if (read_keyboard_timer >= 2)                                             //read
            read_keyboard_timer = 0;
            sqlite3 *db3;
            openDb("/sd/PTS.db", &db3);                                      //open the database
-           sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE id = %d",pnt);                  //search database by rowid
+           sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE id = %d",pnt);  //search database by rowid
            db_exec(db3,sSQL);
-           sqlite3_close(db3);
+           sqlite3_close(db3);                                              //close database
            lcd.setCursor(0,0);
-           lcd.print("                    ");
+           lcd.print("                    ");                               //clear text on top line
            lcd.setCursor(0,0);
-           lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);  //print column 1,2,3 to lcd screen
+           String tmp = results[0][1]+", "+ results[0][2];                  //combine last name and first name with ,
+           tmp = tmp.substring(0,15);                                       //limit to 15 characters to prevent overflow on lcd screen
+           lcd.print(results[0][0]+ tmp);                                   //print name on top line of lcd
+          // lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);  //print column 1,2,3 to lcd screen
            bump_mode = false;                                                   //reset mode to non bump mode when new angler is selected
            if (rec == 0)                                                        // 'rec' is the number of records returned from query
                 {pnt = pnt-1;
@@ -1688,11 +1691,11 @@ void get_time(void){
    epoch_time = now.unixtime(); 
     time_t test;                                   //create special varible 'time_t'  to hold epoch value
     test = epoch_time;                             //this is an epoch time value
-    Serial.print(hour(test));
-    Serial.print(":");
-    Serial.print(minute(test));
-    Serial.print(":");
-    Serial.println(second(test));
+//    Serial.print(hour(test));
+//    Serial.print(":");
+//    Serial.print(minute(test));
+//    Serial.print(":");
+//    Serial.println(second(test));
     
      if (now.hour()<10)                                //add leading zero
       {h= "0";}
@@ -1712,9 +1715,9 @@ void get_time(void){
     Serial.println(second(epoch_time));
 
     */
- // convertEpoch(epoch_time);
-   Serial.print("Epoch conversion function - ");
-   Serial.println(convertEpoch(epoch_time));
+
+//   Serial.print("Epoch conversion function - ");
+//   Serial.println(convertEpoch(epoch_time));
 
    }
 //-------------Convert Epoch time to readable date ------------------------------------------------
@@ -1725,7 +1728,7 @@ String  convertEpoch(unsigned long epoch_time){
        String yy = "";                                   //varibles to hold leading zero
        String mm = "";
        String dd = "";
-       time_t test;
+       time_t test;                                     //special varible for time function
        test = epoch_time;
       if (hour(test)<10)                                //add leading zero
           {h= "0";}
@@ -1741,9 +1744,9 @@ String  convertEpoch(unsigned long epoch_time){
           {dd = "0";}
    
       time_stamp = yy+ String(year(test))+"/"+ mm +String(month(test))+"/"+ dd + String(day(test))+"   "+ h+String(hour(test)) + ":" + m+ String(minute(test)) + ":"+ s + String(second(test));
+      
       return time_stamp;
-       
-  
+ 
 }
     
 //-------------display date on LCD upper right corner ----------------------------------------------
