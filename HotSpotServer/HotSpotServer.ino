@@ -167,16 +167,16 @@ int Total_late;
 
 
 
-String verString;
+
 int pnt;
 long start_micro;
 String old_time;
+String time_stamp;              //date and time combined (ISO 8601 format)  YYYY-MM-DD hh:mm:ss 
 String current_date;
 String current_time;
 char* system_time;
 char sSQL[200];                 //character array that holds the sql string
 char lcd_buffer[25];
- 
 String results[75][9];          //array the holds sql data 251 results 6 columns
 int rec;                        //number of records in database
 String header;                  // Variable to store the HTTP request header
@@ -217,6 +217,7 @@ String checkbox2_status = "";   // Holds chekbox status "checked" or "" to be in
 String checkbox3_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox4_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
 String checkbox5_status = "";   // Holds chekbox status "checked" or "" to be injected in HTML
+String verString;
 volatile int interruptCounter;  // varible that tracks number of interupts
 volatile int totalInterruptCounter;      // counter to track total number of interrupts
 int no_signal_timer;            // timeout counter used to display No Signal on display
@@ -261,6 +262,7 @@ byte DownArrow[8] = {
 };
 
 //----------funtion prototypes -------------------------------------------------
+String convertEpoch(unsigned long epoch_time);
 void get_date(void);
 void get_time(void);
 void cut_paper(void);
@@ -1677,22 +1679,73 @@ void lcd_display_time(void){
 
 //--------------- get time from rtc -------------------------------------------------
 void get_time(void){
+   
+    unsigned long epoch_time;                   //prints datestamp as unix time
     String h = "";                                   //varibles to hold leading zero
     String m = "";
     String s = "";
     DateTime now = rtc.now();
-    if (now.hour()<10)                                //add leading zero
+   epoch_time = now.unixtime(); 
+    time_t test;                                   //create special varible 'time_t'  to hold epoch value
+    test = epoch_time;                             //this is an epoch time value
+    Serial.print(hour(test));
+    Serial.print(":");
+    Serial.print(minute(test));
+    Serial.print(":");
+    Serial.println(second(test));
+    
+     if (now.hour()<10)                                //add leading zero
       {h= "0";}
     if (now.minute()<10)                               //add leading zero
       {m = "0";}
     if (now.second()<10)                               //add leading zero
       {s = "0";}
     current_time = h+String(now.hour()) + ":" + m+ String(now.minute()) + ":"+ s + String(now.second());
-    Serial.println(now.unixtime());                   //prints datestamp as unix time
-   // breakTime(now.unixtime(),tm);
-   // Serial.println(tm);
-   }
+/*  
+    //test code, remove when done with
+    Serial.println(epoch_time);
+    Serial.println(current_time);
+    Serial.print(hour(epoch_time));
+    Serial.print(":");
+    Serial.print(minute(epoch_time));
+    Serial.print(":");
+    Serial.println(second(epoch_time));
 
+    */
+ // convertEpoch(epoch_time);
+   Serial.print("Epoch conversion function - ");
+   Serial.println(convertEpoch(epoch_time));
+
+   }
+//-------------Convert Epoch time to readable date ------------------------------------------------
+String  convertEpoch(unsigned long epoch_time){
+       String h = "";                                   //varibles to hold leading zero
+       String m = "";
+       String s = "";
+       String yy = "";                                   //varibles to hold leading zero
+       String mm = "";
+       String dd = "";
+       time_t test;
+       test = epoch_time;
+      if (hour(test)<10)                                //add leading zero
+          {h= "0";}
+      if (minute(test)<10)                               //add leading zero
+          {m = "0";}
+      if (second(test)<10)                               //add leading zero
+          {s = "0";}
+      if (year(test)<10)                                //add leading zero
+          {yy= "0";}
+      if (month(test)<10)                               //add leading zero
+          {mm = "0";}
+      if (day(test)<10)                               //add leading zero
+          {dd = "0";}
+   
+      time_stamp = yy+ String(year(test))+"/"+ mm +String(month(test))+"/"+ dd + String(day(test))+"   "+ h+String(hour(test)) + ":" + m+ String(minute(test)) + ":"+ s + String(second(test));
+      return time_stamp;
+       
+  
+}
+    
 //-------------display date on LCD upper right corner ----------------------------------------------
 void lcd_display_date(void){
     lcd.setCursor(10,0);
@@ -1872,26 +1925,6 @@ void print_ticket(void)
 //--------------print time date stamp on ticket -------------
                set_text_size(0x00);            //normal text size
                Serial2.print (current_time + "            " + current_date);
-//                DateTime now = rtc.now();
-//
-//                if (now.hour()<10)                               //add leading zero
-//                  {Serial2.print("0");}
-//                Serial2.print(now.hour(), DEC);
-//                Serial2.print(':');
-//                if (now.minute()<10)                               //add leading zero
-//                  {Serial2.print("0");}
-//                Serial2.print(now.minute(), DEC);
-//                Serial2.print(':');
-//                if (now.second()<10)                               //add leading zero
-//                  {Serial2.print("0");}
-//                Serial2.print(now.second(), DEC);
-//                Serial2.print("       ");
-//                Serial2.print(now.month(), DEC);
-//                Serial2.print('/');
-//                Serial2.print(now.day(), DEC);
-//                Serial2.print('/');
-//                Serial2.print(now.year(), DEC);
-
 
 //--------------area to insert tournament name and address and date--------------
                if (line1!= "")                         //if line 1 is not blank
@@ -1968,18 +2001,24 @@ void set_text_reverse(bool on_off){                            //set or clear re
 //------------------------------------------------------------------------------
 void recall_eeprom_values(void){
     line1 = (EEPROM.readString(line1_eeprom_addr));                       //recall values saved in eeprom
+    if (line1 == "")
+       line1 = "Pro Tournament Scales";
     line2 = (EEPROM.readString(line2_eeprom_addr));
+    if (line2 == "")
+       line2 = "2001 North Morton Street";
     line3 = (EEPROM.readString(line3_eeprom_addr));
+    if (line3 == "")
+       line3 = "Franklin, IN 46131";
     line4 = (EEPROM.readString(line4_eeprom_addr));
     serial_number = EEPROM.readInt(serial_number_addr);                  //get ticket serial number
     Serial.println("Load S/N "+ String(serial_number));                  //print serial number to serial monitor
     cb_print_2_copies = (EEPROM.readBool(checkbox1_eeprom_addr));        //recall checkbox status (boolean)
+         cb_print_2_copies = false;                                          //***remove in final build
     cb_print_signature_line = (EEPROM.readBool(checkbox2_eeprom_addr));
     cb_serial_ticket = (EEPROM.readBool(checkbox3_eeprom_addr));
     cb_print_when_locked = (EEPROM.readBool(checkbox4_eeprom_addr));
     passwordString = (EEPROM.readString(password_addr));           //retrieve password stored in eeprom
 }
-
 
 //-----------------------------------------------------------------------------
 void clear_radio_rx_array(void){                               //routine to clear radio rx buffer
