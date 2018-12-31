@@ -141,6 +141,7 @@ const int checkbox3_eeprom_addr = 202;  // checkbox3   -   202
 const int checkbox4_eeprom_addr = 203;  // checkbox4   -   203
 const int serial_number_addr = 204;     // checkbox5   -   204
 const int password_addr = 215;          // password    -   215
+const int angler_sort_field_addr = 220;   //field to sort anglers by in bump sink screen
 
 const char* PARAM_MESSAGE = "message";
 //------------- a string to hold the version numbe r---------------------
@@ -164,7 +165,7 @@ int Total_fish;         //bump sink values for screen entry
 int Total_alive;
 int Total_short;
 int Total_late;
-
+String angler_search;         //field to search by in bumpsink search screen
 
 int menu_pointer;
 bool menu_mode;
@@ -262,6 +263,7 @@ byte DownArrow[8] = {
 };
 
 //----------funtion prototypes -------------------------------------------------
+void lcd_clear(int);
 void menu(void);
 void addToAnglerDB(char* sSQL);
 String convertEpoch(unsigned long epoch_time);
@@ -300,25 +302,15 @@ char* string2char(String str)
 LiquidCrystal_I2C lcd(0x3F,20,4);                      // set the LCD address to 0x27 or 3f for a 20 chars and 4 line display
 RTC_DS3231 rtc;                                        //start an instance of the real time clock named 'rtc'
 
-//-------------Timer Interuput routines ----------------------------------------------
-//void IRAM_ATTR onTimer()                // (100 ms) this is the actual interrupt(place before void setup() code)
-//  {
-//  portENTER_CRITICAL_ISR(&timerMux);
-//  interruptCounter++;                   //put code to perform during interrupt here
-//  read_keyboard_timer++;                //timer to scan keyboard keys for press
-//  ClockTimer++;                          //timer used to read clock every second
-//  portEXIT_CRITICAL_ISR(&timerMux);
-//  }
-
 
 //--------------------------------------------------------------------------
 //-------------Start of Program -----------------------------------------
 //------------------------------------------------------------------------
 void setup(){
     listDir(SD, "/", 2);                      //SD card directory listing, '2' = 2 levels deep
-    sqlite3_initialize();                     //start the database engine
+    sqlite3_initialize();                     //start the SQL database engine
     Wire.begin();                             //start i2c for RTC
-    delay(100);
+    delay(10);
     //---------- declare input buttons with pullup -----------------------------
     pinMode(button_PRINT,INPUT_PULLUP);    // print button
     pinMode(button_F1,INPUT_PULLUP);       // F1
@@ -348,7 +340,7 @@ void setup(){
      Serial2.write('{');
      Serial2.write('1');                 //change to zero for right side printing
 
-     Serial2.write(0x1B);                //B Font 12x24
+     Serial2.write(0x1B);                //B Font (must be 'B' font for small pica text on printer
      Serial2.write('M');
      Serial2.write('1');
      Serial2.write(0x0A);
@@ -357,8 +349,8 @@ void setup(){
 
 //--------------- diagnostic mode if F1 is held on cold boot ------------------------------------------
 
-    if (!digitalRead(button_F1))                                     //^^^ If button 1 held on cold start, turn on diagnostic mode
-        {diagnostic_flag = true;
+    if (!digitalRead(button_F1)){                                     //^^^ If button 1 held on cold start, turn on diagnostic mode
+        diagnostic_flag = true;
          lcd.clear();
          lcd.setCursor(2,1);
          lcd.print("  Diagnostic  Mode");                           //display message on LCD screen
@@ -477,13 +469,13 @@ void setup(){
     cb_serial_ticket ? checkbox3_status = "checked" : checkbox3_status = "";
     cb_print_when_locked ? checkbox4_status = "checked" : checkbox4_status = "";
 
-    lcd.clear();                                           //clear lcd display
-    lcd.setCursor(0,0);
-    lcd.print(line1);
-    lcd.setCursor(0,1);
-    lcd.print(line2);
-    lcd.setCursor(0,2);
-    lcd.print(line3);
+//    lcd.clear();                                           //clear lcd display
+//    lcd.setCursor(0,0);
+//    lcd.print(line1);
+//    lcd.setCursor(0,1);
+//    lcd.print(line2);
+//    lcd.setCursor(0,2);
+//    lcd.print(line3);
  
     lcd.clear();
 
@@ -517,13 +509,13 @@ void setup(){
 ////==============================================================
 ////-------------test code for data base--------------------------
 ////==============================================================
-//note - data base used for this was created with DB browser and loaded onto sd card
+
    sqlite3 *db3;                                                                        //declare a pointer to the data base
    openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
 
 
 
- //-- add tables if they do not exist ----------
+ //-- add tables if they do not exist or unrem code to delete table ----------
 
   // db_exec(db3, "DROP TABLE weighin");                        //unrem this line to erase old table and create new table
    db_exec(db3, "CREATE TABLE weighin(ID INTEGER NOT NULL UNIQUE,TotalFish INTEGER NOT NULL DEFAULT 0,LiveFish INTEGER DEFAULT 0,ShortFish INTEGER DEFAULT 0,Late INTEGER DEFAULT 0,weight INTEGER DEFAULT 0,adj_weight INTEGER DEFAULT 0,TimeStamp TEXT,DateStamp TEXT, PRIMARY KEY (ID))");
@@ -760,7 +752,7 @@ if((micros() - start_micro) >= 100000){                   //usec timer used for 
 
 
 //--------- no signal timer -------(5 seconds)----------
-   if (totalInterruptCounter >=50){
+   if (totalInterruptCounter >=25){
        //lcd_display_time();
         totalInterruptCounter = 0;                        //reset counter
         if (++ no_signal_timer >= 2)                      //if no signal this timer times out
@@ -768,9 +760,8 @@ if((micros() - start_micro) >= 100000){                   //usec timer used for 
              if (!no_sig_flag)                            //if flag is not set
                {
                 if (bump_mode == false)
-                   {//lcd.clear();                                //clear lcd screen
-                    lcd.setCursor(0,1);
-                    lcd.print("                    ");         //erase line 2
+                   {//lcd.clear();                        //clear lcd screen
+                    lcd_clear(1);                          //erase line 2
                     lcd.setCursor(2,1);
                     lcd.print("** No  Signal **");}       //only display if not in bump sink mode
                    }
@@ -809,32 +800,29 @@ if (read_keyboard_timer >= 2){                                             //rea
             Total_short = 0;
             Total_late = 0;
            }
-      else           //else code if all bump sink info has not been entered
-         {
+      else{           //else code if all bump sink info has not been entered
+         
           if (bump_mode == false)                                         //toggle bump mode on or off
              { bump_mode = true;
-             Total_fish = 0;
+             Total_fish = 0;                                              //reset bump info to zeros
              Total_alive = 0;
              Total_short = 0;
              Total_late = 0;
-             lcd.setCursor(0,1);
-             lcd.print("                    ");
+             lcd_clear(1);                          //clear bottom two lines of lcd
              lcd.setCursor(0,2);
              lcd.print("Tot Alive Short Late");
              lcd.setCursor(0,3);
              sprintf(lcd_buffer,"  %d    %d    %d    %d",Total_fish,Total_alive,Total_short,Total_late);
-             lcd.print(lcd_buffer);
+             lcd.print(lcd_buffer);                                       
              
              Serial.println("bump_mode = true");
              }
           else
              {bump_mode = false;   
-              lcd.setCursor(0,1);
-              lcd.print("                    ");                            //clear lines 2,3,4
-              lcd.setCursor(0,2);
-              lcd.print("                    ");
-              lcd.setCursor(0,3);
-              lcd.print("                    ");
+              lcd_clear(1);                                             //clear lcd lines 2,3,4
+              lcd_clear(2);
+              lcd_clear(3);
+              
               Serial.println("bump_mode = false");
 
              }
@@ -856,23 +844,20 @@ if (read_keyboard_timer >= 2){                                             //rea
           }
         }
         read_keyboard_timer = 0;
+        //--bump sink mode ----
         if (bump_mode == true)                                       //if in bumpsink mode
            {
             if(++Total_fish > 5)                                     //increment and limit at 5 max
                {Total_fish = 0;}
             lcd.setCursor(2,3);
-            lcd.print(Total_fish);                                  //update screen
+            lcd.print(Total_fish);                                   //update screen
             delay(150);
            }
-        else{
-        lcd.setCursor(2,3);
-        lcd.write(byte(1));                                             //show down arrow icon
-        lcd.print("  ");
-
+        else{                                                        //if not in bump sink mode
          sqlite3 *db3;
-         openDb("/sd/PTS.db", &db3);                                     //open the database
-      // db_exec(db3, "DELETE FROM Angler WHERE lastName = ''");       //delete records with no last name
-         db_exec(db3, "SELECT * FROM Angler ");   //query the angler list and sort by boat numb decending
+         openDb("/sd/PTS.db", &db3);                                 //open the database
+      // db_exec(db3, "DELETE FROM Angler WHERE lastName = ''");     //delete records with no last name
+         db_exec(db3, "SELECT * FROM Angler ");                      //query the entire angler list 
          sqlite3_close(db3);                                             //close database
 
          print_results();                                                //send results to printer
@@ -881,7 +866,7 @@ if (read_keyboard_timer >= 2){                                             //rea
           {Serial2.println(">>Button F1 pressed");                       //^^^ send button press diag to printer
            Serial.println(">>Button F1 pressed");
           }
-       }//else{
+       }//else
 
     }//if (!digitalRead(button_F1))
 //----------F2 button press ---------------
@@ -897,7 +882,7 @@ if (read_keyboard_timer >= 2){                                             //rea
            }
         else                                                             //if not in bumpsink mode
           {
-          lcd.print("F2");                                               //display text on lcd screen
+         // lcd.print("F2");                                               //display text on lcd screen
           sqlite3 *db3;                                                   //define object for database
            openDb("/sd/PTS.db", &db3);                                     //open the database
            
@@ -935,8 +920,7 @@ if (read_keyboard_timer >= 2){                                             //rea
            sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE id = %d",pnt);  //search database by rowid
            db_exec(db3,sSQL);                                               //execute the sql command
            sqlite3_close(db3);                                              //close database
-           lcd.setCursor(0,0);                                              //set lcd cursor
-           lcd.print("                    ");                               //clear text on top line
+           lcd_clear(0);                                                   //clear text on top line
            lcd.setCursor(0,0);
            String tmp = results[0][1]+", "+ results[0][2];                  //combine last name and first name with ','
            tmp = tmp.substring(0,15);                                       //limit to 15 characters to prevent overflow on lcd screen
@@ -979,8 +963,7 @@ if (read_keyboard_timer >= 2){                                             //rea
          sprintf(sSQL,"SELECT ID, LastName,FirstName FROM Angler WHERE id = %d",pnt);                  //search database by rowid
          db_exec(db3,sSQL);
          sqlite3_close(db3);
-         lcd.setCursor(0,0);
-         lcd.print("                    ");                                       //clear line
+         lcd_clear(0);                                       //clear line
          lcd.setCursor(0,0);
          String tmp = results[0][1]+", "+ results[0][2];                  //combine last name and first name with ,
          tmp = tmp.substring(0,15);                                       //limit to 15 characters to prevent overflow on lcd screen
@@ -1638,12 +1621,27 @@ void menu(void){
 
   menu_pointer = 0;                                     //set pointer to first line
   while (digitalRead(button_PRINT)){                     //stay in loop until print[ENTER] button is pressed
+      angler_search = (EEPROM.readString(angler_sort_field_addr));     //get the current selected search field
       lcd.setCursor(0,menu_pointer);
       lcd.print(">");
       lcd.setCursor (19,menu_pointer);
       lcd.print("<");
+      //---- F3 press --------
       if (!digitalRead(button_F3)){
           lcd.setCursor(0,menu_pointer);
+          lcd.print(" ");                                 //erase old arrows
+          lcd.setCursor (19,menu_pointer);
+          lcd.print(" ");
+          if (menu_pointer != 0){
+              menu_pointer = menu_pointer - 1; 
+              }    
+          while(!digitalRead(button_F3)){                //switch debounce
+              delay(50);   
+              }
+          }
+       //------- F4 press ---------
+       if (!digitalRead(button_F4)){
+         lcd.setCursor(0,menu_pointer);
           lcd.print(" ");                                 //erase old arrows
           lcd.setCursor (19,menu_pointer);
           lcd.print(" ");
@@ -1651,37 +1649,55 @@ void menu(void){
           if (menu_pointer > 3){
               menu_pointer = 3;
               }
-          while(!digitalRead(button_F3)){                //switch debounce
-              delay(50);   
-              }
-          }
-       if (!digitalRead(button_F4)){
-          lcd.setCursor(0,menu_pointer);
-          lcd.print(" ");                                 //erase old arrows
-          lcd.setCursor (19,menu_pointer);
-          lcd.print(" ");
-          if (menu_pointer != 0){
-              menu_pointer = menu_pointer - 1; 
-              }
           while(!digitalRead(button_F4)){                //switch debounce
               delay(50);   
               }
           }
           
     }//while (digitalRead(button_PRINT))
-    
+    if (menu_pointer  == 0){
+      angler_search = "ID";                            //sort angler list by ID
+     
+       sqlite3 *db3;                                                                        //declare a pointer to the data base
+       openDb("/sd/PTS.db", &db3);  
+       sprintf(sSQL,"CREATE TABLE weighin_list AS SELECT ID ,TotalFish ,LiveFish,ShortFish,Late,weight,adj_weight,TimeStamp,DateStamp FROM weighin"); //create table if does not exist
+       db_exec(db3,sSQL);
+       sprintf(sSQL,"INSERT INTO  weighin_list SELECT * FROM weighin ORDER BY ID DESC");            //xfer sorted list to new table
+       db_exec(db3,sSQL);                                                         //execute the command
+       sqlite3_close(db3); 
+    }
+    else if (menu_pointer == 1){
+      angler_search = "LastName";                      //sort angler list by last name
+    }
+    else if (menu_pointer == 2){                       //3rd menu item (print standings to printer)
+      lcd.clear();
+      lcd.setCursor(4,1);
+      lcd.print("Printing");
+      lcd.setCursor(4,2);
+      lcd.print("Standings...");
+      print_weigh_results();                           //print out standing report to printer
+      delay(2000);
+    }
+    EEPROM.writeString(angler_sort_field_addr, angler_search);//save to eeprom
     lcd.clear();                                          //clear menu screen on exit
  }//void menu(void)
+ 
 //---------------save bumpsink info and weight to database -------------------------
 void save_weighin_to_database(){
        sqlite3 *db3;                                                              //create an instance of the data base
        openDb("/sd/PTS.db", &db3);                                                //open the database
-       char time_char[9];
-       char date_char[11];
+      // char time_char[9];                                                         //define temp arrays to hold time and date
+      // char date_char[11];
        sprintf(sSQL,"Update WEIGHIN SET TotalFish = %d,LiveFish = %d,ShortFish = %d,Late = %d,TimeStamp = '%s',DateStamp = '%s' WHERE ID = %d",Total_fish,Total_alive,Total_short,Total_late,current_time.c_str(),current_date.c_str(),pnt);             //build the sql command
        db_exec(db3,sSQL);                                                         //execute the command
        sqlite3_close(db3);                                                        //close the database
        }
+
+//------------- lcd clear line function -------------------------------------------------------------
+void lcd_clear(int line){                                                              //clear entire line of lcd display
+  lcd.setCursor(0,line);
+  lcd.print("                    ");       
+}
 //---------------- check availble size and memory left on SD card --------------------------
 void check_sd_mem(void){
            Serial2.println(">>setup() - SD card present");
