@@ -166,8 +166,8 @@ int Total_short;
 int Total_late;
 
 
-
-
+int menu_pointer;
+bool menu_mode;
 int pnt;
 long start_micro;
 String old_time;
@@ -262,6 +262,7 @@ byte DownArrow[8] = {
 };
 
 //----------funtion prototypes -------------------------------------------------
+void menu(void);
 void addToAnglerDB(char* sSQL);
 String convertEpoch(unsigned long epoch_time);
 void get_date(void);
@@ -736,8 +737,8 @@ int val = heap_caps_get_free_size(MALLOC_CAP_8BIT);                            /
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
 
-if((micros() - start_micro) >= 100000)                   //usec timer used for various functions
-    {
+if((micros() - start_micro) >= 100000){                   //usec timer used for various functions
+    
     ++ClockTimer;                                        //updates clock time every one second
     ++totalInterruptCounter;
     ++read_keyboard_timer;                               //read keyboard every 200ms
@@ -745,8 +746,8 @@ if((micros() - start_micro) >= 100000)                   //usec timer used for v
     }
 
 //-------- 1 second timer-----------------------------
-  if (ClockTimer >=10)                                  //update clock every one second
-      {get_time();                                      //update clock value [current_time]
+  if (ClockTimer >=10){                                  //update clock every one second
+      get_time();                                      //update clock value [current_time]
       // get_date();
        //lcd_display_time();                              //display time upper left corner of lcd
       // lcd_display_date();                              //display date upper right corner of lcd
@@ -759,25 +760,29 @@ if((micros() - start_micro) >= 100000)                   //usec timer used for v
 
 
 //--------- no signal timer -------(5 seconds)----------
-   if (totalInterruptCounter >=50)
-      { //lcd_display_time();
+   if (totalInterruptCounter >=50){
+       //lcd_display_time();
         totalInterruptCounter = 0;                        //reset counter
         if (++ no_signal_timer >= 2)                      //if no signal this timer times out
            { statt = 0;                                   //set display mode to 0 so "No Signal" will be displayed
              if (!no_sig_flag)                            //if flag is not set
                {
                 if (bump_mode == false)
-                   {lcd.clear();                                //clear lcd screen
+                   {//lcd.clear();                                //clear lcd screen
+                    lcd.setCursor(0,1);
+                    lcd.print("                    ");         //erase line 2
                     lcd.setCursor(2,1);
                     lcd.print("** No  Signal **");}       //only display if not in bump sink mode
                    }
              no_sig_flag = 1;                             //set flag so display will not update every loop
            }
       }
+
+   
 //--------------- read  button routines -------------------------------------------------------
 
-if (read_keyboard_timer >= 2)                                             //read keypad every 200 ms
-     {
+if (read_keyboard_timer >= 2){                                             //read keypad every 200 ms
+     
 
 //----  PRINT button pressed?  -------------
      if (!digitalRead(button_PRINT)){                                      //if pushbutton is pressed (low condition), print the ticket
@@ -840,9 +845,16 @@ if (read_keyboard_timer >= 2)                                             //read
       }//else
     }//if (!digitalRead(button_PRINT))
 
-//---- F1 button pressed? ----------------
+//---- F1 button pressed? ------------- hold for 3 sec for menu screen ---
      lcd.setCursor(1,3);
      if (!digitalRead(button_F1)){                                        //F1 button
+        delay(50);                                                    //switch debounce
+        start_micro = micros();                                       //get the current timer count
+        while(!digitalRead(button_F1)){                               //while button is being held
+          if((micros() - start_micro) >= 2000000){                    //hold f1 button for 3 seconds to enter menu mode
+            menu();                                                   //call menu routine
+          }
+        }
         read_keyboard_timer = 0;
         if (bump_mode == true)                                       //if in bumpsink mode
            {
@@ -874,8 +886,8 @@ if (read_keyboard_timer >= 2)                                             //read
     }//if (!digitalRead(button_F1))
 //----------F2 button press ---------------
      lcd.setCursor(6,3);
-     if (!digitalRead(button_F2))                                         //F2 button
-       {read_keyboard_timer = 0;                                          //reset keyboard read timer
+     if (!digitalRead(button_F2)){                                         //F2 button
+       read_keyboard_timer = 0;                                          //reset keyboard read timer
          if (bump_mode == true){                                          //if in bumpsink mode
             if(++Total_alive > Total_fish)                                //increment and roll over to 0 if over total fish
                {Total_alive = 0;}
@@ -900,12 +912,10 @@ if (read_keyboard_timer >= 2)                                             //read
          delay(250);                                                        //switch debounce
          }
        }
-    
-
 //--------- F3 button pressed? -------------------
        lcd.setCursor(11,3);
-     if (!digitalRead(button_F3))                                         //F3 button
-       {
+     if (!digitalRead(button_F3)){                                         //F3 button
+       
         if (bump_mode == true)                                            //if in bumpsink mode
            {
             if(++Total_short > Total_fish)                                     //increment and roll over to zero if over total fish value
@@ -942,18 +952,14 @@ if (read_keyboard_timer >= 2)                                             //read
               Serial2.println(">>Button F3 pressed");                        //^^^ send button press diag to printer
              }
            
-          lcd.setCursor(13,3);
-          lcd.write(byte(0));                                               //up arrow key
+//          lcd.setCursor(13,3);
+//          lcd.write(byte(0));                                               //up arrow key
               
            }
      }// if (!digitalRead(button_F3))
-      
-
 //-------- F4 button pressed? ---------------------
-
-     if (!digitalRead(button_F4))                                       //F4 button
-       {
-        if (bump_mode == true)
+     if (!digitalRead(button_F4)){                                       //F4 button
+       if (bump_mode == true)
            {
             if(++Total_late > 15)                                     //increment and hold at total fish max
                {Total_late = 0;}
@@ -978,25 +984,21 @@ if (read_keyboard_timer >= 2)                                             //read
          lcd.setCursor(0,0);
          String tmp = results[0][1]+", "+ results[0][2];                  //combine last name and first name with ,
          tmp = tmp.substring(0,15);                                       //limit to 15 characters to prevent overflow on lcd screen
-         lcd.print(results[0][0]+"   "+ tmp);                                   //print name on top line of lcd
-         bump_mode = false;                                                   //unset bump mode when new angler is selected
+         lcd.print(results[0][0]+"   "+ tmp);                             //print name on top line of lcd
+         bump_mode = false;                                               //unset bump mode when new angler is selected
          read_keyboard_timer = 0;
       
          if (diagnostic_flag){
             Serial.println(">>Button F4 pressed");
             Serial2.println(">>Button F4 pressed");                    //^^^ send button press diag to printer
             }
-       else
-         {lcd.setCursor(18,3);
-          lcd.write(byte(1));                                               //down arrow key
-          //lcd.print("  ");
-          }
+      
        }//else
      }// if (!digitalRead(button_F4)) 
 
 //-------------- F1 + F4 key press will reboot computer ---------------------------
-  if (!digitalRead(button_F1) &&  !digitalRead(button_F4))              // If button 1 and 4 are pressed at same time reboot
-       {read_keyboard_timer = 0;
+  if (!digitalRead(button_F1) &&  !digitalRead(button_F4)){              // If button 1 and 4 are pressed at same time reboot
+       read_keyboard_timer = 0;
         delay(2000);
         if (!digitalRead(button_F1) &&  !digitalRead(button_F4))        //if still holding after 2 seconds
             {
@@ -1015,8 +1017,8 @@ if (read_keyboard_timer >= 2)                                             //read
 
 
 //--------------- printer uart recieve ---------------------------------------------------------------
-      if (Serial2.available() > 0)                                   //feedback from the printer
-           {char c;
+      if (Serial2.available() > 0){                                   //feedback from the printer
+           char c;
            c = (char)Serial1.read();
            Serial.print(c);                                            //send to serial monitor
            if (c == 0x00)                                           //if null zero
@@ -1024,8 +1026,8 @@ if (read_keyboard_timer >= 2)                                             //read
            }
 
 //------------ radio uart -----------------------------------------------------------------------------
-      if (Serial1.available() > 0)                                  //if data in radio recieve buffer, send to serial monitor
-          {char c;
+      if (Serial1.available() > 0){                                 //if data in radio recieve buffer, send to serial monitor
+          char c;
            c = (char)Serial1.read();                                //get byte from uart buffer
            radio_rx_array[radio_rx_pointer] += c;                   //add character to radio rx buffer
            radio_rx_pointer ++;                                     //increment pointer
@@ -1601,11 +1603,6 @@ if (read_keyboard_timer >= 2)                                             //read
 
 
 
-
-
-
-
-
 //%%%%%%%%%%%%%%%%%%%%%% functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /**
  * Checks the status of the checkbox in the header and changes the flag and status string
@@ -1623,7 +1620,58 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
    status = "";                                    //set to null value if not checked
   }
 }
+//---------------  MENU SCREEN -----------------------------------------------------
+void menu(void){
+  lcd.clear();
+  lcd.setCursor(2,0);
+  lcd.print("Search by ID");
+  lcd.setCursor(2,1);
+  lcd.print("Search by Name");
+  lcd.setCursor(2,2);
+  lcd.print("Print Standing");
+  lcd.setCursor(2,3);
+  lcd.print("Exit Menu");
+  while (!digitalRead(button_F1)){
+    delay(50);
+  }
+  menu_mode = true;                                     //set flag for menu mode  
 
+  menu_pointer = 0;                                     //set pointer to first line
+  while (digitalRead(button_PRINT)){                     //stay in loop until print[ENTER] button is pressed
+      lcd.setCursor(0,menu_pointer);
+      lcd.print(">");
+      lcd.setCursor (19,menu_pointer);
+      lcd.print("<");
+      if (!digitalRead(button_F3)){
+          lcd.setCursor(0,menu_pointer);
+          lcd.print(" ");                                 //erase old arrows
+          lcd.setCursor (19,menu_pointer);
+          lcd.print(" ");
+          menu_pointer = menu_pointer +1;                 //increment pointer
+          if (menu_pointer > 3){
+              menu_pointer = 3;
+              }
+          while(!digitalRead(button_F3)){                //switch debounce
+              delay(50);   
+              }
+          }
+       if (!digitalRead(button_F4)){
+          lcd.setCursor(0,menu_pointer);
+          lcd.print(" ");                                 //erase old arrows
+          lcd.setCursor (19,menu_pointer);
+          lcd.print(" ");
+          if (menu_pointer != 0){
+              menu_pointer = menu_pointer - 1; 
+              }
+          while(!digitalRead(button_F4)){                //switch debounce
+              delay(50);   
+              }
+          }
+          
+    }//while (digitalRead(button_PRINT))
+    
+    lcd.clear();                                          //clear menu screen on exit
+ }//void menu(void)
 //---------------save bumpsink info and weight to database -------------------------
 void save_weighin_to_database(){
        sqlite3 *db3;                                                              //create an instance of the data base
