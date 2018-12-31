@@ -262,6 +262,7 @@ byte DownArrow[8] = {
 };
 
 //----------funtion prototypes -------------------------------------------------
+void addToAnglerDB(char* sSQL);
 String convertEpoch(unsigned long epoch_time);
 void get_date(void);
 void get_time(void);
@@ -316,7 +317,7 @@ void setup(){
     listDir(SD, "/", 2);                      //SD card directory listing, '2' = 2 levels deep
     sqlite3_initialize();                     //start the database engine
     Wire.begin();                             //start i2c for RTC
-
+    delay(100);
     //---------- declare input buttons with pullup -----------------------------
     pinMode(button_PRINT,INPUT_PULLUP);    // print button
     pinMode(button_F1,INPUT_PULLUP);       // F1
@@ -324,21 +325,15 @@ void setup(){
     pinMode(button_F3,INPUT_PULLUP);       // F3
     pinMode(button_F4,INPUT_PULLUP);       // F4
 
-    //----------- setup 1us counter --------------------------------------------
-//    timer = timerBegin(0, 80, true);            // "0" is the timer to use, '80' is the prescaler,true counts up 80mhz divided by 80 = 1 mhz or 1 usec
-//    timerAttachInterrupt(timer,&onTimer,true);  // "&onTimer" is the int function to call when intrrupt occurs,"true" is edge interupted
-//    timerAlarmWrite(timer, 100000, true);       // interupt every 1000000 times
-//    timerAlarmEnable(timer);                    // this line enables the timer declared 3 lines up and starts it
-//    ticket = 0;
-
     //-------------  declare serial ports and start up LCD module --------------------------------------
     /*   Note the format for setting a serial port is as follows:
         Serial2.begin(baud-rate, protocol, RX pin, TX pin);  */
     Serial1.begin(9600, SERIAL_8N1,33,32);     // XB RADIO,  RX = 33, TX = 32,
     Serial2.begin(9600, SERIAL_8N1,16,17);     // THERMAL PRINTER, RX = 16,  TX = 17
     Serial.begin(115200);                      // start serial port 0 (debug monitor and programming port)
-    delay(1000);                               //time for the serial ports to setup
+    delay(500);                               //time for the serial ports to setup
     lcd.init();                               //initialize the LCD display
+    delay(5);
     lcd.backlight();                          //turn on backlight
     lcd.createChar(0, UpArrow);               //assign custom character to location 0
     lcd.createChar(1, DownArrow);             //assign custom character to location 1
@@ -465,6 +460,7 @@ void setup(){
 
 
     lcd.setCursor(0,3);
+    lcd.print("Software Ver - ");
     lcd.print(VERSION_NUMBER);                                                 //print software version
     if (diagnostic_flag == true)                                                  //^^^diagnostic mode
         { Serial2.print(">>Software ");
@@ -487,7 +483,7 @@ void setup(){
     lcd.print(line2);
     lcd.setCursor(0,2);
     lcd.print(line3);
- //   delay(3000);
+ 
     lcd.clear();
 
 //-------- get the MAC address of the WiFi module ----------
@@ -517,9 +513,9 @@ void setup(){
      else if (diagnostic_flag){                                //^^^ diagnostic message
            check_sd_mem();                            //send to printer, card memory statistics
           }
-
-////-------------test code for data base---------------------
-
+////==============================================================
+////-------------test code for data base--------------------------
+////==============================================================
 //note - data base used for this was created with DB browser and loaded onto sd card
    sqlite3 *db3;                                                                        //declare a pointer to the data base
    openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
@@ -580,14 +576,14 @@ void setup(){
 //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('23','5','4','3','4','900','897')");
 //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('24','4','3','2','1','1012','987')");
 
-
+   
    Serial.printf("----List Tables ---------\n\r");
      db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
     Serial.printf("----End of Tables ---------\n\r");
 
 //     db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                  //list entire data base
      Serial.println("--- weighin results by adj_weight ------");
-     db_exec(db3, "SELECT * FROM weighin Order BY adj_weight DESC");
+     db_exec(db3, "SELECT * FROM weighin Order BY adj_weight DESC");       //***diagnostic
      db_exec(db3, "SELECT * FROM Angler");                                 //total number of records in table
 //     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
 
@@ -740,32 +736,24 @@ int val = heap_caps_get_free_size(MALLOC_CAP_8BIT);                            /
 //&&&&&&&&&&&&&&&&&&&&&&&&&   Start of Program Loop  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 void loop(){
 
-if((micros() - start_micro) >= 100000)
+if((micros() - start_micro) >= 100000)                   //usec timer used for various functions
     {
-    ++ClockTimer;
+    ++ClockTimer;                                        //updates clock time every one second
     ++totalInterruptCounter;
-    ++read_keyboard_timer;
+    ++read_keyboard_timer;                               //read keyboard every 200ms
     start_micro = micros();
     }
-//--------- 100 ms timer-----------------------------
-//   if (interruptCounter > 0)                            //every one second 100 msec int is generated
-//      {
-//      portENTER_CRITICAL(&timerMux);
-//      interruptCounter--;                               //reset counter to zero
-//      portEXIT_CRITICAL(&timerMux);
-//      totalInterruptCounter++;                          //increment counter for ints generated every second
-//      }
 
 //-------- 1 second timer-----------------------------
   if (ClockTimer >=10)                                  //update clock every one second
-      {get_time();
+      {get_time();                                      //update clock value [current_time]
       // get_date();
        //lcd_display_time();                              //display time upper left corner of lcd
       // lcd_display_date();                              //display date upper right corner of lcd
 
        ClockTimer = 0;                                  //reset one second timer used for clock updates
 
-     // int val = heap_caps_get_free_size(MALLOC_CAP_8BIT); //diagnnostic to display available heap size
+     // int val = heap_caps_get_free_size(MALLOC_CAP_8BIT); //diagnostic to display available heap size
      // Serial.println(val);
       }
 
@@ -792,8 +780,8 @@ if (read_keyboard_timer >= 2)                                             //read
      {
 
 //----  PRINT button pressed?  -------------
-     if (!digitalRead(button_PRINT))                                      //if pushbutton is pressed (low condition), print the ticket
-      { no_sig_flag = 0 ;                                                 //clear flag so that 'no signal' message can appear if needed
+     if (!digitalRead(button_PRINT)){                                      //if pushbutton is pressed (low condition), print the ticket
+       no_sig_flag = 0 ;                                                 //clear flag so that 'no signal' message can appear if needed
         if (diagnostic_flag)                                              //^^^ diagnostic message
           {Serial.println(">>Print button  pressed");
             Serial2.println(">>Print button pressed");}
@@ -845,24 +833,26 @@ if (read_keyboard_timer >= 2)                                             //read
               Serial.println("bump_mode = false");
 
              }
-        }
-        read_keyboard_timer = 0;
-      }
+          while(!digitalRead(button_PRINT)){                               //print key debounce
+                  delay(50);
+                   }
+        read_keyboard_timer = 0;                                           //reset keyboard timer
+      }//else
+    }//if (!digitalRead(button_PRINT))
 
 //---- F1 button pressed? ----------------
      lcd.setCursor(1,3);
-     if (!digitalRead(button_F1))                                        //F1 button
-       { read_keyboard_timer = 0;
-        if (bump_mode == true)
+     if (!digitalRead(button_F1)){                                        //F1 button
+        read_keyboard_timer = 0;
+        if (bump_mode == true)                                       //if in bumpsink mode
            {
-            if(++Total_fish > 5)                                     //increment and hold at 5 max
+            if(++Total_fish > 5)                                     //increment and limit at 5 max
                {Total_fish = 0;}
             lcd.setCursor(2,3);
-            lcd.print(Total_fish);
+            lcd.print(Total_fish);                                  //update screen
             delay(150);
            }
-        else
-        {
+        else{
         lcd.setCursor(2,3);
         lcd.write(byte(1));                                             //show down arrow icon
         lcd.print("  ");
@@ -879,40 +869,36 @@ if (read_keyboard_timer >= 2)                                             //read
           {Serial2.println(">>Button F1 pressed");                       //^^^ send button press diag to printer
            Serial.println(">>Button F1 pressed");
           }
-       }
-//     else{
-//         lcd.setCursor(0,3);
-//         lcd.print("Res");
-//        }
-       }
+       }//else{
+
+    }//if (!digitalRead(button_F1))
 //----------F2 button press ---------------
      lcd.setCursor(6,3);
      if (!digitalRead(button_F2))                                         //F2 button
-       {read_keyboard_timer = 0;
-         if (bump_mode == true)
-           {
-            if(++Total_alive > Total_fish)                                     //increment and hold at 5 max
+       {read_keyboard_timer = 0;                                          //reset keyboard read timer
+         if (bump_mode == true){                                          //if in bumpsink mode
+            if(++Total_alive > Total_fish)                                //increment and roll over to 0 if over total fish
                {Total_alive = 0;}
-            lcd.setCursor(7,3);
-            lcd.print(Total_alive);
-           delay(150);
+            lcd.setCursor(7,3);                                          //set lcd cursor position
+            lcd.print(Total_alive);                                      //update lcd with current count of alive fish
+           delay(150);                                                   //switch debounce
            }
-        else
-        {
-        lcd.print("F2");
-        sqlite3 *db3;
-         openDb("/sd/PTS.db", &db3);                                     //open the database
-         
-         db_exec(db3, "SELECT Angler.id,Angler.FirstName,Angler.LastName,weighin.totalFish,weighin.liveFish,weighin.shortFish,weighin.late,weighin.weight,weighin.adj_weight FROM angler INNER JOIN Weighin on Weighin.ID = Angler.ID ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
-         sqlite3_close(db3);                                             //close database
-         Serial.println("*** DIAGNOSTIC  -  Database closed at line 901");
-        print_weigh_results();
-
-       if (diagnostic_flag)
-          {Serial.println(">>Button F2 pressed");
-            Serial2.println(">>Button F2 pressed");}                      //^^^ send button press diag to printer
-       delay(1000);                                                        //switch debounce
-       }
+        else                                                             //if not in bumpsink mode
+          {
+          lcd.print("F2");                                               //display text on lcd screen
+          sqlite3 *db3;                                                   //define object for database
+           openDb("/sd/PTS.db", &db3);                                     //open the database
+           
+           db_exec(db3, "SELECT Angler.id,Angler.FirstName,Angler.LastName,weighin.totalFish,weighin.liveFish,weighin.shortFish,weighin.late,weighin.weight,weighin.adj_weight FROM angler INNER JOIN Weighin on Weighin.ID = Angler.ID ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
+           sqlite3_close(db3);                                             //close database
+           Serial.println("*** DIAGNOSTIC  -  Database closed at line 901");
+          print_weigh_results();                                          //print report on printer
+  
+         if (diagnostic_flag)
+            {Serial.println(">>Button F2 pressed");
+              Serial2.println(">>Button F2 pressed");}                      //^^^ send button press diag to printer
+         delay(250);                                                        //switch debounce
+         }
        }
     
 
@@ -920,32 +906,31 @@ if (read_keyboard_timer >= 2)                                             //read
        lcd.setCursor(11,3);
      if (!digitalRead(button_F3))                                         //F3 button
        {
-        if (bump_mode == true)
+        if (bump_mode == true)                                            //if in bumpsink mode
            {
-            if(++Total_short > Total_fish)                                     //increment and hold at total fish max
+            if(++Total_short > Total_fish)                                     //increment and roll over to zero if over total fish value
                {Total_short = 0;}
             lcd.setCursor(12,3);
-            lcd.print(Total_short);
-            delay(150);
+            lcd.print(Total_short);                                       //update lcd with number of short fish
+            delay(250);                                                   //switch debounce
            }
         else
           {
            if (pnt > 100)                                                    //tempoary if statement in case pointer gets out of wack
               {pnt = 1;}
            pnt = pnt+1;                                                      //increment pointer 
-           read_keyboard_timer = 0;
-           sqlite3 *db3;
+           read_keyboard_timer = 0;                                         //reset keyboard read timer
+           sqlite3 *db3;                                                    //asign object to database
            openDb("/sd/PTS.db", &db3);                                      //open the database
            sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE id = %d",pnt);  //search database by rowid
-           db_exec(db3,sSQL);
+           db_exec(db3,sSQL);                                               //execute the sql command
            sqlite3_close(db3);                                              //close database
-           lcd.setCursor(0,0);
+           lcd.setCursor(0,0);                                              //set lcd cursor
            lcd.print("                    ");                               //clear text on top line
            lcd.setCursor(0,0);
-           String tmp = results[0][1]+", "+ results[0][2];                  //combine last name and first name with ,
+           String tmp = results[0][1]+", "+ results[0][2];                  //combine last name and first name with ','
            tmp = tmp.substring(0,15);                                       //limit to 15 characters to prevent overflow on lcd screen
-           lcd.print(results[0][0]+ tmp);                                   //print name on top line of lcd
-          // lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);  //print column 1,2,3 to lcd screen
+           lcd.print(results[0][0]+"   "+ tmp);                                   //print name on top line of lcd
            bump_mode = false;                                                   //reset mode to non bump mode when new angler is selected
            if (rec == 0)                                                        // 'rec' is the number of records returned from query
                 {pnt = pnt-1;
@@ -991,7 +976,9 @@ if (read_keyboard_timer >= 2)                                             //read
          lcd.setCursor(0,0);
          lcd.print("                    ");                                       //clear line
          lcd.setCursor(0,0);
-         lcd.print(results[0][0]+ "   "+ results[0][1]+", "+ results[0][2]);
+         String tmp = results[0][1]+", "+ results[0][2];                  //combine last name and first name with ,
+         tmp = tmp.substring(0,15);                                       //limit to 15 characters to prevent overflow on lcd screen
+         lcd.print(results[0][0]+"   "+ tmp);                                   //print name on top line of lcd
          bump_mode = false;                                                   //unset bump mode when new angler is selected
          read_keyboard_timer = 0;
       
@@ -1023,7 +1010,7 @@ if (read_keyboard_timer >= 2)                                             //read
                 }
              rebootEspWithReason("manual reboot");                      //reboot computer
             }
-        }
+        }//if (!digitalRead(button_F1) &&  !digitalRead(button_F4))
     }//end if read_keyboard_timer = 0
 
 
