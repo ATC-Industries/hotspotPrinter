@@ -1,5 +1,4 @@
-#include <Time.h>
-#include <TimeLib.h>
+
 
 
 
@@ -93,7 +92,7 @@ Angler
 #include <stdlib.h>
 #include <sqlite3.h>            //database engine https://github.com/siara-cc/esp32_arduino_sqlite3_lib
 #include <WiFi.h>               // Load Wi-Fi library
-#include "ESPAsyncWebServer.h"
+#include "ESPAsyncWebServer.h"  //async web server
 #include "SPIFFS.h"
 #include <EEPROM.h>             //driver for eeprom
 //------ files for SD card -----------------------------------------------------
@@ -717,8 +716,8 @@ int val = heap_caps_get_free_size(MALLOC_CAP_8BIT);                            /
  Serial.println("Available stack" + val);
 
 
- start_micro = micros();
- Total_fish = 0;
+ start_micro = micros();                                                       //set varible to current micros (used for timingapplications
+ Total_fish = 0;                                                               //preset varibles with zero
  Total_alive = 0;
  Total_short = 0;
  Total_late = 0;
@@ -734,18 +733,19 @@ if((micros() - start_micro) >= 100000){                   //usec timer used for 
     ++ClockTimer;                                        //updates clock time every one second
     ++totalInterruptCounter;
     ++read_keyboard_timer;                               //read keyboard every 200ms
-    start_micro = micros();
+    start_micro = micros();                              //record the current timer count
     }
 
 //-------- 1 second timer-----------------------------
   if (ClockTimer >=10){                                  //update clock every one second
       get_time();                                      //update clock value [current_time]
+      ClockTimer = 0;                                  //reset one second timer used for clock updates
+
       // get_date();
        //lcd_display_time();                              //display time upper left corner of lcd
       // lcd_display_date();                              //display date upper right corner of lcd
 
-       ClockTimer = 0;                                  //reset one second timer used for clock updates
-
+       
      // int val = heap_caps_get_free_size(MALLOC_CAP_8BIT); //diagnostic to display available heap size
      // Serial.println(val);
       }
@@ -753,7 +753,6 @@ if((micros() - start_micro) >= 100000){                   //usec timer used for 
 
 //--------- no signal timer -------(5 seconds)----------
    if (totalInterruptCounter >=25){
-       //lcd_display_time();
         totalInterruptCounter = 0;                        //reset counter
         if (++ no_signal_timer >= 2)                      //if no signal this timer times out
            { statt = 0;                                   //set display mode to 0 so "No Signal" will be displayed
@@ -781,7 +780,7 @@ if (read_keyboard_timer >= 2){                                             //rea
         if (diagnostic_flag)                                              //^^^ diagnostic message
           {Serial.println(">>Print button  pressed");
             Serial2.println(">>Print button pressed");}
-       if ((Total_fish != 0) ) ///print ticket if bump sink info has been entered
+       if ((Total_fish != 0) )                                                ///print ticket if bump sink info has been entered
            {print_ticket();                                                   //print the weight ticket
             save_weighin_to_database();                                      //save bumpsink info weight and adj weight to database
             bump_mode = false;                                              //get out of bump mode after ticket is printed
@@ -792,10 +791,12 @@ if (read_keyboard_timer >= 2){                                             //rea
                {delay(30);}
             lcd.clear();
             lcd.setCursor(3,1);
-            lcd.print("PRINTING...         ");                                       //display 'Printing' message to lcd
+            lcd.print("PRINTING...         ");                              //display 'Printing' message to lcd
             delay(2000);
-            lcd.clear();
-            Total_fish = 0;
+            lcd.clear();                                                    //clear screen
+            lcd.setCursor(0,3);
+            lcd.print("Select Angler F3 F4 ");
+            Total_fish = 0;                                                 //reset varibles
             Total_alive = 0;
             Total_short = 0;
             Total_late = 0;
