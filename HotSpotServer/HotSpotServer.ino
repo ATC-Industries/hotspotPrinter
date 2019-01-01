@@ -721,7 +721,12 @@ int val = heap_caps_get_free_size(MALLOC_CAP_8BIT);                            /
  Total_alive = 0;
  Total_short = 0;
  Total_late = 0;
-}//void setup() ending terminator
+ lcd.clear();
+ lcd.setCursor(3,1);
+ lcd.print("Pro Tournament");
+ lcd.setCursor(8,2);
+ lcd.print("Scales");
+}//void setup() 
 
 
 
@@ -762,11 +767,16 @@ if((micros() - start_micro) >= 100000){                   //usec timer used for 
                    {//lcd.clear();                        //clear lcd screen
                     lcd_clear(1);                          //erase line 2
                     lcd.setCursor(2,1);
-                    lcd.print("** No  Signal **");}       //only display if not in bump sink mode
+                    lcd.print("** No  Signal **");       //only display if not in bump sink mode
+                    lcd.setCursor(0,2);
+                    lcd.print("Select Angler, use");
+                    lcd.setCursor(11,3);
+                    lcd.print("F3    F4 ");
                    }
              no_sig_flag = 1;                             //set flag so display will not update every loop
            }
       }
+   }
 
    
 //--------------- read  button routines -------------------------------------------------------
@@ -794,8 +804,10 @@ if (read_keyboard_timer >= 2){                                             //rea
             lcd.print("PRINTING...         ");                              //display 'Printing' message to lcd
             delay(2000);
             lcd.clear();                                                    //clear screen
-            lcd.setCursor(0,3);
-            lcd.print("Select Angler F3 F4 ");
+            lcd.setCursor(0,2);
+            lcd.print("Select Angler, use");
+            lcd.setCursor(11,3);
+            lcd.print("F3    F4 ");
             Total_fish = 0;                                                 //reset varibles
             Total_alive = 0;
             Total_short = 0;
@@ -894,17 +906,17 @@ if (read_keyboard_timer >= 2){                                             //rea
   
          if (diagnostic_flag)
             {Serial.println(">>Button F2 pressed");
-              Serial2.println(">>Button F2 pressed");}                      //^^^ send button press diag to printer
-         delay(250);                                                        //switch debounce
+              Serial2.println(">>Button F2 pressed");}                   //^^^ send button press diag to printer
+         delay(250);                                                     //switch debounce
          }
        }
 //--------- F3 button pressed? -------------------
        lcd.setCursor(11,3);
-     if (!digitalRead(button_F3)){                                         //F3 button
+     if (!digitalRead(button_F3)){                                        //F3 button
        
         if (bump_mode == true)                                            //if in bumpsink mode
            {
-            if(++Total_short > Total_fish)                                     //increment and roll over to zero if over total fish value
+            if(++Total_short > Total_fish)                                //increment and roll over to zero if over total fish value
                {Total_short = 0;}
             lcd.setCursor(12,3);
             lcd.print(Total_short);                                       //update lcd with number of short fish
@@ -912,9 +924,9 @@ if (read_keyboard_timer >= 2){                                             //rea
            }
         else
           {
-           if (pnt > 100)                                                    //tempoary if statement in case pointer gets out of wack
-              {pnt = 1;}
-           pnt = pnt+1;                                                      //increment pointer 
+//           if (pnt > 100)                                                   //tempoary if statement in case pointer gets out of wack
+//              {pnt = 1;}
+           pnt = pnt+1;                                                     //increment pointer 
            read_keyboard_timer = 0;                                         //reset keyboard read timer
            sqlite3 *db3;                                                    //asign object to database
            openDb("/sd/PTS.db", &db3);                                      //open the database
@@ -925,28 +937,27 @@ if (read_keyboard_timer >= 2){                                             //rea
            lcd.setCursor(0,0);
            String tmp = results[0][1]+", "+ results[0][2];                  //combine last name and first name with ','
            tmp = tmp.substring(0,15);                                       //limit to 15 characters to prevent overflow on lcd screen
-           lcd.print(results[0][0]+"   "+ tmp);                                   //print name on top line of lcd
-           bump_mode = false;                                                   //reset mode to non bump mode when new angler is selected
-           if (rec == 0)                                                        // 'rec' is the number of records returned from query
+           lcd.print(results[0][0]+"   "+ tmp);                             //print name on top line of lcd
+           bump_mode = false;                                               //reset mode to non bump mode when new angler is selected
+           if (rec == 0)                                                    // 'rec' is the number of records returned from query
                 {pnt = pnt-1;
                 lcd.setCursor(0,0);
-                lcd.print("  -- End of file -- ");                              //if last record then display end of file
+                lcd.print("  -- End of file -- ");                          //if last record then display end of file
                 }
            if (diagnostic_flag)
              {Serial.println(">>Button F3 pressed");
               Serial2.println(">>Button F3 pressed");                        //^^^ send button press diag to printer
              }
-           
-//          lcd.setCursor(13,3);
-//          lcd.write(byte(0));                                               //up arrow key
+          lcd_clear(2);
+          lcd_clear(3);                                                     //clear line 4
               
-           }
+           }//else (bump mode == false)
      }// if (!digitalRead(button_F3))
 //-------- F4 button pressed? ---------------------
-     if (!digitalRead(button_F4)){                                       //F4 button
+     if (!digitalRead(button_F4)){                                            //F4 button
        if (bump_mode == true)
            {
-            if(++Total_late > 15)                                     //increment and hold at total fish max
+            if(++Total_late > 15)                                             //increment and hold at total fish max
                {Total_late = 0;}
             lcd.setCursor(17,3);
             lcd.print(Total_late);
@@ -955,7 +966,7 @@ if (read_keyboard_timer >= 2){                                             //rea
            }
         else
           {
-           if (pnt > 100)                               //temporary code in case pointer gets out of wack
+           if (pnt > 100)                                                     //temporary code in case pointer gets out of wack
               {pnt = 1;}
            if (pnt >1)
                {pnt = pnt-1;}
@@ -964,7 +975,7 @@ if (read_keyboard_timer >= 2){                                             //rea
          sprintf(sSQL,"SELECT ID, LastName,FirstName FROM Angler WHERE id = %d",pnt);                  //search database by rowid
          db_exec(db3,sSQL);
          sqlite3_close(db3);
-         lcd_clear(0);                                       //clear line
+         lcd_clear(0);                                                    //clear line
          lcd.setCursor(0,0);
          String tmp = results[0][1]+", "+ results[0][2];                  //combine last name and first name with ,
          tmp = tmp.substring(0,15);                                       //limit to 15 characters to prevent overflow on lcd screen
@@ -974,9 +985,10 @@ if (read_keyboard_timer >= 2){                                             //rea
       
          if (diagnostic_flag){
             Serial.println(">>Button F4 pressed");
-            Serial2.println(">>Button F4 pressed");                    //^^^ send button press diag to printer
+            Serial2.println(">>Button F4 pressed");                       //^^^ send button press diag to printer
             }
-      
+          lcd_clear(2);
+          lcd_clear(3);                                                       //clear the bottom line
        }//else
      }// if (!digitalRead(button_F4)) 
 
@@ -988,24 +1000,25 @@ if (read_keyboard_timer >= 2){                                             //rea
             {
             lcd.clear();
             lcd.setCursor(0,1);
-            lcd.print("Rebooting");                                     //display 'rebooting'  on Lcd
+            lcd.print("Restart");                                     //display 'rebooting'  on Lcd
 
-            for (int i = 0; i < 11; i++){                              // delay and print dots 11 times.
+            for (int i = 0; i < 11; i++){                               // delay and print dots 11 times.
                 delay(100);
                 lcd.print(".");
                 }
-             rebootEspWithReason("manual reboot");                      //reboot computer
+            if (!digitalRead(button_F1) &&  !digitalRead(button_F4))     //if buttons are still being held down   
+               {ESP.restart();}                                             //reboot the software
             }
         }//if (!digitalRead(button_F1) &&  !digitalRead(button_F4))
     }//end if read_keyboard_timer = 0
 
 
 //--------------- printer uart recieve ---------------------------------------------------------------
-      if (Serial2.available() > 0){                                   //feedback from the printer
+      if (Serial2.available() > 0){                                     //feedback from the printer
            char c;
            c = (char)Serial1.read();
            Serial.print(c);                                            //send to serial monitor
-           if (c == 0x00)                                           //if null zero
+           if (c == 0x00)                                             //if null zero
              Serial.println("");
            }
 
