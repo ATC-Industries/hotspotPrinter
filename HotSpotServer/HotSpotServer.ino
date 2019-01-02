@@ -802,7 +802,7 @@ if (read_keyboard_timer >= 2){                                             //rea
             lcd.clear();
             lcd.setCursor(3,1);
             lcd.print("PRINTING...         ");                              //display 'Printing' message to lcd
-            delay(2000);
+            delay(1500);
             lcd.clear();                                                    //clear screen
             lcd.setCursor(0,2);
             lcd.print("Select Angler, use");
@@ -812,6 +812,7 @@ if (read_keyboard_timer >= 2){                                             //rea
             Total_alive = 0;
             Total_short = 0;
             Total_late = 0;
+            bump_mode = false;                                             //clear bump mode flag after printing results
            }
       else{           //else code if all bump sink info has not been entered
          
@@ -1618,6 +1619,12 @@ void checkboxStatus(String h, bool& is_checked, String& status, String number) {
   }
 }
 //---------------  MENU SCREEN -----------------------------------------------------
+/*
+ *menu_pointer = 0 // first menu item (Search by ID)
+ *menu_pointer = 1 // second menu item (Search by Name) 
+ *menu_pointer = 2 // third menu item (Print Standing) 
+ *menu_pointer = 3 // last menu item (Exit Menu)
+ */
 void menu(void){
   lcd.clear();
   lcd.setCursor(2,0);
@@ -1682,13 +1689,20 @@ void menu(void){
     }
     else if (menu_pointer == 1){
       angler_search = "LastName";                      //sort angler list by last name
+//       sqlite3 *db3;                                                                        //declare a pointer to the data base
+//       openDb("/sd/PTS.db", &db3);  
+//       sprintf(sSQL,"CREATE TABLE weighin_list AS SELECT ID ,TotalFish ,LiveFish,ShortFish,Late,weight,adj_weight,TimeStamp,DateStamp FROM weighin"); //create table if does not exist
+//       db_exec(db3,sSQL);
+//       sprintf(sSQL,"INSERT INTO  weighin_list SELECT * FROM weighin ORDER BY  DESC");            //xfer sorted list to new table
+//       db_exec(db3,sSQL);                                                         //execute the command
+//       sqlite3_close(db3); 
     }
     else if (menu_pointer == 2){                       //3rd menu item (print standings to printer)
       lcd.clear();
       lcd.setCursor(4,1);
       lcd.print("Printing");
       lcd.setCursor(4,2);
-      lcd.print("Standings...");
+      lcd.print("Standings ...");
       print_weigh_results();                           //print out standing report to printer
       delay(2000);
     }
@@ -1744,7 +1758,6 @@ void lcd_display_time(void){
     lcd.setCursor(0,0);
     lcd.print(current_time);
     }
-
 //--------------- get time from rtc -------------------------------------------------
 void get_time(void){
    
@@ -1813,13 +1826,11 @@ String  convertEpoch(unsigned long epoch_time){
       return time_stamp;
  
 }
-    
 //-------------display date on LCD upper right corner ----------------------------------------------
 void lcd_display_date(void){
     lcd.setCursor(10,0);
     lcd.println(current_date);
     }
-
 //---------- get date from rtc --------------------------------------------------------
 void get_date(void){
     String m = "";
@@ -1831,7 +1842,6 @@ void get_date(void){
        {d= "0";}
     current_date = String(now.year())+ "-" + m + String(now.month()) + "-" + d+ String(now.day());
    }
-
 //-------------------------- Print Ticket ----------------------------------------------
 void print_ticket(void)
               {
