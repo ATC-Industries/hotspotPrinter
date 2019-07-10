@@ -29,7 +29,7 @@ See https://gulpjs.com/docs/en/getting-started/quick-start to get Gulp running
 ### Setting up Arduino IDE to load files to SPIFFS
 
 TODO
-
+https://randomnerdtutorials.com/install-esp32-filesystem-uploader-arduino-ide/
 
 ### Dependencies
 
