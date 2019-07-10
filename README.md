@@ -21,6 +21,16 @@ The included libraries will install automatically from the board and standard se
 You will need to install the Data upload plugin to upload all the files in the `data` fold to the ESP32 SPIFFS
 https://github.com/me-no-dev/arduino-esp32fs-plugin
 
+### Dev Enviro
+
+Gulp is being used to build html pages using Nunjucks.
+See https://gulpjs.com/docs/en/getting-started/quick-start to get Gulp running
+
+### Setting up Arduino IDE to load files to SPIFFS
+
+TODO
+
+
 ### Dependencies
 
 `#include <U8g2lib.h>`  In the library manager search for "U8g" and choose the library by oliver
