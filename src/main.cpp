@@ -112,7 +112,7 @@ Angler
 #include "OutputPrint.h"        //routines to print data results to printer
 #include <ArduinoJson.h>        // https://arduinojson.org/v5/example/generator/
 #include <Time.h>
-#include <TimeLib.h>
+//#include <TimeLib.h>
 
 #define EEPROM_SIZE 1024        //rom reserved for eeprom storage
 
@@ -509,88 +509,88 @@ void setup(){
 ////-------------test code for data base--------------------------
 ////==============================================================
 
-   sqlite3 *db3;                                                                        //declare a pointer to the data base
-   openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
+//    sqlite3 *db3;                                                                        //declare a pointer to the data base
+//    openDb("/sd/PTS.db", &db3);                                                          //open database on SD card, assign to 'db3'
 
 
 
- //-- add tables if they do not exist or unrem code to delete table ----------
+//  //-- add tables if they do not exist or unrem code to delete table ----------
 
-  // db_exec(db3, "DROP TABLE weighin");                        //unrem this line to erase old table and create new table
-   db_exec(db3, "CREATE TABLE weighin(ID INTEGER NOT NULL UNIQUE,TotalFish INTEGER NOT NULL DEFAULT 0,LiveFish INTEGER DEFAULT 0,ShortFish INTEGER DEFAULT 0,Late INTEGER DEFAULT 0,weight INTEGER DEFAULT 0,adj_weight INTEGER DEFAULT 0,TimeStamp TEXT,DateStamp TEXT, PRIMARY KEY (ID))");
-  // db_exec(db3, "DROP TABLE Angler");                              //unrem this line to erase old table and create new table
-   db_exec(db3, "CREATE TABLE Angler(ID INTEGER UNIQUE NOT NULL,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
-
-
-
-  // db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
-  // // db_exec(db3, "DROP TABLE Id");
-  //  db_exec(db3, "CREATE TABLE Angler(ID INTEGER UNIQUE NOT NULL,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
-  //  //
-  //  //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
-  //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')");
-
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('4','4','3','0','8','689','550')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('5','4','4','3','4','389','880')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('6','2','2','2','2','769','770')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('7','5','4','1','5','359','444')");     //add records
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('8','4','4','1','3','560','555')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('9','5','2','3','6','1686','1666')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('10','5','3','0','8','875','770')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('11','5','4','3','4','890','789')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('12','5','3','2','1','1012','912')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('13','5','4','0','5','359','570')");     //add records
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('14','4','4','1','3','790','650')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('15','5','5','3','6','1220','1098')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('16','4','3','0','8','689','567')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('17','4','4','3','4','389','879')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('18','2','2','2','2','769','789')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('19','5','4','1','5','359','456')");     //add records
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('20','4','4','1','3','560','567')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('21','5','2','3','6','1686','1678')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('22','5','3','0','8','875','789')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('23','5','4','3','4','900','897')");
-//    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('24','4','3','2','1','1012','987')");
+//   // db_exec(db3, "DROP TABLE weighin");                        //unrem this line to erase old table and create new table
+//    db_exec(db3, "CREATE TABLE weighin(ID INTEGER NOT NULL UNIQUE,TotalFish INTEGER NOT NULL DEFAULT 0,LiveFish INTEGER DEFAULT 0,ShortFish INTEGER DEFAULT 0,Late INTEGER DEFAULT 0,weight INTEGER DEFAULT 0,adj_weight INTEGER DEFAULT 0,TimeStamp TEXT,DateStamp TEXT, PRIMARY KEY (ID))");
+//   // db_exec(db3, "DROP TABLE Angler");                              //unrem this line to erase old table and create new table
+//    db_exec(db3, "CREATE TABLE Angler(ID INTEGER UNIQUE NOT NULL,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
 
 
-   Serial.printf("----List Tables ---------\n\r");
-     db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
-    Serial.printf("----End of Tables ---------\n\r");
 
-//     db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                  //list entire data base
-     Serial.println("--- weighin results by adj_weight ------");
-     db_exec(db3, "SELECT * FROM weighin Order BY adj_weight DESC");       //***diagnostic
-     db_exec(db3, "SELECT * FROM Angler");                                 //total number of records in table
-//     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
+//   // db_exec(db3, "DROP TABLE Angler");                        //unrem this line to erase old table and create new table
+//   // // db_exec(db3, "DROP TABLE Id");
+//   //  db_exec(db3, "CREATE TABLE Angler(ID INTEGER UNIQUE NOT NULL,FirstName TEXT,LastName TEXT,MiddleInit TEXT,Address1 TEXT,Address2 TEXT,City   TEXT,State TEXT,Zip INTEGER,CellPhone INTEGER,Telephone INTEGER,SSN INTEGER,DOB INTEGER,DateStamp INTEGER,ISW9Filed INTEGER,Email TEXT,PRIMARY KEY (ID))");
+//   //  //
+//   //  //  db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,SSN,DOB,DateStamp,ISWFiled,Email)Values('98','John','Smith','B','555 West Street','Apt C','Memphis','TN','54678','5553954678','','321569876','11/13/61','12/18/18','1','John@google.com')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Bill','Brown','K')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Carl','Sager','W')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Steve','Phillips','A')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Brian','RedStone','C')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mike','Bluewater','D')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Mitch','Calmer','E')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Shipner','F')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Kim','Yellow','K')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Larry','Bager','W')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Shawn','Killmore','A')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Ernie','Pyle','C')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Roger','Pence','D')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Jeremy','Junston','E')");
+//   //    db_exec(db3, "INSERT INTO Angler(FirstName,LastName,MiddleInit) Values ('Fred','Widows','F')");
 
- //-----  example to pass varibles to a sql query---------
-     char *namev = "Mike Joes";
-     char *IDv = "4";
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('1','5','4','0','5','359','570')");     //add records
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('2','4','4','1','3','790','650')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('3','5','5','3','6','1220','1098')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('4','4','3','0','8','689','550')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('5','4','4','3','4','389','880')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('6','2','2','2','2','769','770')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('7','5','4','1','5','359','444')");     //add records
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('8','4','4','1','3','560','555')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('9','5','2','3','6','1686','1666')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('10','5','3','0','8','875','770')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('11','5','4','3','4','890','789')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('12','5','3','2','1','1012','912')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('13','5','4','0','5','359','570')");     //add records
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('14','4','4','1','3','790','650')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('15','5','5','3','6','1220','1098')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('16','4','3','0','8','689','567')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('17','4','4','3','4','389','879')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('18','2','2','2','2','769','789')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('19','5','4','1','5','359','456')");     //add records
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('20','4','4','1','3','560','567')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('21','5','2','3','6','1686','1678')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('22','5','3','0','8','875','789')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('23','5','4','3','4','900','897')");
+// //    db_exec(db3, "INSERT INTO weighin (id,totalfish,livefish,shortfish,late,weight,adj_weight) Values ('24','4','3','2','1','1012','987')");
 
 
-//     sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                  //search database by rowid
-//     db_exec(db3,sSQL);                                                          //this is theactual query to database
-//      sprintf(sSQL,"SELECT * FROM Angler WHERE name = '%s'",namev);              //search database by name
-//     db_exec(db3,sSQL);
-//      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);             //search database by WEighin id
-//     db_exec(db3,sSQL);
-    sqlite3_close(db3);                                                         //close database
+//    Serial.printf("----List Tables ---------\n\r");
+//      db_exec(db3, "SELECT name FROM sqlite_master WHERE type='table'");                 //list tables in data base
+//     Serial.printf("----End of Tables ---------\n\r");
+
+// //     db_exec(db3, "SELECT * FROM Angler ORDER BY WeighInId DESC");                  //list entire data base
+//      Serial.println("--- weighin results by adj_weight ------");
+//      db_exec(db3, "SELECT * FROM weighin Order BY adj_weight DESC");       //***diagnostic
+//      db_exec(db3, "SELECT * FROM Angler");                                 //total number of records in table
+// //     db_exec(db3,"SELECT * FROM Angler WHERE ROWID = 7");
+
+//  //-----  example to pass varibles to a sql query---------
+//      char *namev = "Mike Joes";
+//      char *IDv = "4";
+
+
+// //     sprintf(sSQL,"SELECT * FROM Angler WHERE ROWID = %s",IDv);                  //search database by rowid
+// //     db_exec(db3,sSQL);                                                          //this is theactual query to database
+// //      sprintf(sSQL,"SELECT * FROM Angler WHERE name = '%s'",namev);              //search database by name
+// //     db_exec(db3,sSQL);
+// //      sprintf(sSQL,"SELECT * FROM Angler WHERE WeighInId = %s",IDv);             //search database by WEighin id
+// //     db_exec(db3,sSQL);
+//     sqlite3_close(db3);                                                         //close database
 
      int r = 0;
 //     Serial.printf("----array values -----  %d records ------\n\r",rec);
@@ -649,7 +649,7 @@ server.on("/add", HTTP_POST, [](AsyncWebServerRequest *request){
 
 //  Take in add angler form data and do stuff with it
 server.on("/setup", HTTP_POST, [](AsyncWebServerRequest *request){
-        request->redirect("/setup");
+        request->redirect("/");
         // Build sql insertion string
         line1 = request->getParam(0)->value().c_str();
         line2 = request->getParam(1)->value().c_str();
@@ -1808,34 +1808,34 @@ void get_time(void){
 //   Serial.println(convertEpoch(epoch_time));
 
    }
-//-------------Convert Epoch time to readable date ------------------------------------------------
-String  convertEpoch(unsigned long epoch_time){
-       String h = "";                                   //varibles to hold leading zero
-       String m = "";
-       String s = "";
-       String yy = "";                                   //varibles to hold leading zero
-       String mm = "";
-       String dd = "";
-       time_t test;                                     //special varible for time function
-       test = epoch_time;
-      if (hour(test)<10)                                //add leading zero
-          {h= "0";}
-      if (minute(test)<10)                               //add leading zero
-          {m = "0";}
-      if (second(test)<10)                               //add leading zero
-          {s = "0";}
-      if (year(test)<10)                                //add leading zero
-          {yy= "0";}
-      if (month(test)<10)                               //add leading zero
-          {mm = "0";}
-      if (day(test)<10)                               //add leading zero
-          {dd = "0";}
+// //-------------Convert Epoch time to readable date ------------------------------------------------
+// String  convertEpoch(unsigned long epoch_time){
+//        String h = "";                                   //varibles to hold leading zero
+//        String m = "";
+//        String s = "";
+//        String yy = "";                                   //varibles to hold leading zero
+//        String mm = "";
+//        String dd = "";
+//        time_t test;                                     //special varible for time function
+//        test = epoch_time;
+//       if (hour(test)<10)                                //add leading zero
+//           {h= "0";}
+//       if (minute(test)<10)                               //add leading zero
+//           {m = "0";}
+//       if (second(test)<10)                               //add leading zero
+//           {s = "0";}
+//       if (year(test)<10)                                //add leading zero
+//           {yy= "0";}
+//       if (month(test)<10)                               //add leading zero
+//           {mm = "0";}
+//       if (day(test)<10)                               //add leading zero
+//           {dd = "0";}
 
-      time_stamp = yy+ String(year(test))+"/"+ mm +String(month(test))+"/"+ dd + String(day(test))+"   "+ h+String(hour(test)) + ":" + m+ String(minute(test)) + ":"+ s + String(second(test));
+//       time_stamp = yy+ String(year(test))+"/"+ mm +String(month(test))+"/"+ dd + String(day(test))+"   "+ h+String(hour(test)) + ":" + m+ String(minute(test)) + ":"+ s + String(second(test));
 
-      return time_stamp;
+//       return time_stamp;
 
-}
+// }
 //-------------display date on LCD upper right corner ----------------------------------------------
 void lcd_display_date(void){
     lcd.setCursor(10,0);
