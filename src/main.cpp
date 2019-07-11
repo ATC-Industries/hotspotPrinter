@@ -276,8 +276,6 @@ void lcd_display_time(void);
 void save_weighin_to_database();
 void recall_eeprom_values(void);
 void clear_output_buffer(void);
-void recall_eeprom_values(void);
-void clear_output_buffer(void);
 void clear_radio_rx_array(void);        // routine to clear rx buffer from xbee radio
 void print_ticket(void);                // function to print the weigh ticket
 //void set_text_size(unsigned int size);  // oled set text size routine
@@ -288,8 +286,7 @@ void Set_Clock(byte Year, byte Month, byte Date, byte DoW, byte Hour, byte Minut
 void checkboxStatus(String h, bool& is_checked, String& status, String number);
 //int openDb(const char *filename, sqlite3 **db);
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
-char* string2char(String str)
-{
+char* string2char(String str) {
     if(str.length()!= 0)
     {
         char *p = const_cast<char*>(str.c_str());
@@ -592,7 +589,7 @@ void setup(){
 // //     db_exec(db3,sSQL);
 //     sqlite3_close(db3);                                                         //close database
 
-     int r = 0;
+  //   int r = 0;
 //     Serial.printf("----array values -----  %d records ------\n\r",rec);
 //
 //     while (r <= rec-1){                                                          //Print all records found in query
@@ -650,11 +647,20 @@ server.on("/add", HTTP_POST, [](AsyncWebServerRequest *request){
 //  Take in add angler form data and do stuff with it
 server.on("/setup", HTTP_POST, [](AsyncWebServerRequest *request){
         request->redirect("/");
-        // Build sql insertion string
+        // save form fields to line variables
         line1 = request->getParam(0)->value().c_str();
         line2 = request->getParam(1)->value().c_str();
         line3 = request->getParam(2)->value().c_str();
         line4 = request->getParam(3)->value().c_str();
+
+         //-----save varibles to eeprom---------------------------
+        EEPROM.writeString(line1_eeprom_addr, line1.substring(0,40)); //save input box info after to trimming
+        EEPROM.writeString(line2_eeprom_addr, line2.substring(0,40));
+        EEPROM.writeString(line3_eeprom_addr, line3.substring(0,40));
+        EEPROM.writeString(line4_eeprom_addr, line4.substring(0,40));
+
+        EEPROM.commit();                         ////save to eeprom
+        
 });
 
 server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -1777,8 +1783,8 @@ void get_time(void){
     String s = "";
     DateTime now = rtc.now();
    epoch_time = now.unixtime();
-    time_t test;                                   //create special varible 'time_t'  to hold epoch value
-    test = epoch_time;                             //this is an epoch time value
+    //time_t test;                                   //create special varible 'time_t'  to hold epoch value
+    //test = epoch_time;                             //this is an epoch time value
 //    Serial.print(hour(test));
 //    Serial.print(":");
 //    Serial.print(minute(test));
@@ -2042,8 +2048,8 @@ void print_ticket(void)
                     Serial2.printf("stat = %d\n",stat); //diagnostic
                    }
 //-------------- cut paper-----------------------------------------
-               if (!diagnostic_flag)                                                 //do not cut paper in diagnostic mode
-                 {cut_paper();}
+               if (!diagnostic_flag) {              //do not cut paper in diagnostic mode
+                 cut_paper();}
 
                Serial2.write(0x1B);                //justification: left border
                Serial2.write('a');
