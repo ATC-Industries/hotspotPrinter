@@ -1,17 +1,17 @@
-<!-- index.njk -->
+<!-- systemsettings.njk -->
 {% extends "layout.njk" %}
 
 {% block content %}
 
 <!-- Importing Nunjucks Macro -->
 {% import 'macros/nav-macro.njk' as nav %}
-<!-- Creating the navigation with activePage = 'home' -->
-{{ nav.active('home') }}
+<!-- Creating the navigation with activePage = 'systemsettings' -->
+{{ nav.active('systemsettings') }}
 
 <main role="main" class="container">
 
     <div class="starter-template">
-        <h1 class="">Welcome to the PTS Weigh-In Manager</h1>
+        <h1 class="">Settings</h1>
         <p class="lead">Use the form below to customize your weigh ticket.</p>
         <form action="/setup" method="post">
           
