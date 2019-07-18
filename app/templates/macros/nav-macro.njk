@@ -3,7 +3,7 @@
     <a class="navbar-brand" href="#">
         <img src="pts-white.svg" width="40" height="30" alt="">
     </a>
-    {# <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
 
@@ -12,24 +12,24 @@
 <li class="nav-item {%if activePage == 'home' %} active {% endif %}">
     <a class="nav-link" href="/">Home {%if activePage == 'home' %}<span class="sr-only">(current)</span>{% endif %}</a>
 </li>
-<li class="nav-item {%if activePage == 'weighin' %} active {% endif %}">
+{# <li class="nav-item {%if activePage == 'weighin' %} active {% endif %}">
     <a class="nav-link" href="/weighin">Weigh-In {%if activePage == 'weighin' %}<span class="sr-only">(current)</span>{% endif %}</a>
-</li>
-<li class="nav-item {%if activePage == 'registration' %} active {% endif %}">
+</li> #}
+{# <li class="nav-item {%if activePage == 'registration' %} active {% endif %}">
     <a class="nav-link" href="/registration">Registration {%if activePage == 'registration' %}<span class="sr-only">(current)</span>{% endif %}</a>
-</li>
-<li class="nav-item {%if activePage == 'bumpsink' %} active {% endif %}">
+</li> #}
+{# <li class="nav-item {%if activePage == 'bumpsink' %} active {% endif %}">
     <a class="nav-link" href="/bumpsink">Bump Sink {%if activePage == 'bumpsink' %}<span class="sr-only">(current)</span>{% endif %}</a>
-</li>
+</li> #}
 <li class="nav-item dropdown">
     <a class="nav-link dropdown-toggle" href="https://example.com" id="dropdown01" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Setup</a>
     <div class="dropdown-menu" aria-labelledby="dropdown01">
-        <a class="dropdown-item" href="/addangler">Add Anglers{%if activePage == 'addangler' %}<span class="sr-only">(current)</span>{% endif %}</a>
-        <a class="dropdown-item" href="/setuptournament">Setup a Tournament{%if activePage == 'setuptournament' %}<span class="sr-only">(current)</span>{% endif %}</a>
+        {# <a class="dropdown-item" href="/addangler">Add Anglers{%if activePage == 'addangler' %}<span class="sr-only">(current)</span>{% endif %}</a>
+        <a class="dropdown-item" href="/setuptournament">Setup a Tournament{%if activePage == 'setuptournament' %}<span class="sr-only">(current)</span>{% endif %}</a> #}
         <a class="dropdown-item" href="/systemsettings">System Settings{%if activePage == 'systemsettings' %}<span class="sr-only">(current)</span>{% endif %}</a>
     </div>
 </li>
 </ul>
-</div> #}
+</div>
 </nav>
 {% endmacro %}
