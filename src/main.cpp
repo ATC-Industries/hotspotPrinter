@@ -90,7 +90,7 @@ Angler
 //------ Include files ---------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
-#include <sqlite3.h>            //database engine https://github.com/siara-cc/esp32_arduino_sqlite3_lib
+//#include <sqlite3.h>            //database engine https://github.com/siara-cc/esp32_arduino_sqlite3_lib
 #include <WiFi.h>               // Load Wi-Fi library
 #include "ESPAsyncWebServer.h"  //async web server
 #include "SPIFFS.h"
@@ -108,7 +108,7 @@ Angler
 #include "css.h"                // refrence to css file to bring in CSS styles
 #include "SDfunc.h"             // refrence the SD card functions
 #include "html.h"               // refrence to HTML generation functions
-#include "sqlite.h"             // sqlite3 database functions
+//#include "sqlite.h"             // sqlite3 database functions
 #include "OutputPrint.h"        //routines to print data results to printer
 #include <ArduinoJson.h>        // https://arduinojson.org/v5/example/generator/
 #include <Time.h>
@@ -273,7 +273,7 @@ void check_sd_mem(void);
 void checkboxStatus(String h, bool& is_checked, String& status, String number);
 void lcd_display_date(void);
 void lcd_display_time(void);
-void save_weighin_to_database();
+//void save_weighin_to_database();
 void recall_eeprom_values(void);
 void clear_output_buffer(void);
 void clear_radio_rx_array(void);        // routine to clear rx buffer from xbee radio
@@ -304,7 +304,7 @@ RTC_DS3231 rtc;                                        //start an instance of th
 //------------------------------------------------------------------------
 void setup(){
     listDir(SD, "/", 2);                      //SD card directory listing, '2' = 2 levels deep
-    sqlite3_initialize();                     //start the SQL database engine
+    // sqlite3_initialize();                     //start the SQL database engine
     Wire.begin();                             //start i2c for RTC
     delay(10);
     //---------- declare input buttons with pullup -----------------------------
@@ -629,20 +629,20 @@ server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
 
 server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
 
-server.on("/addangler", HTTP_ANY, [](AsyncWebServerRequest *request){
-        request->send(SPIFFS, "/addangler.html", "text/html");
-});
+// server.on("/addangler", HTTP_ANY, [](AsyncWebServerRequest *request){
+//         request->send(SPIFFS, "/addangler.html", "text/html");
+// });
 
-//  Take in add angler form data and do stuff with it
-server.on("/add", HTTP_POST, [](AsyncWebServerRequest *request){
-        request->redirect("/addangler");
-        // Build sql insertion string
-        sprintf(sSQL,"INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,DOB,Email)Values('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
-                request->getParam(0)->value().c_str(),request->getParam(1)->value().c_str(),request->getParam(2)->value().c_str(),request->getParam(3)->value().c_str(),request->getParam(4)->value().c_str(),
-                request->getParam(5)->value().c_str(),request->getParam(6)->value().c_str(),request->getParam(7)->value().c_str(),request->getParam(8)->value().c_str(),request->getParam(9)->value().c_str(),
-                request->getParam(10)->value().c_str(),request->getParam(11)->value().c_str());
-        addToAnglerDB(sSQL);
-});
+// //  Take in add angler form data and do stuff with it
+// server.on("/add", HTTP_POST, [](AsyncWebServerRequest *request){
+//         request->redirect("/addangler");
+//         // Build sql insertion string
+//         sprintf(sSQL,"INSERT INTO Angler(FirstName,LastName,MiddleInit,Address1,Address2,City,State,Zip,CellPhone,Telephone,DOB,Email)Values('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
+//                 request->getParam(0)->value().c_str(),request->getParam(1)->value().c_str(),request->getParam(2)->value().c_str(),request->getParam(3)->value().c_str(),request->getParam(4)->value().c_str(),
+//                 request->getParam(5)->value().c_str(),request->getParam(6)->value().c_str(),request->getParam(7)->value().c_str(),request->getParam(8)->value().c_str(),request->getParam(9)->value().c_str(),
+//                 request->getParam(10)->value().c_str(),request->getParam(11)->value().c_str());
+//         addToAnglerDB(sSQL);
+// });
 
 //  Take in add angler form data and do stuff with it
 server.on("/setup", HTTP_POST, [](AsyncWebServerRequest *request){
@@ -663,14 +663,14 @@ server.on("/setup", HTTP_POST, [](AsyncWebServerRequest *request){
         
 });
 
-server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(SPIFFS, "/login.html", "text/html");
-});
+// server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
+//         request->send(SPIFFS, "/login.html", "text/html");
+// });
 
-// Route to load signin.css file
-server.on("/signin.css", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(SPIFFS, "/signin.css", "text/css");
-});
+// // Route to load signin.css file
+// server.on("/signin.css", HTTP_GET, [](AsyncWebServerRequest *request){
+//         request->send(SPIFFS, "/signin.css", "text/css");
+// });
 
 // Route to load style.css file
 server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -808,7 +808,7 @@ if (read_keyboard_timer >= 2){                                             //rea
             Serial2.println(">>Print button pressed");}
        if ((Total_fish != 0) )                                                ///print ticket if bump sink info has been entered
            {print_ticket();                                                   //print the weight ticket
-            save_weighin_to_database();                                      //save bumpsink info weight and adj weight to database
+           // save_weighin_to_database();                                      //save bumpsink info weight and adj weight to database
             bump_mode = false;                                              //get out of bump mode after ticket is printed
             delay(300);
             if (checkbox1_status == "checked")                                //if checkbox "print 2 tickets" is checked
@@ -884,11 +884,11 @@ if (read_keyboard_timer >= 2){                                             //rea
             delay(150);
            }
         else{                                                        //if not in bump sink mode
-         sqlite3 *db3;
-         openDb("/sd/PTS.db", &db3);                                 //open the database
-      // db_exec(db3, "DELETE FROM Angler WHERE lastName = ''");     //delete records with no last name
-         db_exec(db3, "SELECT * FROM Angler ");                      //query the entire angler list
-         sqlite3_close(db3);                                             //close database
+      //    sqlite3 *db3;
+      //    openDb("/sd/PTS.db", &db3);                                 //open the database
+      // // db_exec(db3, "DELETE FROM Angler WHERE lastName = ''");     //delete records with no last name
+      //    db_exec(db3, "SELECT * FROM Angler ");                      //query the entire angler list
+      //    sqlite3_close(db3);                                             //close database
 
          print_results();                                                //send results to printer
          delay(1000);                                                    //delay, so 2 copies do not print
@@ -913,11 +913,11 @@ if (read_keyboard_timer >= 2){                                             //rea
         else                                                             //if not in bumpsink mode
           {
          // lcd.print("F2");                                               //display text on lcd screen
-          sqlite3 *db3;                                                   //define object for database
-           openDb("/sd/PTS.db", &db3);                                     //open the database
+          // sqlite3 *db3;                                                   //define object for database
+          //  openDb("/sd/PTS.db", &db3);                                     //open the database
 
-           db_exec(db3, "SELECT Angler.id,Angler.FirstName,Angler.LastName,weighin.totalFish,weighin.liveFish,weighin.shortFish,weighin.late,weighin.weight,weighin.adj_weight FROM angler INNER JOIN Weighin on Weighin.ID = Angler.ID ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
-           sqlite3_close(db3);                                             //close database
+          //  db_exec(db3, "SELECT Angler.id,Angler.FirstName,Angler.LastName,weighin.totalFish,weighin.liveFish,weighin.shortFish,weighin.late,weighin.weight,weighin.adj_weight FROM angler INNER JOIN Weighin on Weighin.ID = Angler.ID ORDER BY adj_weight DESC"); //query the results list and sort by final weight numb decending
+          //  sqlite3_close(db3);                                             //close database
            Serial.println("*** DIAGNOSTIC  -  Database closed at line 901");
           print_weigh_results();                                          //print report on printer
 
@@ -945,11 +945,11 @@ if (read_keyboard_timer >= 2){                                             //rea
 //              {pnt = 1;}
            pnt = pnt+1;                                                     //increment pointer
            read_keyboard_timer = 0;                                         //reset keyboard read timer
-           sqlite3 *db3;                                                    //asign object to database
-           openDb("/sd/PTS.db", &db3);                                      //open the database
-           sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE id = %d",pnt);  //search database by rowid
-           db_exec(db3,sSQL);                                               //execute the sql command
-           sqlite3_close(db3);                                              //close database
+          //  sqlite3 *db3;                                                    //asign object to database
+          //  openDb("/sd/PTS.db", &db3);                                      //open the database
+          //  sprintf(sSQL,"SELECT ID, LastName, FirstName FROM Angler WHERE id = %d",pnt);  //search database by rowid
+          //  db_exec(db3,sSQL);                                               //execute the sql command
+          //  sqlite3_close(db3);                                              //close database
            lcd_clear(0);                                                   //clear text on top line
            lcd.setCursor(0,0);
            String tmp = results[0][1]+", "+ results[0][2];                  //combine last name and first name with ','
@@ -987,11 +987,11 @@ if (read_keyboard_timer >= 2){                                             //rea
               {pnt = 1;}
            if (pnt >1)
                {pnt = pnt-1;}
-         sqlite3 *db3;
-         openDb("/sd/PTS.db", &db3);
-         sprintf(sSQL,"SELECT ID, LastName,FirstName FROM Angler WHERE id = %d",pnt);                  //search database by rowid
-         db_exec(db3,sSQL);
-         sqlite3_close(db3);
+        //  sqlite3 *db3;
+        //  openDb("/sd/PTS.db", &db3);
+        //  sprintf(sSQL,"SELECT ID, LastName,FirstName FROM Angler WHERE id = %d",pnt);                  //search database by rowid
+        //  db_exec(db3,sSQL);
+        //  sqlite3_close(db3);
          lcd_clear(0);                                                    //clear line
          lcd.setCursor(0,0);
          String tmp = results[0][1]+", "+ results[0][2];                  //combine last name and first name with ,
@@ -1695,13 +1695,13 @@ void menu(void){
     if (menu_pointer  == 0){
       angler_search = "ID";                            //sort angler list by ID
 
-       sqlite3 *db3;                                                                        //declare a pointer to the data base
-       openDb("/sd/PTS.db", &db3);
-       sprintf(sSQL,"CREATE TABLE weighin_list AS SELECT ID ,TotalFish ,LiveFish,ShortFish,Late,weight,adj_weight,TimeStamp,DateStamp FROM weighin"); //create table if does not exist
-       db_exec(db3,sSQL);
-       sprintf(sSQL,"INSERT INTO  weighin_list SELECT * FROM weighin ORDER BY ID DESC");            //xfer sorted list to new table
-       db_exec(db3,sSQL);                                                         //execute the command
-       sqlite3_close(db3);
+      //  sqlite3 *db3;                                                                        //declare a pointer to the data base
+      //  openDb("/sd/PTS.db", &db3);
+      //  sprintf(sSQL,"CREATE TABLE weighin_list AS SELECT ID ,TotalFish ,LiveFish,ShortFish,Late,weight,adj_weight,TimeStamp,DateStamp FROM weighin"); //create table if does not exist
+      //  db_exec(db3,sSQL);
+      //  sprintf(sSQL,"INSERT INTO  weighin_list SELECT * FROM weighin ORDER BY ID DESC");            //xfer sorted list to new table
+      //  db_exec(db3,sSQL);                                                         //execute the command
+      //  sqlite3_close(db3);
     }
     else if (menu_pointer == 1){
       angler_search = "LastName";                      //sort angler list by last name
@@ -1727,15 +1727,15 @@ void menu(void){
  }//void menu(void)
 
 //---------------save bumpsink info and weight to database -------------------------
-void save_weighin_to_database(){
-       sqlite3 *db3;                                                              //create an instance of the data base
-       openDb("/sd/PTS.db", &db3);                                                //open the database
-      // char time_char[9];                                                         //define temp arrays to hold time and date
-      // char date_char[11];
-       sprintf(sSQL,"Update WEIGHIN SET TotalFish = %d,LiveFish = %d,ShortFish = %d,Late = %d,TimeStamp = '%s',DateStamp = '%s' WHERE ID = %d",Total_fish,Total_alive,Total_short,Total_late,current_time.c_str(),current_date.c_str(),pnt);             //build the sql command
-       db_exec(db3,sSQL);                                                         //execute the command
-       sqlite3_close(db3);                                                        //close the database
-       }
+// void save_weighin_to_database(){
+      //  sqlite3 *db3;                                                              //create an instance of the data base
+      //  openDb("/sd/PTS.db", &db3);                                                //open the database
+      // // char time_char[9];                                                         //define temp arrays to hold time and date
+      // // char date_char[11];
+      //  sprintf(sSQL,"Update WEIGHIN SET TotalFish = %d,LiveFish = %d,ShortFish = %d,Late = %d,TimeStamp = '%s',DateStamp = '%s' WHERE ID = %d",Total_fish,Total_alive,Total_short,Total_late,current_time.c_str(),current_date.c_str(),pnt);             //build the sql command
+      //  db_exec(db3,sSQL);                                                         //execute the command
+      //  sqlite3_close(db3);                                                        //close the database
+      //  }
 
 //------------- lcd clear line function -------------------------------------------------------------
 void lcd_clear(int line){                                                              //clear entire line of lcd display
@@ -2254,12 +2254,12 @@ void processRadioString(){
 //    </ul>
 
 //add code to read radio serial number
-void addToAnglerDB(char* sSQL) {
-    sqlite3 *db3;                       //declare a pointer to the data base
-    openDb("/sd/PTS.db", &db3);         //open database on SD card, assign to 'db3'
-    db_exec(db3,sSQL);                  // Execute the insertion
-    sqlite3_close(db3);                 // Close the database
-}
+// void addToAnglerDB(char* sSQL) {
+//     sqlite3 *db3;                       //declare a pointer to the data base
+//     openDb("/sd/PTS.db", &db3);         //open database on SD card, assign to 'db3'
+//     db_exec(db3,sSQL);                  // Execute the insertion
+//     sqlite3_close(db3);                 // Close the database
+// }
 
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
   if(type == WS_EVT_CONNECT){

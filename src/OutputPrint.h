@@ -45,14 +45,14 @@ void print_results(){
 
    int r = 0;
    Serial2.print("--------------------------");
-   Serial2.print(rec);
+   // Serial2.print(rec);
    Serial2.println(" records----------------------");
-   while ( r <= rec-1){                                                //Print all records found
+   // while ( r <= rec-1){                                                //Print all records found
 
-        Serial2.print( results[r][0]+"  \t");                         // print the column names from array
-        Serial2.println( results[r][1]);
-        r++;
-        }
+   //      Serial2.print( results[r][0]+"  \t");                         // print the column names from array
+   //      Serial2.println( results[r][1]);
+   //      r++;
+   //      }
    Serial2.println("");
    Serial2.write(0x1B);                         //justification: center text
    Serial2.write('a');
@@ -98,7 +98,7 @@ void print_weigh_results(){
 
 
     Serial2.print("--------------------------");
-    Serial2.print(rec);
+   //  Serial2.print(rec);
     Serial2.println(" records----------------------------");
     bold_on();
     Serial2.println("  ID  Name           T   A   S   L    Act      Adj   Place"); //print column titles
@@ -106,42 +106,42 @@ void print_weigh_results(){
     r=0;
     bold_off();
 
-    while (r <= rec-1){                                                       //Print all records found in query
-        if(results[r][0].length() == 1)                                      //insert padding
-           {Serial2.print("   ");}
-        else if (results[r][0].length() == 2)
-           {Serial2.print("  ");}
-        else if (results[r][0].length() == 3)
-           {Serial2.print(" ");}
-        Serial2.print( results[r][0]+"  ");                                //id numberdisplay all the column values (add tab)
-        Serial2.print( results[r][2]+" ");                                    //last name
-        Serial2.print( results[r][1]+" \x09");                                //first name
-        Serial2.print( results[r][3]+"   ");                                  //total fish
-        Serial2.print( results[r][4]+"   ");                                  //live fish
-        Serial2.print( results[r][5]+"   ");                                  //short fish
-        Serial2.print( results[r][6]+"   ");                                  //late
-        if(results[r][7].length() == 2)                                       //add padding if needed
-           {Serial2.print("  ");}
-        if(results[r][7].length() == 3)                                      //insert padding
-           {Serial2.print(" ");}
-        String tmpString;
-        tmpString = results[r][7];
-        float var = tmpString.toFloat();
-        var = var/100;
-        Serial2.print( var);                                                 //actual weight in decimal mode
-        Serial2.print("   ");
-        if(results[r][8].length() == 2)
-           {Serial2.print("  ");}
-        if(results[r][8].length() == 3)                                      //insert padding
-           {Serial2.print(" ");}
-        tmpString = results[r][8];
-        var = tmpString.toFloat();
-        var = var/100;                                                       //divide by 100 to add decimal point
-        Serial2.print( var);                                                //print actual wieght with decimal
-        Serial2.print("  ");
-       Serial2.println(r+1);
-        r++;                                                                  //advance to next record
-    }
+   //  while (r <= rec-1){                                                       //Print all records found in query
+   //      if(results[r][0].length() == 1)                                      //insert padding
+   //         {Serial2.print("   ");}
+   //      else if (results[r][0].length() == 2)
+   //         {Serial2.print("  ");}
+   //      else if (results[r][0].length() == 3)
+   //         {Serial2.print(" ");}
+   //      Serial2.print( results[r][0]+"  ");                                //id numberdisplay all the column values (add tab)
+   //      Serial2.print( results[r][2]+" ");                                    //last name
+   //      Serial2.print( results[r][1]+" \x09");                                //first name
+   //      Serial2.print( results[r][3]+"   ");                                  //total fish
+   //      Serial2.print( results[r][4]+"   ");                                  //live fish
+   //      Serial2.print( results[r][5]+"   ");                                  //short fish
+   //      Serial2.print( results[r][6]+"   ");                                  //late
+   //      if(results[r][7].length() == 2)                                       //add padding if needed
+   //         {Serial2.print("  ");}
+   //      if(results[r][7].length() == 3)                                      //insert padding
+   //         {Serial2.print(" ");}
+   //      String tmpString;
+   //      tmpString = results[r][7];
+   //      float var = tmpString.toFloat();
+   //      var = var/100;
+   //      Serial2.print( var);                                                 //actual weight in decimal mode
+   //      Serial2.print("   ");
+   //      if(results[r][8].length() == 2)
+   //         {Serial2.print("  ");}
+   //      if(results[r][8].length() == 3)                                      //insert padding
+   //         {Serial2.print(" ");}
+   //      tmpString = results[r][8];
+   //      var = tmpString.toFloat();
+   //      var = var/100;                                                       //divide by 100 to add decimal point
+   //      Serial2.print( var);                                                //print actual wieght with decimal
+   //      Serial2.print("  ");
+   //     Serial2.println(r+1);
+   //      r++;                                                                  //advance to next record
+   //  }
    Serial2.println("");                                                       //line feed
    Serial2.println(current_time + "-----  Report by Pro Tournament Scales -------"+ current_date);
    paper_cut();                                                               //cut paper
