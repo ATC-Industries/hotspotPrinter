@@ -629,6 +629,8 @@ server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
 
 server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
 
+server.serveStatic("/systemsettings", SPIFFS, "/").setDefaultFile("systemsettings.html");
+
 // server.on("/addangler", HTTP_ANY, [](AsyncWebServerRequest *request){
 //         request->send(SPIFFS, "/addangler.html", "text/html");
 // });
