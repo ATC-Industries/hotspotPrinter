@@ -655,6 +655,9 @@ server.on("/setup", HTTP_POST, [](AsyncWebServerRequest *request){
         line3 = request->getParam(2)->value().c_str();
         line4 = request->getParam(3)->value().c_str();
 
+        // TODO handle check box
+        // TODO Send Date and time and update ESP32 Date and Time
+
          //-----save varibles to eeprom---------------------------
         EEPROM.writeString(line1_eeprom_addr, line1.substring(0,40)); //save input box info after to trimming
         EEPROM.writeString(line2_eeprom_addr, line2.substring(0,40));
